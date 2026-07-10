@@ -1,0 +1,57 @@
+.media-cover-placeholder {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 70% at 18% 22%, color-mix(in srgb, var(--app-accent) 12%, transparent), transparent 58%),
+    radial-gradient(ellipse 72% 64% at 84% 78%, color-mix(in srgb, var(--app-accent-soft) 18%, transparent), transparent 62%),
+    linear-gradient(145deg, color-mix(in srgb, var(--app-surface) 88%, var(--app-bg) 12%), var(--app-surface));
+}
+
+.media-cover-placeholder--fill {
+  position: absolute;
+  inset: 0;
+}
+
+.media-cover-placeholder__shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    118deg,
+    transparent 32%,
+    color-mix(in srgb, var(--app-accent) 8%, rgba(255, 255, 255, 0.05)) 48%,
+    transparent 64%
+  );
+  transform: translateX(-120%);
+  animation: mediaCoverShine 2.8s ease-in-out infinite;
+}
+
+.media-cover-placeholder__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px),
+    radial-gradient(circle at 70% 65%, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px);
+  background-size: 18px 18px, 22px 22px;
+  pointer-events: none;
+}
+
+@keyframes mediaCoverShine {
+  0%,
+  18% {
+    transform: translateX(-120%);
+  }
+
+  52%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media-cover-placeholder__shine {
+    animation: none;
+    transform: none;
+    opacity: 0.45;
+  }
+}

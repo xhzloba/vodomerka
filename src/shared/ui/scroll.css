@@ -1,0 +1,45 @@
+/* Overlay scroll: фиксированная ширина трека — без reflow при появлении thumb */
+.scroll-overlay {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  -ms-overflow-style: none;
+}
+
+.scroll-overlay::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scroll-overlay::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-overlay::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.scroll-overlay:hover,
+.scroll-overlay.is-scrolling {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.scroll-overlay:hover::-webkit-scrollbar-thumb,
+.scroll-overlay.is-scrolling::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.scroll-overlay-x {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-overlay-x::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}

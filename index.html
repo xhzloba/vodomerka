@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="obsidian">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https: http: data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http://api.vokino.pro https://api.vokino.pro https://proxy.vokino.pro;"
+    />
+    <title>Vodomerka</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #0a0a0e;
+      }
+
+      html[data-theme='onyx'],
+      html[data-theme='onyx'] body {
+        background-color: #050508;
+      }
+
+      html[data-theme='nocturne'],
+      html[data-theme='nocturne'] body {
+        background-color: #07060c;
+      }
+
+      html[data-theme='ember'],
+      html[data-theme='ember'] body {
+        background-color: #0b0907;
+      }
+
+      html[data-theme='aurora'],
+      html[data-theme='aurora'] body {
+        background-color: #060a0c;
+      }
+
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+      }
+    </style>
+    <script>
+      try {
+        var raw = localStorage.getItem('tv-leonid-settings');
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (parsed && parsed.theme) {
+            document.documentElement.dataset.theme = parsed.theme;
+          }
+        }
+      } catch (e) {}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,110 @@
+.ui-combobox {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ui-combobox__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border-radius: var(--radius-sm);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  font-weight: 500;
+  color: var(--app-text);
+  text-align: left;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.ui-combobox__trigger span {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-combobox__trigger svg {
+  flex-shrink: 0;
+  color: var(--app-text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.ui-combobox--open .ui-combobox__trigger {
+  border-color: var(--app-border-strong);
+  background: var(--app-surface-hover);
+}
+
+.ui-combobox--open .ui-combobox__trigger svg {
+  transform: rotate(180deg);
+}
+
+.ui-combobox--sm {
+  width: 212px;
+  min-width: 188px;
+  max-width: 248px;
+}
+
+.ui-combobox--sm .ui-combobox__trigger {
+  min-height: 40px;
+  padding: 8px 11px;
+  font-size: 0.875rem;
+}
+
+.ui-combobox--md {
+  min-width: 200px;
+  max-width: min(320px, 42vw);
+}
+
+.ui-combobox--md .ui-combobox__trigger {
+  min-height: 40px;
+  padding: 9px 12px;
+  font-size: 0.9375rem;
+}
+
+.ui-combobox__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 100%;
+  max-width: min(360px, 70vw);
+  max-height: min(380px, 52vh);
+  margin: 0;
+  padding: 5px;
+  list-style: none;
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+  background: var(--app-elevated);
+  border: 1px solid var(--app-border-strong);
+  box-shadow: var(--app-card-shadow);
+}
+
+.ui-combobox__option {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--app-text-muted);
+  text-align: left;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.ui-combobox--sm .ui-combobox__option {
+  padding: 9px 10px;
+  font-size: 0.875rem;
+}
+
+.ui-combobox--md .ui-combobox__option {
+  padding: 9px 11px;
+  font-size: 0.9375rem;
+}
+
+.ui-combobox__option:hover,
+.ui-combobox__option--active {
+  background: var(--app-surface-hover);
+  color: var(--app-text);
+}

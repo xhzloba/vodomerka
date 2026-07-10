@@ -1,0 +1,152 @@
+import { useEffect, useRef, useState } from 'react';
+import type { MediaItem } from '@/shared/domain/media';
+import { getMediaTypeLabel } from '@/shared/domain/media';
+import { useMediaImage } from '@/shared/hooks/useMediaImage';
+import { MediaCoverPlaceholder } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
+import { InfoIcon, PlayIcon } from '@/shared/ui/icons';
+import './HeroBanner.css';
+
+interface HeroBannerProps {
+  items: MediaItem[];
+  autoSlide: boolean;
+  slideIntervalSec: number;
+  onPlay: (item: MediaItem) => void;
+  onInfo: (item: MediaItem) => void;
+}
+
+function buildMetaLine(item: MediaItem): string {
+  return [
+    getMediaTypeLabel(item.type),
+    item.year,
+    item.duration,
+    item.rating != null ? item.rating.toFixed(1) : null,
+    item.genres[0],
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+function shuffleItems(items: MediaItem[], avoidFirstId?: string): MediaItem[] {
+  const shuffled = [...items];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+
+  if (avoidFirstId && shuffled.length > 1 && shuffled[0].id === avoidFirstId) {
+    [shuffled[0], shuffled[1]] = [shuffled[1], shuffled[0]];
+  }
+
+  return shuffled;
+}
+
+function createSlideQueue(items: MediaItem[], avoidFirstId?: string): MediaItem[] {
+  if (items.length <= 1) {
+    return items;
+  }
+
+  return shuffleItems(items, avoidFirstId);
+}
+
+export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo }: HeroBannerProps) {
+  const [item, setItem] = useState(items[0]);
+  const slideQueueRef = useRef<MediaItem[]>([]);
+  const slideIndexRef = useRef(0);
+
+  useEffect(() => {
+    slideQueueRef.current = createSlideQueue(items);
+    slideIndexRef.current = 0;
+    setItem(slideQueueRef.current[0] ?? items[0]);
+  }, [items]);
+
+  useEffect(() => {
+    if (!autoSlide || items.length <= 1) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setItem((current) => {
+        slideIndexRef.current += 1;
+
+        if (
+          slideQueueRef.current.length === 0 ||
+          slideIndexRef.current >= slideQueueRef.current.length
+        ) {
+          slideQueueRef.current = createSlideQueue(items, current.id);
+          slideIndexRef.current = 0;
+        }
+
+        return slideQueueRef.current[slideIndexRef.current] ?? current;
+      });
+    }, slideIntervalSec * 1000);
+
+    return () => window.clearInterval(timer);
+  }, [items, autoSlide, slideIntervalSec]);
+
+  const metaLine = buildMetaLine(item);
+  const { src: heroSrc, failed: heroImageFailed, ready: heroReady, loading, onError } = useMediaImage({
+    primaryUrl: item.backdrop || item.poster,
+    fallbackUrl: item.poster,
+    eager: true,
+  });
+  const { src: logoSrc, failed: logoFailed } = useMediaImage({
+    primaryUrl: item.logo ?? '',
+    eager: true,
+  });
+  const showLogo = Boolean(item.logo && logoSrc && !logoFailed);
+
+  const hasHeroSource = Boolean(item.backdrop || item.poster);
+  const isHeroLoading = hasHeroSource && !heroImageFailed && !heroReady;
+  const showHeroImage = Boolean(heroSrc) && !heroImageFailed && heroReady;
+
+  return (
+    <section className="hero">
+      <div className="hero__backdrop" aria-hidden="true">
+        <div className="hero__image-panel">
+          {isHeroLoading ? <MediaCoverPlaceholder className="hero__cover-placeholder" fill /> : null}
+          {showHeroImage ? (
+            <img
+              key={heroSrc}
+              className="hero__backdrop-image hero__backdrop-image--ready"
+              src={heroSrc}
+              alt=""
+              loading={loading}
+              referrerPolicy="no-referrer"
+              onError={onError}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div key={item.id} className="hero__content hero__content--enter">
+        <p className="hero__eyebrow">{metaLine}</p>
+        {showLogo ? (
+          <img
+            key={logoSrc}
+            className="hero__logo"
+            src={logoSrc}
+            alt={item.title}
+            loading="eager"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <h2 className="hero__title">{item.title}</h2>
+        )}
+
+        {item.description && <p className="hero__description">{item.description}</p>}
+
+        <div className="hero__actions">
+          <button className="hero__btn hero__btn--primary" onClick={() => onPlay(item)}>
+            <PlayIcon size={22} />
+            Смотреть
+          </button>
+          <button className="hero__btn hero__btn--ghost" onClick={() => onInfo(item)}>
+            <InfoIcon size={22} />
+            Подробнее
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}

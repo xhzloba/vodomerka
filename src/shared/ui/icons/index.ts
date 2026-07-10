@@ -1,0 +1,23 @@
+export type { IconProps } from './Icon';
+export {
+  BookOpenIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  CopyIcon,
+  EyeIcon,
+  EyeOffIcon,
+  FavoritesIcon,
+  GridIcon,
+  HistoryIcon,
+  HomeIcon,
+  InfoIcon,
+  PlayIcon,
+  PlayOverlayIcon,
+  SearchIcon,
+  SettingsIcon,
+  TrashIcon,
+  TrendingIcon,
+  WatchingIcon,
+} from './icons';

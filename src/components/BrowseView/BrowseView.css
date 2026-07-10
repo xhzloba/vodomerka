@@ -1,0 +1,242 @@
+.browse-view,
+.library-view {
+  position: relative;
+  height: 100%;
+}
+
+.browse-view {
+  display: flex;
+  flex-direction: column;
+  padding: var(--app-page-top) 28px 28px 18px;
+  overflow: hidden;
+}
+
+.library-view {
+  padding: 0 0 28px;
+}
+
+.browse-view__header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.browse-view__scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.browse-view__scroll-top-shadow {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  flex-shrink: 0;
+  height: 18px;
+  margin-bottom: -18px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.82), transparent);
+  transition: opacity var(--transition-fast);
+}
+
+.browse-view__scroll-top-shadow--visible {
+  opacity: 1;
+}
+
+.browse-view__header-main {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+  flex: 1;
+}
+
+.browse-view__title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.browse-view__title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  margin: 0;
+  line-height: 1;
+}
+
+.browse-view__settings-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-top: 0.06em;
+  border-radius: var(--radius-sm);
+  color: var(--app-text-muted);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.browse-view__settings-trigger svg {
+  width: 22px;
+  height: 22px;
+}
+
+.browse-view__settings-trigger:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--app-text);
+}
+
+.browse-view__divider {
+  width: 1px;
+  height: 1.35rem;
+  background: var(--app-border-strong);
+  flex-shrink: 0;
+}
+
+.library-view__title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.library-view__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: var(--app-page-top) 18px 0 18px;
+}
+
+.library-view__clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 120, 120, 0.28);
+  background: rgba(192, 57, 57, 0.12);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ff9a9a;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.library-view__clear-btn svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.library-view__clear-btn:hover {
+  background: rgba(192, 57, 57, 0.2);
+  border-color: rgba(255, 120, 120, 0.45);
+  color: #ffb3b3;
+}
+
+.browse-view__content {
+  min-height: 240px;
+}
+
+.browse-view__category-trigger {
+  flex-shrink: 0;
+  padding: 0;
+  font-size: 1.1875rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  color: var(--app-text);
+  transition: color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.browse-view__category-trigger:hover {
+  color: var(--app-accent);
+}
+
+.browse-view__category-placeholder {
+  flex-shrink: 0;
+  font-size: 1.1875rem;
+  color: var(--app-text-muted);
+  opacity: 0.5;
+}
+
+.browse-view__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.browse-view__rows .content-row {
+  padding-left: 0;
+}
+
+.browse-view__error {
+  margin: 0 0 16px;
+  color: #ff8f8f;
+  font-size: 0.875rem;
+}
+
+.browse-view__empty {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.9375rem;
+}
+
+.library-view__empty {
+  text-align: center;
+  padding: 80px 18px;
+  color: var(--text-tertiary);
+}
+
+.library-view__empty-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: var(--app-text-muted);
+  opacity: 0.35;
+}
+
+.library-view__empty-text {
+  font-size: 17px;
+}
+
+.library-view__rows {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 48px;
+}
+
+.library-view__rows .content-row {
+  padding-left: 18px;
+  padding-right: 0;
+  margin-bottom: 36px;
+}
+
+.library-view__rows .content-row:last-child {
+  margin-bottom: 0;
+}
+
+.library-view__rows .content-row__header {
+  margin-bottom: 12px;
+  padding-right: 18px;
+}
+
+.library-view__rows .content-row__scroll {
+  padding: 8px 0 12px;
+  margin-right: 0;
+  scroll-padding-left: 0;
+  scroll-padding-right: 0;
+}

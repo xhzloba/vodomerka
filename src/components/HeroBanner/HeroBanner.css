@@ -1,0 +1,203 @@
+.hero {
+  position: relative;
+  margin-top: calc(-1 * var(--app-titlebar-height));
+  padding-top: var(--app-titlebar-height);
+  height: min(74vh, 680px);
+  min-height: 480px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.hero__backdrop {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 0.34fr) minmax(0, 0.66fr);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Backdrop: слева и снизу мягко растворяется в фон приложения */
+.hero__image-panel {
+  grid-column: 2;
+  position: relative;
+  overflow: hidden;
+  -webkit-mask-image:
+    linear-gradient(to top, transparent 0%, rgba(0, 0, 0, 0.18) 10%, rgba(0, 0, 0, 0.52) 24%, rgba(0, 0, 0, 0.82) 38%, #000 52%),
+    linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.28) 12%, rgba(0, 0, 0, 0.72) 24%, #000 38%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to top, transparent 0%, rgba(0, 0, 0, 0.18) 10%, rgba(0, 0, 0, 0.52) 24%, rgba(0, 0, 0, 0.82) 38%, #000 52%),
+    linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.28) 12%, rgba(0, 0, 0, 0.72) 24%, #000 38%);
+  mask-composite: intersect;
+}
+
+.hero__image-panel img,
+.hero__backdrop-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.hero__backdrop-image {
+  animation: hero-media-enter 0.55s cubic-bezier(0.25, 0.1, 0.25, 1);
+  opacity: 0;
+}
+
+.hero__backdrop-image--ready {
+  opacity: 1;
+}
+
+@keyframes hero-media-enter {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.hero__content {
+  position: absolute;
+  top: var(--hero-metadata-top);
+  left: 18px;
+  width: min(520px, calc(50% - 24px));
+  max-height: calc(100% - var(--hero-metadata-top) - 24px);
+  z-index: 2;
+  overflow: visible;
+}
+
+.hero__content--enter {
+  animation: hero-content-enter 0.45s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+@keyframes hero-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero__eyebrow {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 12px;
+  font-size: var(--hero-eyebrow-font-size);
+  font-weight: 500;
+  line-height: var(--hero-eyebrow-line-height);
+  letter-spacing: 0.02em;
+  color: var(--app-text-muted);
+  opacity: 0.78;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hero__title {
+  position: relative;
+  z-index: 4;
+  font-size: clamp(2rem, 4.2vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  margin-bottom: 16px;
+  min-height: 3.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: var(--media-brand-text-shadow);
+}
+
+.hero__logo {
+  position: relative;
+  z-index: 4;
+  display: block;
+  width: auto;
+  max-width: min(100%, 420px);
+  height: auto;
+  max-height: clamp(72px, 12vw, 120px);
+  margin-bottom: 16px;
+  object-fit: contain;
+  object-position: left center;
+  -webkit-filter: var(--media-brand-logo-shadow);
+  filter: var(--media-brand-logo-shadow);
+}
+
+.hero__description {
+  position: relative;
+  z-index: 3;
+  margin-bottom: 24px;
+  font-size: 1.1875rem;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--app-text-muted);
+  opacity: 0.82;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hero__actions {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 16px 32px;
+  border-radius: var(--radius-sm);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: transform var(--transition-fast), opacity var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+
+.hero__btn:active {
+  transform: scale(0.97);
+}
+
+.hero__btn--primary {
+  background: var(--app-text);
+  color: var(--app-bg);
+}
+
+.hero__btn--primary:hover {
+  opacity: 0.9;
+}
+
+.hero__btn--ghost {
+  padding-inline: 24px;
+  color: var(--app-text-muted);
+}
+
+.hero__btn--ghost:hover {
+  color: var(--app-text);
+}
+
+@media (max-width: 960px) {
+  .hero__backdrop {
+    grid-template-columns: minmax(0, 0.32fr) minmax(0, 0.68fr);
+  }
+
+  .hero__content {
+    width: min(520px, calc(100% - 36px));
+  }
+}

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TV Leonid — Media Overrides</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div>
+          <p class="eyebrow">TV Leonid</p>
+          <h1>Media Overrides</h1>
+          <p class="subtitle">Управление `movie_overrides.json` и картинками в GitHub</p>
+        <p id="statusLine" class="status-line" hidden></p>
+        <p id="serverWarning" class="server-warning" hidden>
+          Запущен не тот сервер. Останови старый процесс и выполни: <code>npm run overrides-ui</code>
+        </p>
+        </div>
+        <div class="header__actions">
+          <button id="reloadBtn" class="btn btn--ghost" type="button">Обновить с GitHub</button>
+          <button id="saveBtn" class="btn btn--primary" type="button">Опубликовать в GitHub</button>
+        </div>
+      </header>
+
+      <section class="panel">
+        <h2>GitHub</h2>
+        <div class="grid grid--2">
+          <label class="field">
+            <span>Репозиторий</span>
+            <input id="repoInput" type="text" value="xhzloba/dbmovies" />
+          </label>
+          <label class="field">
+            <span>Ветка</span>
+            <input id="branchInput" type="text" value="main" />
+          </label>
+          <label class="field field--wide">
+            <span>Personal Access Token</span>
+            <input id="tokenInput" type="password" placeholder="github_pat_..." autocomplete="off" />
+          </label>
+        </div>
+        <p class="hint">
+          Нужен токен с правами <code>repo</code> только для публикации. Загрузка и редактирование работают без токена.
+        </p>
+      </section>
+
+      <section class="panel">
+        <div class="panel__head">
+          <h2>Записи</h2>
+          <button id="addBtn" class="btn btn--ghost" type="button">+ Добавить</button>
+        </div>
+        <div id="entriesList" class="entries"></div>
+      </section>
+
+      <section class="panel panel--editor" id="editorPanel" hidden>
+        <div class="panel__head">
+          <h2 id="editorTitle">Редактирование</h2>
+          <button id="closeEditorBtn" class="btn btn--ghost" type="button">Закрыть</button>
+        </div>
+
+        <div class="grid grid--2">
+          <label class="field">
+            <span>Media ID (Vokino)</span>
+            <input id="mediaIdInput" type="text" placeholder="69471c66700ccb861bcd8d4c" />
+          </label>
+          <label class="field field--wide">
+            <span>About / описание</span>
+            <textarea id="aboutInput" rows="3" placeholder="Переопределённое описание"></textarea>
+          </label>
+        </div>
+
+        <div class="assets">
+          <article class="asset-card">
+            <h3>Logo</h3>
+            <div class="asset-card__preview" id="logoPreview">—</div>
+            <input id="logoFile" type="file" accept="image/*" />
+            <label class="field">
+              <span>или URL</span>
+              <input id="logoUrl" type="url" placeholder="https://raw.githubusercontent.com/..." />
+            </label>
+          </article>
+
+          <article class="asset-card">
+            <h3>Poster</h3>
+            <div class="asset-card__preview" id="posterPreview">—</div>
+            <input id="posterFile" type="file" accept="image/*" />
+            <label class="field">
+              <span>или URL</span>
+              <input id="posterUrl" type="url" placeholder="https://raw.githubusercontent.com/..." />
+            </label>
+          </article>
+
+          <article class="asset-card">
+            <h3>Backdrop</h3>
+            <div class="asset-card__preview" id="backdropPreview">—</div>
+            <input id="backdropFile" type="file" accept="image/*" />
+            <label class="field">
+              <span>или URL</span>
+              <input id="backdropUrl" type="url" placeholder="https://raw.githubusercontent.com/..." />
+            </label>
+          </article>
+        </div>
+
+        <div class="editor__actions">
+          <button id="deleteEntryBtn" class="btn btn--danger" type="button">Удалить запись</button>
+          <button id="applyEntryBtn" class="btn btn--primary" type="button">Сохранить локально</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>JSON preview</h2>
+        <pre id="jsonPreview" class="json-preview"></pre>
+      </section>
+    </div>
+
+    <div id="toast" class="toast" hidden></div>
+    <div id="busy" class="busy" hidden>
+      <div class="busy__card">
+        <p id="busyText">Загрузка…</p>
+        <button id="cancelBusyBtn" class="btn btn--ghost" type="button">Скрыть</button>
+      </div>
+    </div>
+
+    <script src="./app.js?v=3" type="module"></script>
+  </body>
+</html>

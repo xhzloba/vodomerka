@@ -1,0 +1,203 @@
+.setup-welcome {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 120;
+  pointer-events: none;
+  animation: setupWelcomeEnter 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.setup-welcome::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 24px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.32), transparent);
+  pointer-events: none;
+}
+
+.setup-welcome__panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px 28px;
+  width: 100%;
+  padding: 20px clamp(20px, 4vw, 40px);
+  border-top: 1px solid var(--app-border-strong);
+  border-radius: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01)),
+    var(--bg-glass);
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.04),
+    0 -4px 12px rgba(0, 0, 0, 0.24),
+    0 -10px 24px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.setup-welcome__panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 35%, rgba(255, 255, 255, 0.04) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: setupWelcomeShine 4.8s ease-in-out 1.2s infinite;
+  pointer-events: none;
+}
+
+.setup-welcome__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.14), transparent 58%),
+    var(--app-accent-soft);
+  border: 1px solid var(--app-accent-border);
+  color: var(--app-accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.setup-welcome__copy {
+  min-width: 0;
+}
+
+.setup-welcome__eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--app-accent);
+}
+
+.setup-welcome__title {
+  margin: 0 0 6px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--app-text);
+}
+
+.setup-welcome__text {
+  margin: 0;
+  max-width: 56ch;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--app-text-muted);
+}
+
+.setup-welcome__actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.setup-welcome__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--app-text);
+  color: var(--app-bg);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition: opacity var(--transition-fast);
+}
+
+.setup-welcome__cta:hover {
+  opacity: 0.9;
+}
+
+.setup-welcome__later {
+  padding: 10px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--app-text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.setup-welcome__later:hover {
+  color: var(--app-text);
+}
+
+@keyframes setupWelcomeEnter {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes setupWelcomeShine {
+  0%,
+  72%,
+  100% {
+    transform: translateX(-120%);
+  }
+
+  82% {
+    transform: translateX(120%);
+  }
+}
+
+@media (max-width: 960px) {
+  .setup-welcome__panel {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      'icon copy'
+      'actions actions';
+    gap: 14px 16px;
+    padding: 18px 20px;
+  }
+
+  .setup-welcome__icon {
+    grid-area: icon;
+  }
+
+  .setup-welcome__copy {
+    grid-area: copy;
+  }
+
+  .setup-welcome__actions {
+    grid-area: actions;
+    flex-wrap: wrap;
+  }
+
+  .setup-welcome__cta {
+    flex: 1 1 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .setup-welcome {
+    animation: none;
+  }
+
+  .setup-welcome__panel::after {
+    animation: none;
+  }
+}

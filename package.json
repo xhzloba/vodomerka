@@ -1,0 +1,54 @@
+{
+  "name": "tv-leonid",
+  "version": "1.0.0",
+  "description": "Стриминговое приложение для фильмов в стиле Apple TV",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "node scripts/brand-electron-dev.mjs && vite",
+    "build": "vite build && electron-builder",
+    "build:app": "vite build",
+    "typecheck": "tsc -p tsconfig.check.json",
+    "check:architecture": "node scripts/check-architecture.mjs",
+    "check": "npm run check:architecture && npm run typecheck && npm run build:app",
+    "preview": "vite preview",
+    "start": "node scripts/brand-electron-dev.mjs && vite",
+    "postinstall": "electron-builder install-app-deps && node scripts/brand-electron-dev.mjs",
+    "overrides-ui": "node tools/media-overrides/dev-server.mjs"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vite-plugin-electron": "^1.1.0",
+    "vite-plugin-electron-renderer": "^1.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "lucide-react": "^1.23.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "build": {
+    "appId": "com.vodomerka.app",
+    "productName": "Vodomerka",
+    "directories": {
+      "output": "release"
+    },
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**"
+    ],
+    "mac": {
+      "category": "public.app-category.entertainment",
+      "target": [
+        "dmg"
+      ]
+    }
+  }
+}

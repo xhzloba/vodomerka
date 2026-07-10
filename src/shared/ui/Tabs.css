@@ -1,0 +1,28 @@
+.ui-tabs {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-width: 0;
+}
+
+.ui-tabs__tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  font-size: 1.1875rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  color: var(--app-text-muted);
+  white-space: nowrap;
+  transition: color var(--transition-fast);
+}
+
+.ui-tabs__tab:hover {
+  color: var(--app-text);
+}
+
+.ui-tabs__tab--active {
+  color: var(--app-text);
+}
