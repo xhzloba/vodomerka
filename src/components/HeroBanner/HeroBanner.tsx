@@ -59,14 +59,14 @@ function renderMetaPart(part: HeroMetaPart) {
           <span className="hero__meta-icon" aria-hidden="true">
             <MediaPosterGlyph />
           </span>
-          {part.value}
+          <span className="hero__meta-text">{part.value}</span>
         </>
       );
     case 'duration':
       return (
         <>
           <ClockIcon size={16} className="hero__meta-item-icon" strokeWidth={1.75} aria-hidden />
-          {part.value}
+          <span className="hero__meta-text">{part.value}</span>
         </>
       );
     case 'age':
@@ -74,7 +74,7 @@ function renderMetaPart(part: HeroMetaPart) {
     case 'rating':
       return <HeroRating rating={part.value} />;
     case 'text':
-      return part.value;
+      return <span className="hero__meta-text">{part.value}</span>;
   }
 }
 
