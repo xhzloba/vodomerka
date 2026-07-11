@@ -134,6 +134,22 @@
   color: color-mix(in srgb, var(--app-text) 62%, var(--app-text-muted));
 }
 
+.hero__meta-age-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 1.15em;
+  padding: 0 5px;
+  border: 1px solid color-mix(in srgb, var(--app-text) 42%, transparent);
+  border-radius: 2px;
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  color: color-mix(in srgb, var(--app-text) 88%, var(--app-text-muted));
+}
+
 .hero__meta-sep {
   display: inline-block;
   width: 1px;

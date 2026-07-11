@@ -22,6 +22,7 @@ type HeroMetaPart =
   | { kind: 'type'; value: string }
   | { kind: 'text'; value: string }
   | { kind: 'duration'; value: string }
+  | { kind: 'age'; value: number }
   | { kind: 'rating'; value: number };
 
 function buildMetaParts(item: MediaItem): HeroMetaPart[] {
@@ -29,6 +30,7 @@ function buildMetaParts(item: MediaItem): HeroMetaPart[] {
     { kind: 'type', value: getMediaTypeLabel(item.type) },
     item.year != null ? { kind: 'text', value: String(item.year) } : null,
     item.duration ? { kind: 'duration', value: item.duration } : null,
+    item.age != null ? { kind: 'age', value: item.age } : null,
     item.rating != null ? { kind: 'rating', value: item.rating } : null,
     item.genres[0] ? { kind: 'text', value: item.genres[0] } : null,
   ].filter((part): part is HeroMetaPart => part != null && part.value !== '');
@@ -67,6 +69,8 @@ function renderMetaPart(part: HeroMetaPart) {
           {part.value}
         </>
       );
+    case 'age':
+      return <span className="hero__meta-age-badge">{part.value}+</span>;
     case 'rating':
       return <HeroRating rating={part.value} />;
     case 'text':
@@ -77,6 +81,10 @@ function renderMetaPart(part: HeroMetaPart) {
 function getMetaPartKey(part: HeroMetaPart, index: number): string {
   if (part.kind === 'rating') {
     return `rating-${part.value}`;
+  }
+
+  if (part.kind === 'age') {
+    return `age-${part.value}`;
   }
 
   return `${part.kind}-${part.value}-${index}`;
