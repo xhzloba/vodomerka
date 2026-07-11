@@ -184,9 +184,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
   background: var(--app-text);
   color: #050608;
   box-shadow: 0 5px 14px rgba(0, 0, 0, 0.34);
@@ -195,15 +195,13 @@
 
 .media-card__watched-badge svg {
   display: block;
-  stroke-width: 2.25;
 }
 
 .media-card--wide .media-card__watched-badge {
   top: 12px;
   left: 12px;
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
+  width: 32px;
+  height: 32px;
 }
 
 .media-card__dim {

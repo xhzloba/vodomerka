@@ -2,6 +2,7 @@ import type { ReactNode, SVGProps } from 'react';
 
 export interface IconProps extends SVGProps<SVGSVGElement> {
   size?: number;
+  solid?: boolean;
 }
 
 interface StrokeIconProps extends IconProps {

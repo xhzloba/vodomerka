@@ -15,6 +15,18 @@
   fill: currentColor;
 }
 
+.app-icon--eye-off-solid {
+  fill: currentColor;
+  stroke: none;
+}
+
+.app-icon--eye-off {
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .app-icon--filled {
   fill: currentColor;
 }

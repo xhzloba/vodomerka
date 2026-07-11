@@ -8,7 +8,7 @@ import { useMediaImage } from '@/shared/hooks/useMediaImage';
 import { MediaCoverPlaceholder } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
 import { useOverriddenMediaItem } from '@/shared/hooks/useOverriddenMediaItem';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
-import { CloseIcon, EyeIcon, FavoritesIcon, InfoIcon, PlayIcon } from '@/shared/ui/icons';
+import { CloseIcon, EyeIcon, EyeOffIcon, FavoritesIcon, InfoIcon, PlayIcon } from '@/shared/ui/icons';
 import './MediaDetail.css';
 
 interface MediaDetailProps {
@@ -162,7 +162,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
       aria-pressed={inWatched}
       title={inWatched ? 'Просмотрено' : 'Отметить просмотренным'}
     >
-      {inWatched ? <EyeIcon size={18} strokeWidth={2.1} /> : <EyeIcon size={18} />}
+      {inWatched ? <EyeOffIcon size={20} solid /> : <EyeIcon size={18} strokeWidth={1.75} />}
     </button>
   );
 

@@ -12,7 +12,7 @@ import {
 import { MediaCoverPlaceholder } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
 import { MediaDescriptionDialog } from '@/shared/ui/MediaDescriptionDialog/MediaDescriptionDialog';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
-import { EyeIcon, PlayOverlayIcon } from '@/shared/ui/icons';
+import { EyeOffIcon, PlayOverlayIcon } from '@/shared/ui/icons';
 import './MediaCard.css';
 
 interface MediaCardProps {
@@ -152,7 +152,7 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
             ) : null}
             {watched ? (
               <span className="media-card__watched-badge" aria-label="Просмотрено" title="Просмотрено">
-                <EyeIcon size={15} strokeWidth={2.25} />
+                <EyeOffIcon size={18} solid />
               </span>
             ) : null}
             <div className="media-card__dim" aria-hidden="true" />
