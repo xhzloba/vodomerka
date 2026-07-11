@@ -59,14 +59,14 @@ function renderMetaPart(part: HeroMetaPart) {
           <span className="hero__meta-icon" aria-hidden="true">
             <MediaPosterGlyph />
           </span>
-          <span className="hero__meta-text">{part.value}</span>
+          <span className="hero__meta-text media-pearl-text">{part.value}</span>
         </>
       );
     case 'duration':
       return (
         <>
           <ClockIcon size={16} className="hero__meta-item-icon" strokeWidth={1.75} aria-hidden />
-          <span className="hero__meta-text">{part.value}</span>
+          <span className="hero__meta-text media-pearl-text">{part.value}</span>
         </>
       );
     case 'age':
@@ -179,7 +179,7 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
             referrerPolicy="no-referrer"
           />
         ) : (
-          <h2 className="hero__title">{item.title}</h2>
+          <h2 className="hero__title media-pearl-text">{item.title}</h2>
         )}
 
         {metaParts.length > 0 ? (

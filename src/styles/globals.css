@@ -267,6 +267,17 @@
     0 1px 1px rgba(0, 0, 0, 0.9),
     0 2px 4px rgba(0, 0, 0, 0.78),
     0 4px 10px rgba(0, 0, 0, 0.52);
+  --media-pearl-text-gradient: linear-gradient(
+    112deg,
+    #ffffff 0%,
+    #eef3f2 14%,
+    #ffffff 28%,
+    #b9c7c3 46%,
+    #f8fbfb 62%,
+    #d2dcd9 78%,
+    #ffffff 100%
+  );
+  --media-fade-text-gradient: var(--media-pearl-text-gradient);
   --media-brand-logo-shadow:
     drop-shadow(0 0 0.75px rgba(0, 0, 0, 0.98)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.92))
     drop-shadow(0 2px 5px rgba(0, 0, 0, 0.78)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
@@ -287,6 +298,16 @@
   --transition-fast: 150ms ease;
   --transition-smooth: 350ms cubic-bezier(0.25, 0.1, 0.25, 1);
   --font-system: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.media-pearl-text {
+  background: var(--media-pearl-text-gradient);
+  background-size: 220% 100%;
+  background-position: 18% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 html,
