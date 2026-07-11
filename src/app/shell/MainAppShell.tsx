@@ -207,16 +207,12 @@ export function MainAppShell() {
     void window.electronAPI?.windowChrome.setSidebarCollapsed(sidebarCollapsed);
   }, [macSidebarChrome, sidebarCollapsed]);
 
-  const renderView = () => {
+  const renderPrimaryView = () => {
     switch (activeNav) {
       case 'home':
         return <HomeView onMediaSelect={handleMediaSelect} onPlay={handlePlay} />;
       case 'browse':
         return <BrowseView onMediaSelect={handleMediaSelect} />;
-      case 'library':
-        return <LibraryView onMediaSelect={handleMediaSelect} />;
-      case 'watched':
-        return <WatchedView onMediaSelect={handleMediaSelect} />;
       case 'search':
         return (
           <SearchView
@@ -227,6 +223,8 @@ export function MainAppShell() {
         );
       case 'settings':
         return <SettingsView />;
+      default:
+        return null;
     }
   };
 
@@ -245,7 +243,32 @@ export function MainAppShell() {
           macSidebarChrome={macSidebarChrome}
           onNavChange={navigate}
         />
-        <main className="app__main">{renderView()}</main>
+        <main className="app__main">
+          <div
+            className={`app__view-layer${
+              activeNav === 'library' || activeNav === 'watched' ? ' app__view-layer--hidden' : ''
+            }`}
+            aria-hidden={activeNav === 'library' || activeNav === 'watched'}
+          >
+            {renderPrimaryView()}
+          </div>
+          <div
+            className={`app__view-layer${
+              activeNav === 'library' ? '' : ' app__view-layer--hidden'
+            }`}
+            aria-hidden={activeNav !== 'library'}
+          >
+            <LibraryView onMediaSelect={handleMediaSelect} />
+          </div>
+          <div
+            className={`app__view-layer${
+              activeNav === 'watched' ? '' : ' app__view-layer--hidden'
+            }`}
+            aria-hidden={activeNav !== 'watched'}
+          >
+            <WatchedView onMediaSelect={handleMediaSelect} />
+          </div>
+        </main>
       </div>
 
       {showSetupWelcome ? (
