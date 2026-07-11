@@ -12,7 +12,7 @@ import {
 import { MediaCoverPlaceholder } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
 import { MediaDescriptionDialog } from '@/shared/ui/MediaDescriptionDialog/MediaDescriptionDialog';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
-import { EyeOffIcon, PlayOverlayIcon } from '@/shared/ui/icons';
+import { EyeOffIcon, FavoritesIcon, PlayOverlayIcon } from '@/shared/ui/icons';
 import './MediaCard.css';
 
 interface MediaCardProps {
@@ -150,10 +150,19 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
                 onError={onError}
               />
             ) : null}
-            {watched ? (
-              <span className="media-card__watched-badge" aria-label="Просмотрено" title="Просмотрено">
-                <EyeOffIcon size={18} solid />
-              </span>
+            {(watched || inFavorites) ? (
+              <div className="media-card__status-badges">
+                {watched ? (
+                  <span className="media-card__status-badge" aria-label="Просмотрено" title="Просмотрено">
+                    <EyeOffIcon size={18} solid />
+                  </span>
+                ) : null}
+                {inFavorites ? (
+                  <span className="media-card__status-badge" aria-label="В избранном" title="В избранном">
+                    <FavoritesIcon size={16} filled strokeWidth={2} />
+                  </span>
+                ) : null}
+              </div>
             ) : null}
             <div className="media-card__dim" aria-hidden="true" />
             <div className="media-card__play">

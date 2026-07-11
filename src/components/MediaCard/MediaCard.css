@@ -176,11 +176,18 @@
   display: none;
 }
 
-.media-card__watched-badge {
+.media-card__status-badges {
   position: absolute;
   top: 10px;
   left: 10px;
   z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.media-card__status-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -190,16 +197,18 @@
   background: var(--app-text);
   color: #050608;
   box-shadow: 0 5px 14px rgba(0, 0, 0, 0.34);
-  pointer-events: none;
 }
 
-.media-card__watched-badge svg {
+.media-card__status-badge svg {
   display: block;
 }
 
-.media-card--wide .media-card__watched-badge {
+.media-card--wide .media-card__status-badges {
   top: 12px;
   left: 12px;
+}
+
+.media-card--wide .media-card__status-badge {
   width: 32px;
   height: 32px;
 }
