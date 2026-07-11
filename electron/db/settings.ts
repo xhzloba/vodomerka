@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   cardShowInfo: false,
   catalogRowGap: 'normal',
   sidebarCollapsed: false,
-  sidebarMenuAnimation: 'liquid',
+  sidebarMenuAnimation: 'magnetic-water',
   hiddenHomeSections: [
     { id: '__home_serial_updates__', title: 'Обновление сериалов' },
     { id: '__home_movie_updates__', title: 'Обновление фильмов' },
