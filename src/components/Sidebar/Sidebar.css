@@ -393,6 +393,12 @@
   .sidebar__magnetic-indicator {
     transition: none !important;
   }
+
+  .sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__magnetic-indicator::before,
+  .sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__magnetic-indicator::after {
+    animation: none !important;
+    background-position: 50% 50%;
+  }
 }
 
 .sidebar--mac-chrome:not(.sidebar--collapsed) .sidebar__panel {
@@ -502,7 +508,8 @@
   }
 }
 
-.sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__nav {
+.sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__nav,
+.sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__nav {
   position: relative;
 }
 
@@ -514,6 +521,14 @@
   z-index: 0;
   border-radius: var(--radius-sm);
   pointer-events: none;
+  overflow: hidden;
+  transition:
+    transform 0.44s cubic-bezier(0.34, 1.28, 0.64, 1),
+    height 0.34s cubic-bezier(0.34, 1.18, 0.64, 1),
+    opacity 0.2s ease;
+}
+
+.sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__magnetic-indicator {
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--app-accent-soft) 92%, transparent) 0%,
@@ -523,24 +538,89 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 12px 28px rgba(0, 0, 0, 0.22);
-  transition:
-    transform 0.44s cubic-bezier(0.34, 1.28, 0.64, 1),
-    height 0.34s cubic-bezier(0.34, 1.18, 0.64, 1),
-    opacity 0.2s ease;
 }
 
-.sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-surface {
+.sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__magnetic-indicator {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--app-surface) 8%, transparent) 0%,
+    color-mix(in srgb, var(--app-surface) 4%, transparent) 72%,
+    transparent 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--app-accent-border) 34%, transparent);
+  backdrop-filter: blur(16px) saturate(1.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 6px 18px rgba(0, 0, 0, 0.16);
+}
+
+.sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__magnetic-indicator::before,
+.sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__magnetic-indicator::after {
+  content: '';
+  position: absolute;
+  left: 13%;
+  right: 13%;
+  bottom: -8px;
+  height: 58%;
+  border-radius: 50% 50% 10px 10px / 46% 46% 8px 8px;
+  pointer-events: none;
+}
+
+.sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__magnetic-indicator::after {
+  z-index: 0;
+  background: radial-gradient(
+    ellipse 58% 92% at 50% 50%,
+    var(--sidebar-liquid-core) 0%,
+    var(--sidebar-liquid-mid) 38%,
+    var(--sidebar-liquid-tail) 58%,
+    transparent 78%
+  );
+  background-size: 235% 128%;
+  background-position: 6% 50%;
+  background-repeat: no-repeat;
+  filter: blur(12px);
+  transform: translateZ(0);
+  opacity: 0.34;
+  animation: sidebar-liquid-drift var(--sidebar-liquid-sweep-duration) ease-in-out infinite;
+}
+
+.sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__magnetic-indicator::before {
+  z-index: 1;
+  background:
+    radial-gradient(circle 2.5px at 20% 34%, var(--sidebar-liquid-bubble) 0%, transparent 72%),
+    radial-gradient(circle 2px at 31% 56%, var(--sidebar-liquid-bubble-soft) 0%, transparent 72%),
+    radial-gradient(circle 3px at 43% 41%, var(--sidebar-liquid-bubble) 0%, transparent 72%),
+    radial-gradient(circle 2px at 54% 67%, var(--sidebar-liquid-bubble-soft) 0%, transparent 72%),
+    radial-gradient(circle 2.5px at 63% 33%, var(--sidebar-liquid-bubble) 0%, transparent 72%),
+    radial-gradient(circle 2px at 72% 58%, var(--sidebar-liquid-bubble-soft) 0%, transparent 72%),
+    radial-gradient(circle 2.5px at 81% 44%, var(--sidebar-liquid-bubble) 0%, transparent 72%),
+    radial-gradient(circle 2px at 47% 74%, var(--sidebar-liquid-bubble-soft) 0%, transparent 72%),
+    radial-gradient(circle 2px at 36% 28%, var(--sidebar-liquid-bubble) 0%, transparent 72%),
+    radial-gradient(circle 2.5px at 58% 52%, var(--sidebar-liquid-bubble-soft) 0%, transparent 72%);
+  background-size: 235% 128%;
+  background-position: 6% 50%;
+  background-repeat: no-repeat;
+  filter: blur(0.55px);
+  opacity: 0.36;
+  animation: sidebar-liquid-drift var(--sidebar-liquid-sweep-duration) ease-in-out infinite;
+}
+
+.sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-surface,
+.sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-surface {
   background: transparent;
   box-shadow: none;
   color: var(--app-text);
 }
 
-.sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-icon {
+.sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-icon,
+.sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-icon {
   color: var(--app-accent);
   opacity: 1;
 }
 
 .sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item:hover:not(.sidebar__item--active) .sidebar__item-surface,
-.sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item:focus-visible:not(.sidebar__item--active) .sidebar__item-surface {
+.sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item:focus-visible:not(.sidebar__item--active) .sidebar__item-surface,
+.sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__item:hover:not(.sidebar__item--active) .sidebar__item-surface,
+.sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__item:focus-visible:not(.sidebar__item--active) .sidebar__item-surface {
   color: var(--app-text);
 }

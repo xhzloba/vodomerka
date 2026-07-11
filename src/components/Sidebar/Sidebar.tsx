@@ -52,8 +52,11 @@ export function Sidebar({
     ready: false,
   });
 
+  const magneticEnabled =
+    (menuAnimation === 'magnetic' || menuAnimation === 'magnetic-water') && !collapsed;
+
   const syncMagneticIndicator = useCallback(() => {
-    if (menuAnimation !== 'magnetic' || collapsed) {
+    if (!magneticEnabled) {
       setMagneticIndicator((state) => (state.ready ? { ...state, ready: false } : state));
       return;
     }
@@ -74,14 +77,14 @@ export function Sidebar({
       height: surfaceRect.height,
       ready: true,
     });
-  }, [collapsed, menuAnimation]);
+  }, [collapsed, magneticEnabled]);
 
   useLayoutEffect(() => {
     syncMagneticIndicator();
-  }, [activeNav, collapsed, favoritesCount, menuAnimation, syncMagneticIndicator]);
+  }, [activeNav, collapsed, favoritesCount, magneticEnabled, syncMagneticIndicator]);
 
   useEffect(() => {
-    if (menuAnimation !== 'magnetic' || collapsed) {
+    if (!magneticEnabled) {
       return;
     }
 
@@ -98,7 +101,7 @@ export function Sidebar({
       resizeObserver.disconnect();
       window.removeEventListener('resize', syncMagneticIndicator);
     };
-  }, [collapsed, menuAnimation, syncMagneticIndicator]);
+  }, [collapsed, magneticEnabled, syncMagneticIndicator]);
 
   const magneticIndicatorStyle = magneticIndicator.ready
     ? ({
@@ -116,7 +119,7 @@ export function Sidebar({
       <div className="sidebar__panel">
         {macSidebarChrome ? <div className="sidebar__chrome" aria-hidden="true" /> : null}
         <nav ref={navRef} className="sidebar__nav">
-          {menuAnimation === 'magnetic' && !collapsed && magneticIndicator.ready ? (
+          {magneticEnabled && magneticIndicator.ready ? (
             <span
               className="sidebar__magnetic-indicator"
               aria-hidden="true"

@@ -74,12 +74,12 @@ export function normalizeCatalogRowGap(value: unknown): CatalogRowGapPreset {
 }
 
 export function normalizeSidebarMenuAnimation(value: unknown): SidebarMenuAnimation {
-  if (value === 'snake' || value === 'magnetic') {
+  if (value === 'snake' || value === 'magnetic' || value === 'magnetic-water') {
     return value;
   }
 
   if (value === 'orbit' || value === 'comet' || value === 'pearl') {
-    return 'magnetic';
+    return 'magnetic-water';
   }
 
   return DEFAULT_APP_SETTINGS.sidebarMenuAnimation;
@@ -180,5 +180,10 @@ export const SIDEBAR_MENU_ANIMATION_OPTIONS: Array<{
     id: 'magnetic',
     label: 'Магнит',
     hint: 'Плавающая подложка плавно переезжает между пунктами',
+  },
+  {
+    id: 'magnetic-water',
+    label: 'Водяной магнит',
+    hint: 'Жидкая подложка с пузырьками, плавно переезжает между пунктами',
   },
 ];
