@@ -42,14 +42,58 @@
   overflow: hidden;
 }
 
-.setup-welcome__panel::after {
+.setup-welcome__snake {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.setup-welcome__snake::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(120deg, transparent 35%, rgba(255, 255, 255, 0.04) 50%, transparent 65%);
-  transform: translateX(-120%);
-  animation: setupWelcomeShine 4.8s ease-in-out 1.2s infinite;
+  background: color-mix(in srgb, var(--app-border-strong) 55%, transparent);
+  opacity: 0.35;
+}
+
+.setup-welcome__snake-beam {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate3d(-58vw, 0, 0);
+  will-change: transform;
+  backface-visibility: hidden;
   pointer-events: none;
+  animation: setupWelcomeSnakeSlide 6s ease-in-out infinite alternate;
+}
+
+.setup-welcome__snake-beam--core {
+  --setup-snake-arc-half: 5deg;
+  --setup-snake-arc-mid: 0deg;
+
+  width: 300px;
+  height: 300px;
+  margin-left: -150px;
+  filter: blur(0.25px);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent calc(var(--setup-snake-arc-mid) - var(--setup-snake-arc-half)),
+    var(--media-snake-1) calc(var(--setup-snake-arc-mid) - var(--setup-snake-arc-half) + 2deg),
+    var(--media-snake-2) calc(var(--setup-snake-arc-mid) - var(--setup-snake-arc-half) * 0.38),
+    var(--media-snake-3) calc(var(--setup-snake-arc-mid) - var(--setup-snake-arc-half) * 0.1),
+    var(--media-snake-3) var(--setup-snake-arc-mid),
+    var(--media-snake-4) calc(var(--setup-snake-arc-mid) + var(--setup-snake-arc-half) * 0.42),
+    var(--media-snake-4) calc(var(--setup-snake-arc-mid) + var(--setup-snake-arc-half)),
+    var(--media-snake-1) calc(var(--setup-snake-arc-mid) + var(--setup-snake-arc-half) + 2deg),
+    transparent calc(var(--setup-snake-arc-mid) + var(--setup-snake-arc-half) + 3deg),
+    transparent 360deg
+  );
 }
 
 .setup-welcome__icon {
@@ -152,15 +196,13 @@
   }
 }
 
-@keyframes setupWelcomeShine {
-  0%,
-  72%,
-  100% {
-    transform: translateX(-120%);
+@keyframes setupWelcomeSnakeSlide {
+  0% {
+    transform: translate3d(-58vw, 0, 0);
   }
 
-  82% {
-    transform: translateX(120%);
+  100% {
+    transform: translate3d(58vw, 0, 0);
   }
 }
 
@@ -197,7 +239,8 @@
     animation: none;
   }
 
-  .setup-welcome__panel::after {
+  .setup-welcome__snake-beam {
     animation: none;
+    transform: translate3d(0, 0, 0);
   }
 }

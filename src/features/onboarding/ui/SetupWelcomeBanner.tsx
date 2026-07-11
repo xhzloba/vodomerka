@@ -17,6 +17,10 @@ export function SetupWelcomeBanner({
   return (
     <div className="setup-welcome" role="region" aria-label="Добро пожаловать">
       <div className="setup-welcome__panel">
+        <span className="setup-welcome__snake" aria-hidden="true">
+          <span className="setup-welcome__snake-beam setup-welcome__snake-beam--core" />
+        </span>
+
         <div className="setup-welcome__icon" aria-hidden="true">
           <SettingsIcon size={22} strokeWidth={1.6} />
         </div>
