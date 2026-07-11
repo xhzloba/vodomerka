@@ -46,13 +46,14 @@ export function WatchedView({ onMediaSelect }: WatchedViewProps) {
         emptyIcon={<EyeIcon size={48} strokeWidth={1.5} />}
         emptyText="Отмечайте фильмы и сериалы в деталке — они появятся здесь"
       >
-        <ContentRow title="ВСЕ" items={watched} onMediaSelect={onMediaSelect} />
+        <ContentRow title="ВСЕ" items={watched} onMediaSelect={onMediaSelect} edgeFade />
         {movies.length > 0 ? (
           <ContentRow
             title="Фильмы"
             titleCount={movies.length}
             items={movies}
             onMediaSelect={onMediaSelect}
+            edgeFade
           />
         ) : null}
         {serials.length > 0 ? (
@@ -61,6 +62,7 @@ export function WatchedView({ onMediaSelect }: WatchedViewProps) {
             titleCount={serials.length}
             items={serials}
             onMediaSelect={onMediaSelect}
+            edgeFade
           />
         ) : null}
       </LibraryCollectionView>

@@ -46,13 +46,14 @@ export function LibraryView({ onMediaSelect }: LibraryViewProps) {
         emptyIcon={<FavoritesIcon size={48} strokeWidth={1.5} />}
         emptyText="Сохранённые фильмы и сериалы появятся здесь"
       >
-        <ContentRow title="ВСЕ" items={favorites} onMediaSelect={onMediaSelect} />
+        <ContentRow title="ВСЕ" items={favorites} onMediaSelect={onMediaSelect} edgeFade />
         {movies.length > 0 ? (
           <ContentRow
             title="Фильмы"
             titleCount={movies.length}
             items={movies}
             onMediaSelect={onMediaSelect}
+            edgeFade
           />
         ) : null}
         {serials.length > 0 ? (
@@ -61,6 +62,7 @@ export function LibraryView({ onMediaSelect }: LibraryViewProps) {
             titleCount={serials.length}
             items={serials}
             onMediaSelect={onMediaSelect}
+            edgeFade
           />
         ) : null}
       </LibraryCollectionView>
