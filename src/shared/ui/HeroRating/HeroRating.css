@@ -1,0 +1,28 @@
+.hero-rating {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: baseline;
+  gap: 2px;
+}
+
+.hero-rating--top {
+  margin-right: 4px;
+}
+
+.hero-rating__laurel {
+  display: block;
+  width: auto;
+  height: 1.05em;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.hero-rating__value {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  background: linear-gradient(165deg, #ffd25e 16.44%, #b59646 63.42%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}

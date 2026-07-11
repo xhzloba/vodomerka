@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { getMediaTypeLabel } from '@/shared/domain/media';
 import { useMediaImage } from '@/shared/hooks/useMediaImage';
 import { MediaCoverPlaceholder } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
+import { HeroRating } from '@/shared/ui/HeroRating/HeroRating';
 import { InfoIcon, PlayIcon } from '@/shared/ui/icons';
 import './HeroBanner.css';
 
@@ -14,16 +15,16 @@ interface HeroBannerProps {
   onInfo: (item: MediaItem) => void;
 }
 
-function buildMetaLine(item: MediaItem): string {
+type HeroMetaPart = string | { kind: 'rating'; value: number };
+
+function buildMetaParts(item: MediaItem): HeroMetaPart[] {
   return [
     getMediaTypeLabel(item.type),
-    item.year,
-    item.duration,
-    item.rating != null ? item.rating.toFixed(1) : null,
-    item.genres[0],
-  ]
-    .filter(Boolean)
-    .join(' · ');
+    item.year != null ? String(item.year) : null,
+    item.duration ?? null,
+    item.rating != null ? { kind: 'rating', value: item.rating } : null,
+    item.genres[0] ?? null,
+  ].filter((part): part is HeroMetaPart => part != null && part !== '');
 }
 
 function shuffleItems(items: MediaItem[], avoidFirstId?: string): MediaItem[] {
@@ -84,7 +85,7 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
     return () => window.clearInterval(timer);
   }, [items, autoSlide, slideIntervalSec]);
 
-  const metaLine = buildMetaLine(item);
+  const metaParts = buildMetaParts(item);
   const { src: heroSrc, failed: heroImageFailed, ready: heroReady, loading, onError } = useMediaImage({
     primaryUrl: item.backdrop || item.poster,
     fallbackUrl: item.poster,
@@ -120,7 +121,6 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
       </div>
 
       <div key={item.id} className="hero__content hero__content--enter">
-        <p className="hero__eyebrow">{metaLine}</p>
         {showLogo ? (
           <img
             key={logoSrc}
@@ -133,6 +133,19 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
         ) : (
           <h2 className="hero__title">{item.title}</h2>
         )}
+
+        {metaParts.length > 0 ? (
+          <p className="hero__meta">
+            {metaParts.map((part, index) => (
+              <Fragment key={typeof part === 'string' ? `${part}-${index}` : `rating-${part.value}`}>
+                {index > 0 ? <span className="hero__meta-sep" aria-hidden="true" /> : null}
+                <span className="hero__meta-item">
+                  {typeof part === 'string' ? part : <HeroRating rating={part.value} />}
+                </span>
+              </Fragment>
+            ))}
+          </p>
+        ) : null}
 
         {item.description && <p className="hero__description">{item.description}</p>}
 
