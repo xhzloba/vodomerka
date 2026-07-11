@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { NavItem } from '@/types';
 import type { SidebarMenuAnimation } from '@/shared/settings/types';
 import { getSearchShortcutLabel } from '@/features/onboarding/tips/platformShortcut';
@@ -36,9 +38,74 @@ export function Sidebar({
   macSidebarChrome = false,
   onNavChange,
 }: SidebarProps) {
+  const navRef = useRef<HTMLElement>(null);
   const { favorites } = useFavorites();
   const favoritesCount = favorites.length;
   const searchShortcutLabel = getSearchShortcutLabel();
+  const [magneticIndicator, setMagneticIndicator] = useState<{
+    y: number;
+    height: number;
+    ready: boolean;
+  }>({
+    y: 0,
+    height: 0,
+    ready: false,
+  });
+
+  const syncMagneticIndicator = useCallback(() => {
+    if (menuAnimation !== 'magnetic' || collapsed) {
+      setMagneticIndicator((state) => (state.ready ? { ...state, ready: false } : state));
+      return;
+    }
+
+    const nav = navRef.current;
+    const surface = nav?.querySelector<HTMLElement>('.sidebar__item--active .sidebar__item-surface');
+
+    if (!nav || !surface) {
+      setMagneticIndicator((state) => (state.ready ? { ...state, ready: false } : state));
+      return;
+    }
+
+    const navRect = nav.getBoundingClientRect();
+    const surfaceRect = surface.getBoundingClientRect();
+
+    setMagneticIndicator({
+      y: surfaceRect.top - navRect.top + nav.scrollTop,
+      height: surfaceRect.height,
+      ready: true,
+    });
+  }, [collapsed, menuAnimation]);
+
+  useLayoutEffect(() => {
+    syncMagneticIndicator();
+  }, [activeNav, collapsed, favoritesCount, menuAnimation, syncMagneticIndicator]);
+
+  useEffect(() => {
+    if (menuAnimation !== 'magnetic' || collapsed) {
+      return;
+    }
+
+    const nav = navRef.current;
+    if (!nav) {
+      return;
+    }
+
+    const resizeObserver = new ResizeObserver(syncMagneticIndicator);
+    resizeObserver.observe(nav);
+    window.addEventListener('resize', syncMagneticIndicator);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', syncMagneticIndicator);
+    };
+  }, [collapsed, menuAnimation, syncMagneticIndicator]);
+
+  const magneticIndicatorStyle = magneticIndicator.ready
+    ? ({
+        transform: `translateY(${magneticIndicator.y}px)`,
+        height: `${magneticIndicator.height}px`,
+      } as CSSProperties)
+    : undefined;
 
   return (
     <aside
@@ -48,7 +115,14 @@ export function Sidebar({
     >
       <div className="sidebar__panel">
         {macSidebarChrome ? <div className="sidebar__chrome" aria-hidden="true" /> : null}
-        <nav className="sidebar__nav">
+        <nav ref={navRef} className="sidebar__nav">
+          {menuAnimation === 'magnetic' && !collapsed && magneticIndicator.ready ? (
+            <span
+              className="sidebar__magnetic-indicator"
+              aria-hidden="true"
+              style={magneticIndicatorStyle}
+            />
+          ) : null}
           {navItems.map((item) => (
             <button
               key={item.id}

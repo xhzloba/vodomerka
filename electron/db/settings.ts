@@ -231,8 +231,12 @@ function normalizeCatalogRowGap(value: string | undefined): AppSettings['catalog
 function normalizeSidebarMenuAnimation(
   value: string | undefined,
 ): AppSettings['sidebarMenuAnimation'] {
-  if (value === 'snake') {
-    return 'snake';
+  if (value === 'snake' || value === 'magnetic') {
+    return value;
+  }
+
+  if (value === 'orbit' || value === 'comet' || value === 'pearl') {
+    return 'magnetic';
   }
 
   return DEFAULT_SETTINGS.sidebarMenuAnimation;

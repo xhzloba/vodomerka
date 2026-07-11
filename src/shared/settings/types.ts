@@ -74,8 +74,12 @@ export function normalizeCatalogRowGap(value: unknown): CatalogRowGapPreset {
 }
 
 export function normalizeSidebarMenuAnimation(value: unknown): SidebarMenuAnimation {
-  if (value === 'snake') {
-    return 'snake';
+  if (value === 'snake' || value === 'magnetic') {
+    return value;
+  }
+
+  if (value === 'orbit' || value === 'comet' || value === 'pearl') {
+    return 'magnetic';
   }
 
   return DEFAULT_APP_SETTINGS.sidebarMenuAnimation;
@@ -171,5 +175,10 @@ export const SIDEBAR_MENU_ANIMATION_OPTIONS: Array<{
     id: 'snake',
     label: 'Змейка',
     hint: 'Вращающаяся рамка как на карточках',
+  },
+  {
+    id: 'magnetic',
+    label: 'Магнит',
+    hint: 'Плавающая подложка плавно переезжает между пунктами',
   },
 ];
