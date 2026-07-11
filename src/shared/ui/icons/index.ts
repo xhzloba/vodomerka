@@ -5,6 +5,7 @@ export {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ClockIcon,
   CloseIcon,
   CopyIcon,
   EyeIcon,

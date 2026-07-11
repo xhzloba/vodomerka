@@ -2,9 +2,12 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { getMediaTypeLabel } from '@/shared/domain/media';
 import { useMediaImage } from '@/shared/hooks/useMediaImage';
-import { MediaCoverPlaceholder } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
+import {
+  MediaCoverPlaceholder,
+  MediaPosterGlyph,
+} from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
 import { HeroRating } from '@/shared/ui/HeroRating/HeroRating';
-import { InfoIcon, PlayIcon } from '@/shared/ui/icons';
+import { ClockIcon, InfoIcon, PlayIcon } from '@/shared/ui/icons';
 import './HeroBanner.css';
 
 interface HeroBannerProps {
@@ -15,16 +18,20 @@ interface HeroBannerProps {
   onInfo: (item: MediaItem) => void;
 }
 
-type HeroMetaPart = string | { kind: 'rating'; value: number };
+type HeroMetaPart =
+  | { kind: 'type'; value: string }
+  | { kind: 'text'; value: string }
+  | { kind: 'duration'; value: string }
+  | { kind: 'rating'; value: number };
 
 function buildMetaParts(item: MediaItem): HeroMetaPart[] {
   return [
-    getMediaTypeLabel(item.type),
-    item.year != null ? String(item.year) : null,
-    item.duration ?? null,
+    { kind: 'type', value: getMediaTypeLabel(item.type) },
+    item.year != null ? { kind: 'text', value: String(item.year) } : null,
+    item.duration ? { kind: 'duration', value: item.duration } : null,
     item.rating != null ? { kind: 'rating', value: item.rating } : null,
-    item.genres[0] ?? null,
-  ].filter((part): part is HeroMetaPart => part != null && part !== '');
+    item.genres[0] ? { kind: 'text', value: item.genres[0] } : null,
+  ].filter((part): part is HeroMetaPart => part != null && part.value !== '');
 }
 
 function shuffleItems(items: MediaItem[], avoidFirstId?: string): MediaItem[] {
@@ -40,6 +47,39 @@ function shuffleItems(items: MediaItem[], avoidFirstId?: string): MediaItem[] {
   }
 
   return shuffled;
+}
+
+function renderMetaPart(part: HeroMetaPart) {
+  switch (part.kind) {
+    case 'type':
+      return (
+        <>
+          <span className="hero__meta-icon" aria-hidden="true">
+            <MediaPosterGlyph />
+          </span>
+          {part.value}
+        </>
+      );
+    case 'duration':
+      return (
+        <>
+          <ClockIcon size={16} className="hero__meta-item-icon" strokeWidth={1.75} aria-hidden />
+          {part.value}
+        </>
+      );
+    case 'rating':
+      return <HeroRating rating={part.value} />;
+    case 'text':
+      return part.value;
+  }
+}
+
+function getMetaPartKey(part: HeroMetaPart, index: number): string {
+  if (part.kind === 'rating') {
+    return `rating-${part.value}`;
+  }
+
+  return `${part.kind}-${part.value}-${index}`;
 }
 
 function createSlideQueue(items: MediaItem[], avoidFirstId?: string): MediaItem[] {
@@ -137,11 +177,9 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
         {metaParts.length > 0 ? (
           <p className="hero__meta">
             {metaParts.map((part, index) => (
-              <Fragment key={typeof part === 'string' ? `${part}-${index}` : `rating-${part.value}`}>
+              <Fragment key={getMetaPartKey(part, index)}>
                 {index > 0 ? <span className="hero__meta-sep" aria-hidden="true" /> : null}
-                <span className="hero__meta-item">
-                  {typeof part === 'string' ? part : <HeroRating rating={part.value} />}
-                </span>
+                <span className="hero__meta-item">{renderMetaPart(part)}</span>
               </Fragment>
             ))}
           </p>

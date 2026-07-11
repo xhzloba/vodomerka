@@ -1,4 +1,4 @@
-import { Check, Heart, House, Eye, Trash2, History } from 'lucide-react';
+import { Check, Clock, Heart, House, Eye, Trash2, History } from 'lucide-react';
 import type { IconProps } from './Icon';
 import { StrokeIcon } from './Icon';
 
@@ -130,6 +130,18 @@ export function TrashIcon({ size = 24, className, strokeWidth = 1.75, ...props }
 export function HistoryIcon({ size = 24, className, strokeWidth = 1.75, ...props }: IconProps) {
   return (
     <History
+      size={size}
+      strokeWidth={strokeWidth}
+      className={lucideIconClass(className)}
+      aria-hidden={props['aria-label'] ? undefined : true}
+      {...props}
+    />
+  );
+}
+
+export function ClockIcon({ size = 24, className, strokeWidth = 1.75, ...props }: IconProps) {
+  return (
+    <Clock
       size={size}
       strokeWidth={strokeWidth}
       className={lucideIconClass(className)}

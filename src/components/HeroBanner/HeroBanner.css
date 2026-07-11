@@ -105,10 +105,33 @@
   text-overflow: ellipsis;
 }
 
+.hero__meta-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 6px;
+  color: color-mix(in srgb, var(--app-text) 62%, var(--app-text-muted));
+}
+
+.hero__meta-icon svg {
+  display: block;
+  width: 1.15em;
+  height: 1.15em;
+}
+
 .hero__meta-item {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
+  gap: 6px;
+}
+
+.hero__meta-item-icon {
+  width: 1.05em;
+  height: 1.05em;
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--app-text) 62%, var(--app-text-muted));
 }
 
 .hero__meta-sep {

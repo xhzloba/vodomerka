@@ -7,10 +7,10 @@ interface MediaCoverPlaceholderProps {
   animate?: boolean;
 }
 
-function PosterGlyph() {
+export function MediaPosterGlyph({ className }: { className?: string }) {
   return (
     <svg
-      className="media-cover-placeholder__glyph"
+      className={className}
       aria-hidden="true"
       fill="currentColor"
       viewBox="0 0 48 48"
@@ -47,7 +47,7 @@ export function MediaCoverPlaceholder({
       {animate ? <div className="media-cover-placeholder__shimmer" /> : null}
       {variant === 'poster' ? (
         <div className={`media-cover-placeholder__glyph-wrap${animate ? ' media-cover-placeholder__glyph-wrap--spin' : ''}`}>
-          <PosterGlyph />
+          <MediaPosterGlyph className="media-cover-placeholder__glyph" />
         </div>
       ) : null}
     </div>
