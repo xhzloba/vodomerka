@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { CheckIcon } from '@/shared/ui/icons';
 import './ContextMenu.css';
 
 export interface ContextMenuItem {
@@ -7,6 +8,9 @@ export interface ContextMenuItem {
   label: string;
   icon?: ReactNode;
   disabled?: boolean;
+  active?: boolean;
+  tone?: 'default' | 'danger';
+  separatorBefore?: boolean;
 }
 
 interface ContextMenuProps {
@@ -14,6 +18,7 @@ interface ContextMenuProps {
   x: number;
   y: number;
   title?: string;
+  header?: ReactNode;
   items: ContextMenuItem[];
   onClose: () => void;
   onItemClick?: (id: string) => void;
@@ -27,12 +32,16 @@ export function ContextMenu({
   x,
   y,
   title,
+  header,
   items,
   onClose,
   onItemClick,
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x, y });
+  const [focusIndex, setFocusIndex] = useState(0);
+
+  const enabledItems = items.filter((item) => !item.disabled);
 
   useLayoutEffect(() => {
     if (!open) {
@@ -53,7 +62,15 @@ export function ContextMenu({
       x: Math.max(VIEWPORT_PADDING, Math.min(x, maxX)),
       y: Math.max(VIEWPORT_PADDING, Math.min(y, maxY)),
     });
-  }, [open, x, y, title, items.length]);
+  }, [open, x, y, title, header, items.length]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setFocusIndex(0);
+  }, [open, items]);
 
   useEffect(() => {
     if (!open) {
@@ -71,6 +88,32 @@ export function ContextMenu({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose();
+        return;
+      }
+
+      if (enabledItems.length === 0) {
+        return;
+      }
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setFocusIndex((current) => (current + 1) % enabledItems.length);
+        return;
+      }
+
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setFocusIndex((current) => (current - 1 + enabledItems.length) % enabledItems.length);
+        return;
+      }
+
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        const item = enabledItems[focusIndex];
+        if (item) {
+          onItemClick?.(item.id);
+          onClose();
+        }
       }
     };
 
@@ -93,7 +136,7 @@ export function ContextMenu({
       window.removeEventListener('scroll', handleScroll, true);
       window.removeEventListener('resize', handleResize);
     };
-  }, [onClose, open]);
+  }, [enabledItems, focusIndex, onClose, onItemClick, open]);
 
   if (!open) {
     return null;
@@ -111,29 +154,49 @@ export function ContextMenu({
       aria-label={title ?? 'Контекстное меню'}
       onContextMenu={(event) => event.preventDefault()}
     >
-      {title ? <p className="context-menu__title">{title}</p> : null}
-      <ul className="context-menu__list">
-        {items.map((item) => (
-          <li key={item.id} className="context-menu__item" role="none">
-            <button
-              type="button"
-              className="context-menu__button"
-              role="menuitem"
-              disabled={item.disabled}
-              onClick={() => {
-                if (item.disabled) {
-                  return;
-                }
+      {header ? <div className="context-menu__header">{header}</div> : null}
+      {!header && title ? <p className="context-menu__title">{title}</p> : null}
 
-                onItemClick?.(item.id);
-                onClose();
-              }}
-            >
-              {item.icon ? <span className="context-menu__icon">{item.icon}</span> : null}
-              <span className="context-menu__label">{item.label}</span>
-            </button>
-          </li>
-        ))}
+      <ul className="context-menu__list">
+        {items.map((item) => {
+          const enabledIndex = enabledItems.findIndex((entry) => entry.id === item.id);
+          const isFocused = enabledIndex === focusIndex;
+
+          return (
+            <li key={item.id} className="context-menu__item" role="none">
+              {item.separatorBefore ? <div className="context-menu__separator" role="separator" /> : null}
+              <button
+                type="button"
+                className={[
+                  'context-menu__button',
+                  item.active ? 'context-menu__button--active' : '',
+                  item.tone === 'danger' ? 'context-menu__button--danger' : '',
+                  isFocused ? 'context-menu__button--focused' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                role="menuitem"
+                disabled={item.disabled}
+                onClick={() => {
+                  if (item.disabled) {
+                    return;
+                  }
+
+                  onItemClick?.(item.id);
+                  onClose();
+                }}
+              >
+                {item.icon ? <span className="context-menu__icon">{item.icon}</span> : null}
+                <span className="context-menu__label">{item.label}</span>
+                {item.active ? (
+                  <span className="context-menu__check" aria-hidden="true">
+                    <CheckIcon size={14} strokeWidth={2.4} />
+                  </span>
+                ) : null}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </div>,
     document.body,

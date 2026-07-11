@@ -135,18 +135,19 @@
   transition: border-color var(--transition-fast);
 }
 
+.media-card__poster-wrap--loading,
 .media-card__poster-wrap--empty {
-  background: var(--app-surface);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--app-border) 72%, transparent);
+}
+
+.media-card__poster-wrap--empty {
   box-shadow: none;
 }
 
 .media-card:hover .media-card__poster-wrap,
 .media-card--focused .media-card__poster-wrap {
   border-color: transparent;
-}
-
-.media-card__poster-wrap--loading {
-  background: var(--app-surface);
 }
 
 .media-card__cover-placeholder {

@@ -5,7 +5,10 @@ import { useWatched } from '@/shared/domain/WatchedContext';
 import { useMediaImage } from '@/shared/hooks/useMediaImage';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { ContextMenu } from '@/shared/ui/ContextMenu/ContextMenu';
-import { getMediaContextMenuItems } from '@/shared/ui/mediaContextMenu';
+import {
+  getMediaContextMenuItems,
+  MediaContextMenuHeader,
+} from '@/shared/ui/mediaContextMenu';
 import { MediaCoverPlaceholder } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
 import { MediaDescriptionDialog } from '@/shared/ui/MediaDescriptionDialog/MediaDescriptionDialog';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
@@ -125,7 +128,14 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
           <div
             className={`media-card__poster-wrap${isEmptyCard && !isLoading ? ' media-card__poster-wrap--empty' : ''}${isLoading ? ' media-card__poster-wrap--loading' : ''}`}
           >
-            {isLoading ? <MediaCoverPlaceholder className="media-card__cover-placeholder" fill /> : null}
+            {isLoading || isEmptyCard ? (
+              <MediaCoverPlaceholder
+                className="media-card__cover-placeholder"
+                fill
+                variant="poster"
+                animate={isLoading}
+              />
+            ) : null}
             {showImage ? (
               <img
                 key={src}
@@ -165,6 +175,7 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
         x={contextMenu?.x ?? 0}
         y={contextMenu?.y ?? 0}
         title={item.title}
+        header={<MediaContextMenuHeader item={item} posterUrl={showImage ? src : undefined} />}
         items={getMediaContextMenuItems(item, {
           isFavorite: inFavorites,
           isWatched: watched,

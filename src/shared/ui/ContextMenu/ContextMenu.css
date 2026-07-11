@@ -1,19 +1,30 @@
 .context-menu {
   position: fixed;
   z-index: 1200;
-  min-width: 232px;
-  max-width: min(320px, calc(100vw - 24px));
-  padding: 8px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--app-border-strong);
+  min-width: 248px;
+  max-width: min(340px, calc(100vw - 24px));
+  padding: 6px;
+  border-radius: calc(var(--radius-md) + 2px);
+  border: 1px solid color-mix(in srgb, var(--app-border-strong) 88%, white 12%);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 92%, white 8%) 0%, var(--app-modal-bg) 100%);
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg-elevated) 90%, white 10%) 0%,
+      var(--app-modal-bg) 100%
+    );
   box-shadow:
-    0 18px 42px rgba(0, 0, 0, 0.46),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(18px) saturate(130%);
-  animation: context-menu-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+    0 22px 48px rgba(0, 0, 0, 0.52),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(22px) saturate(140%);
+  animation: context-menu-in 160ms cubic-bezier(0.22, 1, 0.36, 1);
   transform-origin: top left;
+}
+
+.context-menu__header {
+  margin-bottom: 4px;
+  padding: 8px 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .context-menu__title {
@@ -32,21 +43,27 @@
 .context-menu__list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.context-menu__separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .context-menu__button {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   width: 100%;
-  min-height: 38px;
-  padding: 8px 10px;
+  min-height: 40px;
+  padding: 9px 11px;
   border: none;
-  border-radius: 9px;
+  border-radius: 10px;
   background: transparent;
   color: var(--app-text);
   font-size: 0.9375rem;
@@ -56,17 +73,41 @@
   text-align: left;
   transition:
     background var(--transition-fast),
-    color var(--transition-fast);
+    color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .context-menu__button:hover:not(:disabled),
-.context-menu__button:focus-visible:not(:disabled) {
-  background: rgba(255, 255, 255, 0.06);
+.context-menu__button:focus-visible:not(:disabled),
+.context-menu__button--focused:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
   color: #fff;
 }
 
+.context-menu__button:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.context-menu__button--active {
+  background: color-mix(in srgb, var(--app-accent) 12%, transparent);
+}
+
+.context-menu__button--active:hover:not(:disabled),
+.context-menu__button--active:focus-visible:not(:disabled),
+.context-menu__button--active.context-menu__button--focused:not(:disabled) {
+  background: color-mix(in srgb, var(--app-accent) 18%, rgba(255, 255, 255, 0.04));
+}
+
+.context-menu__button--danger {
+  color: color-mix(in srgb, #ff8f8f 88%, var(--app-text));
+}
+
+.context-menu__button--danger .context-menu__icon {
+  color: color-mix(in srgb, #ff8f8f 92%, var(--app-text-muted));
+}
+
 .context-menu__button:disabled {
-  opacity: 0.42;
+  opacity: 0.38;
   cursor: default;
 }
 
@@ -81,18 +122,32 @@
 }
 
 .context-menu__button:hover:not(:disabled) .context-menu__icon,
-.context-menu__button:focus-visible:not(:disabled) .context-menu__icon {
+.context-menu__button:focus-visible:not(:disabled) .context-menu__icon,
+.context-menu__button--focused:not(:disabled) .context-menu__icon {
+  color: var(--app-accent);
+}
+
+.context-menu__button--active .context-menu__icon {
   color: var(--app-accent);
 }
 
 .context-menu__label {
   min-width: 0;
+  flex: 1;
+}
+
+.context-menu__check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--app-accent);
 }
 
 @keyframes context-menu-in {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(-2px);
+    transform: scale(0.95) translateY(-4px);
   }
 
   to {
@@ -104,5 +159,9 @@
 @media (prefers-reduced-motion: reduce) {
   .context-menu {
     animation: none;
+  }
+
+  .context-menu__button:active:not(:disabled) {
+    transform: none;
   }
 }

@@ -1,6 +1,7 @@
 export type { IconProps } from './Icon';
 export {
   BookOpenIcon,
+  CheckIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,

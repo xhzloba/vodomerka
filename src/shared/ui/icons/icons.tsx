@@ -1,4 +1,4 @@
-import { Heart, House, Eye, EyeOff, Trash2, History } from 'lucide-react';
+import { Check, Heart, House, Eye, EyeOff, Trash2, History } from 'lucide-react';
 import type { IconProps } from './Icon';
 import { StrokeIcon } from './Icon';
 
@@ -140,6 +140,23 @@ export function CloseIcon(props: IconProps) {
       <path d="m7.5 7.5 9 9" />
       <path d="m16.5 7.5-9 9" />
     </StrokeIcon>
+  );
+}
+
+export function CheckIcon({
+  size = 24,
+  className,
+  strokeWidth = 1.75,
+  ...props
+}: IconProps) {
+  return (
+    <Check
+      size={size}
+      strokeWidth={strokeWidth}
+      className={lucideIconClass(className)}
+      aria-hidden={props['aria-label'] ? undefined : true}
+      {...props}
+    />
   );
 }
 
