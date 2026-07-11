@@ -61,50 +61,6 @@
   flex: 1;
 }
 
-.browse-view__title-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.browse-view__title {
-  font-size: 1.75rem;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  margin: 0;
-  line-height: 1;
-}
-
-.browse-view__settings-trigger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  margin-top: 0.06em;
-  border-radius: var(--radius-sm);
-  color: var(--app-text-muted);
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.browse-view__settings-trigger svg {
-  width: 22px;
-  height: 22px;
-}
-
-.browse-view__settings-trigger:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--app-text);
-}
-
-.browse-view__divider {
-  width: 1px;
-  height: 1.35rem;
-  background: var(--app-border-strong);
-  flex-shrink: 0;
-}
-
 .library-view__title {
   font-size: var(--app-section-title-size);
   font-weight: 600;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import { useHomePage } from '@/features/home/model/useHomePage';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
@@ -19,6 +19,7 @@ import {
 } from '@/shared/settings/types';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { PageLoading } from '@/shared/ui/PageState';
+import { Tabs } from '@/shared/ui/Tabs';
 import './SettingsView.css';
 
 const SETTINGS_TABS = [
@@ -38,66 +39,8 @@ export function SettingsView() {
   const { reloadWatched } = useWatched();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<SettingsTabId>('appearance');
-  const [hoveredTab, setHoveredTab] = useState<SettingsTabId | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const tabsRef = useRef<HTMLDivElement>(null);
-  const [tabSnakeIndicator, setTabSnakeIndicator] = useState<{
-    x: number;
-    width: number;
-    ready: boolean;
-  }>({
-    x: 0,
-    width: 0,
-    ready: false,
-  });
-
-  const syncTabSnakeIndicator = useCallback(() => {
-    const tabs = tabsRef.current;
-    const targetTab = hoveredTab ?? activeTab;
-    const button = tabs?.querySelector<HTMLElement>(`[data-settings-tab="${targetTab}"]`);
-
-    if (!tabs || !button) {
-      setTabSnakeIndicator((state) => (state.ready ? { ...state, ready: false } : state));
-      return;
-    }
-
-    const tabsRect = tabs.getBoundingClientRect();
-    const buttonRect = button.getBoundingClientRect();
-
-    setTabSnakeIndicator({
-      x: buttonRect.left - tabsRect.left,
-      width: buttonRect.width,
-      ready: true,
-    });
-  }, [activeTab, hoveredTab]);
-
-  useLayoutEffect(() => {
-    syncTabSnakeIndicator();
-  }, [activeTab, hoveredTab, syncTabSnakeIndicator]);
-
-  useEffect(() => {
-    const tabs = tabsRef.current;
-    if (!tabs) {
-      return;
-    }
-
-    const resizeObserver = new ResizeObserver(syncTabSnakeIndicator);
-    resizeObserver.observe(tabs);
-    window.addEventListener('resize', syncTabSnakeIndicator);
-
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener('resize', syncTabSnakeIndicator);
-    };
-  }, [syncTabSnakeIndicator]);
-
-  const tabSnakeIndicatorStyle = tabSnakeIndicator.ready
-    ? ({
-        transform: `translateX(${tabSnakeIndicator.x}px)`,
-        width: `${tabSnakeIndicator.width}px`,
-      } as CSSProperties)
-    : undefined;
 
   const { data: homeData } = useHomePage();
   const hiddenSections = getEffectiveHiddenHomeSections(
@@ -137,46 +80,13 @@ export function SettingsView() {
       <header className="settings-view__header">
         <h1 className="settings-view__title">Настройки</h1>
 
-        <div
-          ref={tabsRef}
-          className="settings-view__tabs"
-          role="tablist"
-          aria-label="Разделы настроек"
-          onMouseLeave={() => setHoveredTab(null)}
-        >
-          {tabSnakeIndicator.ready ? (
-            <span
-              className="settings-view__tab-indicator"
-              aria-hidden="true"
-              style={tabSnakeIndicatorStyle}
-            />
-          ) : null}
-
-          {SETTINGS_TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
-
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                data-settings-tab={tab.id}
-                aria-selected={isActive}
-                className={`settings-view__tab${isActive ? ' settings-view__tab--active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-                onMouseEnter={() => setHoveredTab(tab.id)}
-                onFocus={() => setHoveredTab(tab.id)}
-                onBlur={(event) => {
-                  if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node | null)) {
-                    setHoveredTab(null);
-                  }
-                }}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        <Tabs
+          items={[...SETTINGS_TABS]}
+          activeId={activeTab}
+          onChange={(id) => setActiveTab(id as SettingsTabId)}
+          ariaLabel="Разделы настроек"
+          variant="settings"
+        />
       </header>
 
       <div ref={scrollRef} className="settings-view__content scroll-overlay">

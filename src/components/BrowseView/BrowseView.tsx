@@ -19,7 +19,6 @@ import {
 } from '@/shared/settings/types';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { PageError, PageLoading } from '@/shared/ui/PageState';
-import { SettingsIcon } from '@/shared/ui/icons';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { Tabs } from '@/shared/ui/Tabs';
 import { MediaGrid } from './MediaGrid';
@@ -28,6 +27,8 @@ import './MediaGrid.css';
 
 interface BrowseViewProps {
   onMediaSelect: (item: MediaItem) => void;
+  settingsMenuOpen: boolean;
+  onSettingsMenuOpenChange: (open: boolean) => void;
 }
 
 function pickDefaultTab(tabs: BrowseTab[]): BrowseTab | null {
@@ -36,7 +37,11 @@ function pickDefaultTab(tabs: BrowseTab[]): BrowseTab | null {
 
 let browseCategoriesCache: VokinoCategory[] | null = null;
 
-export function BrowseView({ onMediaSelect }: BrowseViewProps) {
+export function BrowseView({
+  onMediaSelect,
+  settingsMenuOpen,
+  onSettingsMenuOpenChange,
+}: BrowseViewProps) {
   const scrollRef = useOverlayScroll<HTMLDivElement>();
   const requestIdRef = useRef(0);
   const { settings, updateSettings } = useAppSettings();
@@ -54,7 +59,6 @@ export function BrowseView({ onMediaSelect }: BrowseViewProps) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
-  const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
 
   const catalogGridStyle = {
@@ -125,6 +129,12 @@ export function BrowseView({ onMediaSelect }: BrowseViewProps) {
     },
     [],
   );
+
+  useEffect(() => {
+    if (settingsMenuOpen) {
+      setIsCategoryMenuOpen(false);
+    }
+  }, [settingsMenuOpen]);
 
   useEffect(() => {
     const element = scrollRef.current;
@@ -202,13 +212,8 @@ export function BrowseView({ onMediaSelect }: BrowseViewProps) {
   };
 
   const openCategoryMenu = () => {
-    setIsSettingsMenuOpen(false);
+    onSettingsMenuOpenChange(false);
     setIsCategoryMenuOpen(true);
-  };
-
-  const openSettingsMenu = () => {
-    setIsCategoryMenuOpen(false);
-    setIsSettingsMenuOpen(true);
   };
 
   const handleTabSelect = (tabId: string) => {
@@ -239,31 +244,15 @@ export function BrowseView({ onMediaSelect }: BrowseViewProps) {
   if (error && categories.length === 0 && !isCategoriesLoading) {
     return (
       <div className="browse-view">
-        <div className="browse-view__header">
-          <div className="browse-view__header-main">
-            <div className="browse-view__title-group">
-              <h1 className="browse-view__title">Каталог</h1>
-              <button
-                type="button"
-                className="browse-view__settings-trigger"
-                aria-label="Настройки каталога"
-                onClick={openSettingsMenu}
-              >
-                <SettingsIcon size={22} />
-              </button>
-            </div>
-          </div>
-        </div>
-
         <div ref={scrollRef} className="browse-view__scroll scroll-overlay">
           {scrollShadow}
           <PageError title="Ошибка каталога" text={error} />
         </div>
 
         <SlideMenu
-          open={isSettingsMenuOpen}
+          open={settingsMenuOpen}
           title="Настройки каталога"
-          onClose={() => setIsSettingsMenuOpen(false)}
+          onClose={() => onSettingsMenuOpenChange(false)}
         >
           <p className="slide-menu__section-label">Отступы сетки</p>
           <ul className="slide-menu__list">
@@ -292,29 +281,14 @@ export function BrowseView({ onMediaSelect }: BrowseViewProps) {
     <div className="browse-view">
       <div className="browse-view__header">
         <div className="browse-view__header-main">
-          <div className="browse-view__title-group">
-            <h1 className="browse-view__title">Каталог</h1>
-            <button
-              type="button"
-              className="browse-view__settings-trigger"
-              aria-label="Настройки каталога"
-              onClick={openSettingsMenu}
-            >
-              <SettingsIcon size={22} />
-            </button>
-          </div>
-
-          {tabs.length > 0 && (
-            <>
-              <span className="browse-view__divider" aria-hidden="true" />
-              <Tabs
-                items={tabs.map((tab) => ({ id: tab.id, label: tab.title }))}
-                activeId={activeTab?.id ?? null}
-                onChange={handleTabSelect}
-                ariaLabel="Сортировка каталога"
-              />
-            </>
-          )}
+          {tabs.length > 0 ? (
+            <Tabs
+              items={tabs.map((tab) => ({ id: tab.id, label: tab.title }))}
+              activeId={activeTab?.id ?? null}
+              onChange={handleTabSelect}
+              ariaLabel="Сортировка каталога"
+            />
+          ) : null}
         </div>
 
         {categories.length > 0 ? (
@@ -355,9 +329,9 @@ export function BrowseView({ onMediaSelect }: BrowseViewProps) {
       </SlideMenu>
 
       <SlideMenu
-        open={isSettingsMenuOpen}
+        open={settingsMenuOpen}
         title="Настройки каталога"
-        onClose={() => setIsSettingsMenuOpen(false)}
+        onClose={() => onSettingsMenuOpenChange(false)}
       >
         <p className="slide-menu__section-label">Отступы сетки</p>
         <ul className="slide-menu__list">

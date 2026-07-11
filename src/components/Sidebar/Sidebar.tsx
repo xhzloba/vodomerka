@@ -20,6 +20,7 @@ interface SidebarProps {
   menuAnimation?: SidebarMenuAnimation;
   macSidebarChrome?: boolean;
   onNavChange: (nav: NavItem) => void;
+  onBrowseSettingsClick?: () => void;
 }
 
 const navItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
@@ -37,6 +38,7 @@ export function Sidebar({
   menuAnimation = 'liquid',
   macSidebarChrome = false,
   onNavChange,
+  onBrowseSettingsClick,
 }: SidebarProps) {
   const navRef = useRef<HTMLElement>(null);
   const { favorites } = useFavorites();
@@ -126,55 +128,80 @@ export function Sidebar({
               style={magneticIndicatorStyle}
             />
           ) : null}
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`sidebar__item ${activeNav === item.id ? 'sidebar__item--active' : ''}`}
-              onClick={() => onNavChange(item.id)}
-              aria-label={
-                item.id === 'library' && favoritesCount > 0
-                  ? `${item.label}, ${favoritesCount} в избранном`
-                  : item.label
-              }
-              title={collapsed ? item.label : undefined}
-            >
-              <span className="sidebar__item-surface">
-                {menuAnimation === 'liquid' && activeNav === item.id && !collapsed ? (
-                  <>
-                    <span
-                      key={`liquid-glow-${activeNav}`}
-                      className="sidebar__liquid-glow"
-                      aria-hidden="true"
-                    />
-                    <span
-                      key={`liquid-bubbles-${activeNav}`}
-                      className="sidebar__liquid-bubbles"
-                      aria-hidden="true"
-                    />
-                  </>
-                ) : null}
-                {menuAnimation === 'snake' && activeNav === item.id && !collapsed ? (
-                  <span className="sidebar__snake-ring" aria-hidden="true">
-                    <span className="sidebar__snake-beam sidebar__snake-beam--trail" />
-                    <span className="sidebar__snake-beam sidebar__snake-beam--core" />
-                  </span>
-                ) : null}
-                <span className="sidebar__item-icon">{item.icon}</span>
-                <span className="sidebar__item-label">{item.label}</span>
-                {item.id === 'library' && favoritesCount > 0 ? (
-                  <span className="sidebar__item-badge" aria-hidden="true">
-                    {favoritesCount}
-                  </span>
-                ) : null}
-                {item.id === 'search' && !collapsed ? (
-                  <span className="sidebar__item-shortcut" aria-hidden="true">
-                    {searchShortcutLabel}
-                  </span>
-                ) : null}
-              </span>
-            </button>
-          ))}
+          {navItems.map((item) => {
+            const isActive = activeNav === item.id;
+            const showBrowseSettings =
+              item.id === 'browse' && isActive && !collapsed && Boolean(onBrowseSettingsClick);
+
+            const itemButton = (
+              <button
+                type="button"
+                className={`sidebar__item ${isActive ? 'sidebar__item--active' : ''}${
+                  showBrowseSettings ? ' sidebar__item--with-action' : ''
+                }`}
+                onClick={() => onNavChange(item.id)}
+                aria-label={
+                  item.id === 'library' && favoritesCount > 0
+                    ? `${item.label}, ${favoritesCount} в избранном`
+                    : item.label
+                }
+                title={collapsed ? item.label : undefined}
+              >
+                <span className="sidebar__item-surface">
+                  {menuAnimation === 'liquid' && isActive && !collapsed ? (
+                    <>
+                      <span
+                        key={`liquid-glow-${activeNav}`}
+                        className="sidebar__liquid-glow"
+                        aria-hidden="true"
+                      />
+                      <span
+                        key={`liquid-bubbles-${activeNav}`}
+                        className="sidebar__liquid-bubbles"
+                        aria-hidden="true"
+                      />
+                    </>
+                  ) : null}
+                  {menuAnimation === 'snake' && isActive && !collapsed ? (
+                    <span className="sidebar__snake-ring" aria-hidden="true">
+                      <span className="sidebar__snake-beam sidebar__snake-beam--trail" />
+                      <span className="sidebar__snake-beam sidebar__snake-beam--core" />
+                    </span>
+                  ) : null}
+                  <span className="sidebar__item-icon">{item.icon}</span>
+                  <span className="sidebar__item-label">{item.label}</span>
+                  {item.id === 'library' && favoritesCount > 0 ? (
+                    <span className="sidebar__item-badge" aria-hidden="true">
+                      {favoritesCount}
+                    </span>
+                  ) : null}
+                  {item.id === 'search' && !collapsed ? (
+                    <span className="sidebar__item-shortcut" aria-hidden="true">
+                      {searchShortcutLabel}
+                    </span>
+                  ) : null}
+                </span>
+              </button>
+            );
+
+            if (!showBrowseSettings) {
+              return <div key={item.id}>{itemButton}</div>;
+            }
+
+            return (
+              <div key={item.id} className="sidebar__item-wrap sidebar__item-wrap--with-action">
+                {itemButton}
+                <button
+                  type="button"
+                  className="sidebar__item-action"
+                  aria-label="Настройки каталога"
+                  onClick={onBrowseSettingsClick}
+                >
+                  <SettingsIcon size={18} strokeWidth={1.75} />
+                </button>
+              </div>
+            );
+          })}
         </nav>
       </div>
     </aside>

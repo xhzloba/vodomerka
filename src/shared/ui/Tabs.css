@@ -1,15 +1,47 @@
 .ui-tabs {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 24px;
   min-width: 0;
+  padding-bottom: 2px;
+}
+
+.ui-tabs--settings {
+  flex-wrap: wrap;
+  gap: 22px;
+}
+
+.ui-tabs__indicator {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
+  height: 2px;
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--media-snake-1) 0%,
+    var(--media-snake-2) 34%,
+    var(--media-snake-3) 68%,
+    var(--media-snake-4) 100%
+  );
+  box-shadow: 0 0 10px color-mix(in srgb, var(--media-snake-3) 28%, transparent);
+  transition:
+    transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease;
 }
 
 .ui-tabs__tab {
   position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
-  padding: 0;
+  padding: 0 0 6px;
+  border: none;
+  background: transparent;
   font-size: 1.1875rem;
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -19,10 +51,25 @@
   transition: color var(--transition-fast);
 }
 
+.ui-tabs--settings .ui-tabs__tab {
+  padding: 0 0 8px;
+  font-size: 1.125rem;
+}
+
 .ui-tabs__tab:hover {
   color: var(--app-text);
 }
 
 .ui-tabs__tab--active {
   color: var(--app-text);
+}
+
+.ui-tabs--settings .ui-tabs__tab--active {
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-tabs__indicator {
+    transition: none;
+  }
 }

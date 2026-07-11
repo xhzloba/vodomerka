@@ -38,6 +38,13 @@ export function MainAppShell() {
 
   const sidebarCollapsed = settings.sidebarCollapsed;
   const macSidebarChrome = isMacOS();
+  const [browseSettingsMenuOpen, setBrowseSettingsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (activeNav !== 'browse') {
+      setBrowseSettingsMenuOpen(false);
+    }
+  }, [activeNav]);
 
   const handlePlay = useCallback(
     (item: MediaItem) => {
@@ -212,7 +219,13 @@ export function MainAppShell() {
       case 'home':
         return <HomeView onMediaSelect={handleMediaSelect} onPlay={handlePlay} />;
       case 'browse':
-        return <BrowseView onMediaSelect={handleMediaSelect} />;
+        return (
+          <BrowseView
+            onMediaSelect={handleMediaSelect}
+            settingsMenuOpen={browseSettingsMenuOpen}
+            onSettingsMenuOpenChange={setBrowseSettingsMenuOpen}
+          />
+        );
       case 'search':
         return (
           <SearchView
@@ -242,6 +255,7 @@ export function MainAppShell() {
           menuAnimation={settings.sidebarMenuAnimation}
           macSidebarChrome={macSidebarChrome}
           onNavChange={navigate}
+          onBrowseSettingsClick={() => setBrowseSettingsMenuOpen(true)}
         />
         <main className="app__main">
           <div
