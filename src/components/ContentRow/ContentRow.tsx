@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { useLayoutEffect, useRef, useState } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { useHorizontalDragScroll } from '@/shared/hooks/useHorizontalDragScroll';
 import { ChevronLeftIcon, ChevronRightIcon, EyeOffIcon } from '@/shared/ui/icons';
@@ -15,6 +15,7 @@ interface ContentRowProps {
   titleCount?: number;
   onHide?: () => void;
   onMediaSelect: (item: MediaItem) => void;
+  edgeFade?: boolean;
 }
 
 function canScrollHorizontally(element: HTMLElement): boolean {
@@ -30,9 +31,11 @@ export function ContentRow({
   titleCount,
   onHide,
   onMediaSelect,
+  edgeFade = false,
 }: ContentRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScroll, setCanScroll] = useState(false);
+  const [edgeFadeStrength, setEdgeFadeStrength] = useState(0);
   const itemsOrderKey = items.map((item) => item.id).join('\0');
 
   useHorizontalDragScroll(scrollRef, canScroll);
@@ -90,6 +93,46 @@ export function ContentRow({
     };
   }, [items]);
 
+  useEffect(() => {
+    if (!edgeFade) {
+      setEdgeFadeStrength(0);
+      return;
+    }
+
+    const element = scrollRef.current;
+    if (!element || !canScroll) {
+      setEdgeFadeStrength(0);
+      return;
+    }
+
+    const sync = () => {
+      const progress = Math.min(1, element.scrollLeft / 80);
+      setEdgeFadeStrength(1 - (1 - progress) ** 2);
+    };
+
+    sync();
+    element.addEventListener('scroll', sync, { passive: true });
+
+    return () => {
+      element.removeEventListener('scroll', sync);
+    };
+  }, [canScroll, edgeFade, itemsOrderKey]);
+
+  const scrollEdgeStyle = useMemo((): CSSProperties | undefined => {
+    if (!edgeFade || edgeFadeStrength < 0.03) {
+      return undefined;
+    }
+
+    const fadeEnd = 28 + edgeFadeStrength * 52;
+    const softMid = fadeEnd * 0.42;
+    const gradient = `linear-gradient(90deg, transparent 0px, rgba(0, 0, 0, ${(edgeFadeStrength * 0.55).toFixed(3)}) ${softMid.toFixed(1)}px, #000 ${fadeEnd.toFixed(1)}px, #000 100%)`;
+
+    return {
+      WebkitMaskImage: gradient,
+      maskImage: gradient,
+    };
+  }, [edgeFade, edgeFadeStrength]);
+
   const scroll = (direction: 'left' | 'right') => {
     const el = scrollRef.current;
     if (!el) return;
@@ -102,7 +145,7 @@ export function ContentRow({
     <section
       className={`content-row${hideTitle ? ' content-row--no-title' : ''}${
         canScroll ? ' content-row--scrollable' : ''
-      }`}
+      }${edgeFade ? ' content-row--edge-fade' : ''}`}
     >
       {showHeader ? (
         <div className="content-row__header">
@@ -150,16 +193,35 @@ export function ContentRow({
         </div>
       ) : null}
 
-      <div className="content-row__scroll scroll-overlay-x" ref={scrollRef}>
-        {items.map((item) => (
-          <MediaCard
-            key={item.id}
-            item={item}
-            variant={variant}
-            onSelect={onMediaSelect}
-          />
-        ))}
-      </div>
+      {edgeFade ? (
+        <div className="content-row__scroll-shell">
+          <div
+            className="content-row__scroll scroll-overlay-x"
+            ref={scrollRef}
+            style={scrollEdgeStyle}
+          >
+            {items.map((item) => (
+              <MediaCard
+                key={item.id}
+                item={item}
+                variant={variant}
+                onSelect={onMediaSelect}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="content-row__scroll scroll-overlay-x" ref={scrollRef}>
+          {items.map((item) => (
+            <MediaCard
+              key={item.id}
+              item={item}
+              variant={variant}
+              onSelect={onMediaSelect}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

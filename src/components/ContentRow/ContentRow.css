@@ -104,6 +104,10 @@
   color: var(--text-primary);
 }
 
+.content-row__scroll-shell {
+  position: relative;
+}
+
 .content-row__scroll {
   display: flex;
   gap: 16px;

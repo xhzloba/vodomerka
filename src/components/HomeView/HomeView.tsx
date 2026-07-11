@@ -158,6 +158,7 @@ export function HomeView({ onMediaSelect, onPlay }: HomeViewProps) {
             icon={<FavoritesIcon size={22} />}
             items={favorites}
             onMediaSelect={onMediaSelect}
+            edgeFade
             onHide={() =>
               requestHideSection({
                 id: HOME_FAVORITES_SECTION_ID,
@@ -173,6 +174,7 @@ export function HomeView({ onMediaSelect, onPlay }: HomeViewProps) {
             icon={<HistoryIcon size={22} />}
             items={recentlyViewed}
             onMediaSelect={onMediaSelect}
+            edgeFade
             onHide={() =>
               requestHideSection({
                 id: HOME_RECENTLY_VIEWED_SECTION_ID,
@@ -189,6 +191,7 @@ export function HomeView({ onMediaSelect, onPlay }: HomeViewProps) {
             icon={getHomeRowIcon(row)}
             items={row.items}
             onMediaSelect={onMediaSelect}
+            edgeFade
             onHide={isTrendingHomeRow(row) ? undefined : () => handleHideRow(row)}
           />
         ))}
