@@ -74,7 +74,7 @@ export function normalizeCatalogRowGap(value: unknown): CatalogRowGapPreset {
 }
 
 export function normalizeSidebarMenuAnimation(value: unknown): SidebarMenuAnimation {
-  if (value === 'snake' || value === 'magnetic' || value === 'magnetic-water') {
+  if (value === 'liquid' || value === 'snake' || value === 'magnetic' || value === 'magnetic-water') {
     return value;
   }
 

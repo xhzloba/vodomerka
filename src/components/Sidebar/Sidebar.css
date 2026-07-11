@@ -129,32 +129,25 @@
     color var(--transition-fast),
     background var(--transition-fast),
     box-shadow var(--transition-fast),
+    transform var(--transition-fast),
     padding var(--transition-smooth),
     gap var(--transition-smooth);
 }
 
-.sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item-surface::before,
-.sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item-surface::after {
-  content: '';
+.sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item-surface {
+  isolation: isolate;
+}
+
+.sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__liquid-glow,
+.sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__liquid-bubbles {
   position: absolute;
   pointer-events: none;
   border-radius: inherit;
-  opacity: 0;
-  transition: opacity 0.45s ease;
 }
 
-.sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item-surface::before {
-  inset: 3px 6px;
-  z-index: 0;
-  padding: 0;
-  background: transparent;
-  -webkit-mask: none;
-  mask: none;
-}
-
-.sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item-surface::after {
+.sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__liquid-glow {
   inset: -5px;
-  z-index: -1;
+  z-index: 0;
   border-radius: calc(var(--radius-sm) + 5px);
   background: radial-gradient(
     ellipse 58% 92% at 50% 50%,
@@ -168,9 +161,15 @@
   background-repeat: no-repeat;
   filter: blur(12px);
   transform: translateZ(0);
+  opacity: 0.34;
+  animation:
+    sidebar-liquid-glow-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+    sidebar-liquid-drift var(--sidebar-liquid-sweep-duration) ease-in-out 0s infinite;
 }
 
-.sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-surface::before {
+.sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__liquid-bubbles {
+  inset: 3px 6px;
+  z-index: 1;
   background:
     radial-gradient(circle 2.5px at 20% 34%, var(--sidebar-liquid-bubble) 0%, transparent 72%),
     radial-gradient(circle 2px at 31% 56%, var(--sidebar-liquid-bubble-soft) 0%, transparent 72%),
@@ -186,14 +185,9 @@
   background-position: 6% 50%;
   background-repeat: no-repeat;
   filter: blur(0.55px);
+  opacity: 0.36;
   animation:
     sidebar-liquid-bubbles-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards,
-    sidebar-liquid-drift var(--sidebar-liquid-sweep-duration) ease-in-out 0s infinite;
-}
-
-.sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-surface::after {
-  animation:
-    sidebar-liquid-glow-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards,
     sidebar-liquid-drift var(--sidebar-liquid-sweep-duration) ease-in-out 0s infinite;
 }
 
@@ -204,6 +198,10 @@
 
 .sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-surface {
   color: var(--app-text);
+}
+
+.sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item:active .sidebar__item-surface {
+  transform: scale(0.985);
 }
 
 @keyframes sidebar-liquid-glow-in {
@@ -261,7 +259,7 @@
 
 .sidebar__item-icon {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: var(--sidebar-nav-icon-size);
   height: var(--sidebar-nav-icon-size);
   display: flex;
@@ -294,7 +292,7 @@
 
 .sidebar__item-label {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -369,21 +367,25 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item-surface::before,
-  .sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item-surface::after {
+  .sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__liquid-glow,
+  .sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__liquid-bubbles {
     animation: none !important;
   }
 
-  .sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-surface::before {
+  .sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__liquid-bubbles {
     opacity: 0.26;
     background-size: 238% 128%;
     background-position: 50% 50%;
   }
 
-  .sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-surface::after {
+  .sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__liquid-glow {
     opacity: 0.28;
     background-size: 238% 128%;
     background-position: 50% 50%;
+  }
+
+  .sidebar.sidebar--menu-liquid:not(.sidebar--collapsed) .sidebar__item:active .sidebar__item-surface {
+    transform: none;
   }
 
   .sidebar.sidebar--menu-snake:not(.sidebar--collapsed) .sidebar__snake-beam {

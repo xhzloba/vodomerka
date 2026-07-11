@@ -140,6 +140,20 @@ export function Sidebar({
               title={collapsed ? item.label : undefined}
             >
               <span className="sidebar__item-surface">
+                {menuAnimation === 'liquid' && activeNav === item.id && !collapsed ? (
+                  <>
+                    <span
+                      key={`liquid-glow-${activeNav}`}
+                      className="sidebar__liquid-glow"
+                      aria-hidden="true"
+                    />
+                    <span
+                      key={`liquid-bubbles-${activeNav}`}
+                      className="sidebar__liquid-bubbles"
+                      aria-hidden="true"
+                    />
+                  </>
+                ) : null}
                 {menuAnimation === 'snake' && activeNav === item.id && !collapsed ? (
                   <span className="sidebar__snake-ring" aria-hidden="true">
                     <span className="sidebar__snake-beam sidebar__snake-beam--trail" />
