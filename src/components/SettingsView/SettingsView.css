@@ -20,9 +20,33 @@
 }
 
 .settings-view__tabs {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: 22px;
+  padding-bottom: 2px;
+}
+
+.settings-view__tab-indicator {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
+  height: 2px;
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--media-snake-1) 0%,
+    var(--media-snake-2) 34%,
+    var(--media-snake-3) 68%,
+    var(--media-snake-4) 100%
+  );
+  box-shadow: 0 0 10px color-mix(in srgb, var(--media-snake-3) 28%, transparent);
+  transition:
+    transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease;
 }
 
 .settings-view__content {
@@ -31,9 +55,11 @@
 }
 
 .settings-view__tab {
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
-  padding: 0;
+  padding: 0 0 8px;
   border: none;
   background: transparent;
   color: var(--app-text-muted);
@@ -466,4 +492,10 @@
   background: rgba(192, 57, 57, 0.2);
   border-color: rgba(255, 120, 120, 0.45);
   color: #ffb3b3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-view__tab-indicator {
+    transition: none;
+  }
 }
