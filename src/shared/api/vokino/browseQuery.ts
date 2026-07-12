@@ -106,22 +106,6 @@ export function normalizeBrowseGenres(value: string[] | string | null | undefine
   return next;
 }
 
-export function normalizeGenreToken(value: string): string {
-  return value.trim().toLowerCase();
-}
-
-export function itemMatchesBrowseGenres(itemGenres: string[], requiredGenres: string[]): boolean {
-  const normalizedRequired = normalizeBrowseGenres(requiredGenres).map(normalizeGenreToken);
-
-  if (normalizedRequired.length === 0) {
-    return true;
-  }
-
-  const itemGenreSet = new Set(itemGenres.map(normalizeGenreToken));
-
-  return normalizedRequired.every((genre) => itemGenreSet.has(genre));
-}
-
 export function pickActiveFilters(filters: BrowseFilters): BrowseFilters {
   const next: BrowseFilters = {};
 

@@ -35,23 +35,15 @@ const DEFAULT_GENRES: BrowseFilterFieldDefinition['options'] = [
   { value: 'аниме', label: 'аниме' },
   { value: 'детский', label: 'детский' },
   { value: 'мультфильм', label: 'мультфильм' },
-  { value: 'фильм-нуар', label: 'фильм-нуар' },
-  { value: 'для взрослых', label: 'для взрослых' },
   { value: 'документальный', label: 'документальный' },
-  { value: 'игра', label: 'игра' },
   { value: 'история', label: 'история' },
   { value: 'концерт', label: 'концерт' },
-  { value: 'короткометражка', label: 'короткометражка' },
   { value: 'музыка', label: 'музыка' },
   { value: 'мюзикл', label: 'мюзикл' },
-  { value: 'новости', label: 'новости' },
   { value: 'приключения', label: 'приключения' },
-  { value: 'реальное ТВ', label: 'реальное ТВ' },
   { value: 'семейный', label: 'семейный' },
   { value: 'спорт', label: 'спорт' },
   { value: 'ток-шоу', label: 'ток-шоу' },
-  { value: 'церемония', label: 'церемония' },
-  { value: 'дорама', label: 'дорама' },
 ];
 
 const DEFAULT_POPULAR_COUNTRIES: BrowseFilterFieldDefinition['options'] = [

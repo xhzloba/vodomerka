@@ -18,7 +18,6 @@ import {
   buildBrowseListUrlFromContext,
   buildBrowseScope,
   mergeBrowseFilters,
-  pickActiveFilters,
   type BrowseFilters,
 } from '@/shared/api/vokino/browseQuery';
 import { ensureMediaOverridesLoaded, hydrateMediaItems } from '@/shared/domain/overridesStore';
@@ -200,13 +199,7 @@ export function BrowseView({
           }
         }
 
-        const appliedFilters = pickActiveFilters(options?.filters ?? filters);
-        const requiredGenres = appliedFilters.genre;
-
-        const result = await fetchPaginatedList(playlistUrl, pageUrl, {
-          requiredGenres,
-          prefetchForGenreAnd: !append,
-        });
+        const result = await fetchPaginatedList(playlistUrl, pageUrl);
         if (requestId !== requestIdRef.current) return;
 
         setItems((current) =>
