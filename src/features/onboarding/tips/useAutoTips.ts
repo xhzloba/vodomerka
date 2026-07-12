@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { AppSettings } from '@/shared/settings/types';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
+import { playWelcomeSound } from '@/shared/audio/uiSounds';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import { appendDismissedTipId } from './dismissTip';
 import { APP_TIPS, buildAppTipContext, type AppTipDefinition } from './tipDefinitions';
@@ -79,6 +80,8 @@ export function useAutoTips(options: { paused: boolean }) {
       if (!isTipEligible(tip, currentSettings, Date.now())) {
         return;
       }
+
+      playWelcomeSound();
 
       showToast(tip.buildMessage(context), {
         kind: 'tip',

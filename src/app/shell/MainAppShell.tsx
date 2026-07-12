@@ -20,6 +20,7 @@ import { ensureMediaOverridesLoaded } from '@/shared/domain/overridesStore';
 import { openMediaDetailWindow } from '@/shared/platform/mediaDetailWindow';
 import { isMacOS } from '@/shared/platform/runtime';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
+import { playWelcomeSound } from '@/shared/audio/uiSounds';
 import { PageLoading } from '@/shared/ui/PageState';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
@@ -151,6 +152,7 @@ export function MainAppShell() {
 
     const timeoutId = window.setTimeout(() => {
       setSetupWelcomeVisible(true);
+      playWelcomeSound();
     }, SETUP_WELCOME_SHOW_DELAY_MS);
 
     return () => {
