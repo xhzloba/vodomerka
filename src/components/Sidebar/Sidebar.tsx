@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { NavItem } from '@/types';
 import type { SidebarMenuAnimation } from '@/shared/settings/types';
 import { getSearchShortcutLabel } from '@/features/onboarding/tips/platformShortcut';
+import { playMenuSound } from '@/shared/audio/uiSounds';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import {
   EyeIcon,
@@ -112,6 +113,17 @@ export function Sidebar({
     };
   }, [collapsed, magneticEnabled, syncMagneticIndicator]);
 
+  const handleNavClick = useCallback(
+    (nav: NavItem) => {
+      if (activeNav !== nav) {
+        playMenuSound();
+      }
+
+      onNavChange(nav);
+    },
+    [activeNav, onNavChange],
+  );
+
   const magneticIndicatorStyle = magneticIndicator.ready
     ? ({
         transform: `translateY(${magneticIndicator.y}px)`,
@@ -146,7 +158,7 @@ export function Sidebar({
                 className={`sidebar__item ${isActive ? 'sidebar__item--active' : ''}${
                   showItemSettings ? ' sidebar__item--with-action' : ''
                 }`}
-                onClick={() => onNavChange(item.id)}
+                onClick={() => handleNavClick(item.id)}
                 aria-label={
                   item.id === 'library' && favoritesCount > 0
                     ? `${item.label}, ${favoritesCount} в избранном`

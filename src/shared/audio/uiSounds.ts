@@ -1,12 +1,14 @@
 import deleteSoundUrl from './assets/delete.mp3';
 import likeSoundUrl from './assets/like.mp3';
+import menuSoundUrl from './assets/menu.mp3';
 import welcomeSoundUrl from './assets/welcomePage.mp3';
 
-export type UiSoundId = 'delete' | 'like' | 'welcome';
+export type UiSoundId = 'delete' | 'like' | 'menu' | 'welcome';
 
 const UI_SOUND_URLS: Record<UiSoundId, string> = {
   delete: deleteSoundUrl,
   like: likeSoundUrl,
+  menu: menuSoundUrl,
   welcome: welcomeSoundUrl,
 };
 
@@ -47,4 +49,8 @@ export function playLikeSound() {
 
 export function playWelcomeSound() {
   playUiSound('welcome');
+}
+
+export function playMenuSound() {
+  playUiSound('menu');
 }
