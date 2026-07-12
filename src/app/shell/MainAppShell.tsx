@@ -4,6 +4,7 @@ import { useAutoTips } from '@/features/onboarding/tips/useAutoTips';
 import { appendDismissedTipId } from '@/features/onboarding/tips/dismissTip';
 import { TIP_IDS } from '@/features/onboarding/tips/tipDefinitions';
 import { SetupWelcomeBanner } from '@/features/onboarding/ui/SetupWelcomeBanner';
+import { HomeSettingsPanels } from '@/features/home/ui/HomeSettingsPanels';
 import { useSystemUserDisplayName } from '@/features/onboarding/model/useSystemUserDisplayName';
 import { BrowseView } from '@/components/BrowseView/BrowseView';
 import { HomeView } from '@/components/HomeView/HomeView';
@@ -20,6 +21,7 @@ import { openMediaDetailWindow } from '@/shared/platform/mediaDetailWindow';
 import { isMacOS } from '@/shared/platform/runtime';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { PageLoading } from '@/shared/ui/PageState';
+import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 
 const SETUP_WELCOME_SHOW_DELAY_MS = 5_000;
@@ -39,10 +41,17 @@ export function MainAppShell() {
   const sidebarCollapsed = settings.sidebarCollapsed;
   const macSidebarChrome = isMacOS();
   const [browseSettingsMenuOpen, setBrowseSettingsMenuOpen] = useState(false);
+  const [homeSettingsMenuOpen, setHomeSettingsMenuOpen] = useState(false);
 
   useEffect(() => {
     if (activeNav !== 'browse') {
       setBrowseSettingsMenuOpen(false);
+    }
+  }, [activeNav]);
+
+  useEffect(() => {
+    if (activeNav !== 'home') {
+      setHomeSettingsMenuOpen(false);
     }
   }, [activeNav]);
 
@@ -255,7 +264,16 @@ export function MainAppShell() {
           menuAnimation={settings.sidebarMenuAnimation}
           macSidebarChrome={macSidebarChrome}
           onNavChange={navigate}
-          onBrowseSettingsClick={() => setBrowseSettingsMenuOpen(true)}
+          itemSettingsActions={{
+            home: {
+              ariaLabel: 'Настройки главной',
+              onClick: () => setHomeSettingsMenuOpen(true),
+            },
+            browse: {
+              ariaLabel: 'Настройки каталога',
+              onClick: () => setBrowseSettingsMenuOpen(true),
+            },
+          }}
         />
         <main className="app__main">
           <div
@@ -306,6 +324,15 @@ export function MainAppShell() {
           <PageLoading centered />
         </div>
       ) : null}
+
+      <SlideMenu
+        open={homeSettingsMenuOpen}
+        title="Настройки главной"
+        size="wide"
+        onClose={() => setHomeSettingsMenuOpen(false)}
+      >
+        <HomeSettingsPanels variant="menu" />
+      </SlideMenu>
 
       <SearchOverlay
         open={searchOverlayOpen}

@@ -1,0 +1,28 @@
+.home-settings-panels {
+  display: grid;
+  gap: 14px;
+}
+
+.home-settings-panels--menu {
+  gap: 12px;
+  padding-right: 8px;
+}
+
+.home-settings-panels--menu .settings-panel {
+  padding: 14px;
+}
+
+.home-settings-panels--menu .settings-panel__title {
+  font-size: 1rem;
+}
+
+.home-settings-panels--menu .settings-panel__description,
+.home-settings-panels--menu .settings-row__hint,
+.home-settings-panels--menu .settings-subgroup__hint,
+.home-settings-panels--menu .settings-mode-picker__hint {
+  font-size: 0.75rem;
+}
+
+.home-settings-panels--menu .settings-mode-picker {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}

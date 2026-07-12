@@ -14,13 +14,18 @@ import {
 } from '@/shared/ui/icons';
 import './Sidebar.css';
 
+interface SidebarItemSettingsAction {
+  ariaLabel: string;
+  onClick: () => void;
+}
+
 interface SidebarProps {
   activeNav: NavItem;
   collapsed: boolean;
   menuAnimation?: SidebarMenuAnimation;
   macSidebarChrome?: boolean;
   onNavChange: (nav: NavItem) => void;
-  onBrowseSettingsClick?: () => void;
+  itemSettingsActions?: Partial<Record<NavItem, SidebarItemSettingsAction>>;
 }
 
 const navItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
@@ -38,7 +43,7 @@ export function Sidebar({
   menuAnimation = 'liquid',
   macSidebarChrome = false,
   onNavChange,
-  onBrowseSettingsClick,
+  itemSettingsActions,
 }: SidebarProps) {
   const navRef = useRef<HTMLElement>(null);
   const { favorites } = useFavorites();
@@ -130,14 +135,14 @@ export function Sidebar({
           ) : null}
           {navItems.map((item) => {
             const isActive = activeNav === item.id;
-            const showBrowseSettings =
-              item.id === 'browse' && isActive && !collapsed && Boolean(onBrowseSettingsClick);
+            const settingsAction = itemSettingsActions?.[item.id];
+            const showItemSettings = isActive && !collapsed && settingsAction;
 
             const itemButton = (
               <button
                 type="button"
                 className={`sidebar__item ${isActive ? 'sidebar__item--active' : ''}${
-                  showBrowseSettings ? ' sidebar__item--with-action' : ''
+                  showItemSettings ? ' sidebar__item--with-action' : ''
                 }`}
                 onClick={() => onNavChange(item.id)}
                 aria-label={
@@ -184,7 +189,7 @@ export function Sidebar({
               </button>
             );
 
-            if (!showBrowseSettings) {
+            if (!showItemSettings) {
               return <div key={item.id}>{itemButton}</div>;
             }
 
@@ -194,8 +199,8 @@ export function Sidebar({
                 <button
                   type="button"
                   className="sidebar__item-action"
-                  aria-label="Настройки каталога"
-                  onClick={onBrowseSettingsClick}
+                  aria-label={settingsAction.ariaLabel}
+                  onClick={settingsAction.onClick}
                 >
                   <SettingsIcon size={18} strokeWidth={1.75} />
                 </button>

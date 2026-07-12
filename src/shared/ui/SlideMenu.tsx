@@ -8,10 +8,11 @@ interface SlideMenuProps {
   open: boolean;
   title: string;
   onClose: () => void;
+  size?: 'default' | 'wide';
   children: React.ReactNode;
 }
 
-export function SlideMenu({ open, title, onClose, children }: SlideMenuProps) {
+export function SlideMenu({ open, title, onClose, size = 'default', children }: SlideMenuProps) {
   const [mounted, setMounted] = useState(open);
   const [closing, setClosing] = useState(false);
 
@@ -60,7 +61,7 @@ export function SlideMenu({ open, title, onClose, children }: SlideMenuProps) {
 
   return (
     <div
-      className={`slide-menu${closing ? ' slide-menu--closing' : ''}`}
+      className={`slide-menu slide-menu--${size}${closing ? ' slide-menu--closing' : ''}`}
       role="presentation"
     >
       <button

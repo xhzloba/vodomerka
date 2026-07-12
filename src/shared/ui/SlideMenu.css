@@ -28,28 +28,54 @@
   background:
     linear-gradient(
       to left,
-      rgba(0, 0, 0, 0.42) 0%,
-      rgba(0, 0, 0, 0.3) 18%,
-      rgba(0, 0, 0, 0.18) 36%,
-      rgba(0, 0, 0, 0.08) 54%,
-      rgba(0, 0, 0, 0.03) 72%,
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0.36) 18%,
+      rgba(0, 0, 0, 0.24) 36%,
+      rgba(0, 0, 0, 0.12) 54%,
+      rgba(0, 0, 0, 0.05) 72%,
       transparent 100%
     ),
     linear-gradient(
       to left,
       var(--app-bg) 0%,
-      color-mix(in srgb, var(--app-bg) 96%, transparent) 8%,
-      color-mix(in srgb, var(--app-bg) 88%, transparent) 18%,
-      color-mix(in srgb, var(--app-bg) 74%, transparent) 30%,
-      color-mix(in srgb, var(--app-bg) 56%, transparent) 42%,
-      color-mix(in srgb, var(--app-bg) 38%, transparent) 54%,
-      color-mix(in srgb, var(--app-bg) 22%, transparent) 66%,
-      color-mix(in srgb, var(--app-bg) 10%, transparent) 78%,
-      color-mix(in srgb, var(--app-bg) 4%, transparent) 90%,
+      color-mix(in srgb, var(--app-bg) 98%, transparent) 8%,
+      color-mix(in srgb, var(--app-bg) 92%, transparent) 18%,
+      color-mix(in srgb, var(--app-bg) 82%, transparent) 30%,
+      color-mix(in srgb, var(--app-bg) 68%, transparent) 42%,
+      color-mix(in srgb, var(--app-bg) 50%, transparent) 54%,
+      color-mix(in srgb, var(--app-bg) 32%, transparent) 66%,
+      color-mix(in srgb, var(--app-bg) 16%, transparent) 78%,
+      color-mix(in srgb, var(--app-bg) 6%, transparent) 90%,
       transparent 100%
     );
   animation: slide-menu-shade-in 340ms cubic-bezier(0.25, 0.1, 0.25, 1);
   pointer-events: none;
+}
+
+.slide-menu--wide .slide-menu__shade {
+  background:
+    linear-gradient(
+      to left,
+      rgba(0, 0, 0, 0.66) 0%,
+      rgba(0, 0, 0, 0.52) 18%,
+      rgba(0, 0, 0, 0.36) 36%,
+      rgba(0, 0, 0, 0.2) 54%,
+      rgba(0, 0, 0, 0.1) 72%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to left,
+      var(--app-bg) 0%,
+      color-mix(in srgb, var(--app-bg) 99%, transparent) 8%,
+      color-mix(in srgb, var(--app-bg) 96%, transparent) 18%,
+      color-mix(in srgb, var(--app-bg) 90%, transparent) 30%,
+      color-mix(in srgb, var(--app-bg) 78%, transparent) 42%,
+      color-mix(in srgb, var(--app-bg) 62%, transparent) 54%,
+      color-mix(in srgb, var(--app-bg) 44%, transparent) 66%,
+      color-mix(in srgb, var(--app-bg) 24%, transparent) 78%,
+      color-mix(in srgb, var(--app-bg) 10%, transparent) 90%,
+      transparent 100%
+    );
 }
 
 .slide-menu__content {
@@ -62,6 +88,10 @@
   padding-right: 18px;
   pointer-events: auto;
   animation: slide-menu-content-in 340ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.slide-menu--wide .slide-menu__content {
+  width: min(420px, 52vw);
 }
 
 .slide-menu__header {
