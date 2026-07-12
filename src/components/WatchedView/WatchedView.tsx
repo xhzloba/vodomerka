@@ -42,6 +42,7 @@ export function WatchedView({ onMediaSelect }: WatchedViewProps) {
         isLoading={isLoading}
         loadingTitle="Загрузка просмотренного..."
         hasItems={watched.length > 0}
+        clearAriaLabel="Очистить просмотренное"
         onClearRequest={() => setConfirmOpen(true)}
         emptyIcon={<EyeIcon size={48} strokeWidth={1.5} />}
         emptyText="Отмечайте фильмы и сериалы в деталке — они появятся здесь"

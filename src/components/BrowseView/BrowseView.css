@@ -15,7 +15,6 @@
   --library-header-bottom-gap: 24px;
   --library-row-gap: 36px;
   --library-row-header-gap: 12px;
-  --library-clear-btn-width: 148px;
   padding: 0 0 28px;
 }
 
@@ -68,16 +67,22 @@
   margin: 0;
   line-height: 1;
   min-width: 0;
-  flex: 1 1 auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.library-view__title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
 .library-view__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   flex-shrink: 0;
   height: calc(var(--app-page-top) + var(--app-section-header-size));
@@ -86,30 +91,24 @@
   box-sizing: border-box;
 }
 
-.library-view__actions {
-  display: flex;
-  flex: 0 0 var(--library-clear-btn-width);
-  justify-content: flex-end;
-  align-items: center;
-}
-
 .library-view__clear-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
-  padding: 10px 14px;
+  padding: 0;
+  border: none;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 120, 120, 0.28);
-  background: rgba(192, 57, 57, 0.12);
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #ff9a9a;
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    visibility var(--transition-fast);
+  background: transparent;
+  color: var(--app-text-muted);
+  transition: background var(--transition-fast), color var(--transition-fast), visibility var(--transition-fast);
+}
+
+.library-view__clear-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 .library-view__clear-btn:disabled {
@@ -117,15 +116,9 @@
   pointer-events: none;
 }
 
-.library-view__clear-btn svg {
-  display: block;
-  flex-shrink: 0;
-}
-
 .library-view__clear-btn:hover {
-  background: rgba(192, 57, 57, 0.2);
-  border-color: rgba(255, 120, 120, 0.45);
-  color: #ffb3b3;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ff9a9a;
 }
 
 .browse-view__content {

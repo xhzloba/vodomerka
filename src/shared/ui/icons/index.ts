@@ -8,6 +8,7 @@ export {
   ClockIcon,
   CloseIcon,
   CopyIcon,
+  CoverSpacingIcon,
   EyeIcon,
   EyeOffIcon,
   FavoritesIcon,

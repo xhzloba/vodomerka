@@ -9,6 +9,7 @@ import {
   FavoritesIcon,
   GridIcon,
   HomeIcon,
+  CoverSpacingIcon,
   SearchIcon,
   SettingsIcon,
 } from '@/shared/ui/icons';
@@ -17,6 +18,7 @@ import './Sidebar.css';
 interface SidebarItemSettingsAction {
   ariaLabel: string;
   onClick: () => void;
+  icon?: 'settings' | 'cover-spacing';
 }
 
 interface SidebarProps {
@@ -189,6 +191,9 @@ export function Sidebar({
               </button>
             );
 
+            const SettingsActionIcon =
+              settingsAction?.icon === 'cover-spacing' ? CoverSpacingIcon : SettingsIcon;
+
             if (!showItemSettings) {
               return <div key={item.id}>{itemButton}</div>;
             }
@@ -202,7 +207,7 @@ export function Sidebar({
                   aria-label={settingsAction.ariaLabel}
                   onClick={settingsAction.onClick}
                 >
-                  <SettingsIcon size={18} strokeWidth={1.75} />
+                  <SettingsActionIcon size={18} strokeWidth={1.75} />
                 </button>
               </div>
             );

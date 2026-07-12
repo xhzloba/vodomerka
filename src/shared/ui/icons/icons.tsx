@@ -29,6 +29,15 @@ export function GridIcon(props: IconProps) {
   );
 }
 
+export function CoverSpacingIcon(props: IconProps) {
+  return (
+    <StrokeIcon {...props}>
+      <rect x="3.5" y="5.5" width="6.5" height="13" rx="1.5" />
+      <rect x="14" y="5.5" width="6.5" height="13" rx="1.5" />
+    </StrokeIcon>
+  );
+}
+
 export function FavoritesIcon({
   size = 24,
   className,

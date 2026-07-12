@@ -42,6 +42,7 @@ export function LibraryView({ onMediaSelect }: LibraryViewProps) {
         isLoading={isLoading}
         loadingTitle="Загрузка избранного..."
         hasItems={favorites.length > 0}
+        clearAriaLabel="Очистить избранное"
         onClearRequest={() => setConfirmOpen(true)}
         emptyIcon={<FavoritesIcon size={48} strokeWidth={1.5} />}
         emptyText="Сохранённые фильмы и сериалы появятся здесь"

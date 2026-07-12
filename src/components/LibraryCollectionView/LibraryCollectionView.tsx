@@ -9,6 +9,7 @@ interface LibraryCollectionViewProps {
   isLoading: boolean;
   loadingTitle: string;
   hasItems: boolean;
+  clearAriaLabel: string;
   onClearRequest: () => void;
   emptyIcon: ReactNode;
   emptyText: string;
@@ -20,6 +21,7 @@ export function LibraryCollectionView({
   isLoading,
   loadingTitle,
   hasItems,
+  clearAriaLabel,
   onClearRequest,
   emptyIcon,
   emptyText,
@@ -30,18 +32,18 @@ export function LibraryCollectionView({
   return (
     <div ref={scrollRef} className="library-view scroll-overlay">
       <div className="library-view__header">
-        <h1 className="library-view__title">{title}</h1>
-        <div className="library-view__actions">
+        <div className="library-view__title-group">
+          <h1 className="library-view__title">{title}</h1>
           <button
             type="button"
             className="library-view__clear-btn"
             onClick={onClearRequest}
             disabled={!hasItems || isLoading}
+            aria-label={clearAriaLabel}
             aria-hidden={!hasItems || isLoading}
             tabIndex={hasItems && !isLoading ? 0 : -1}
           >
-            <TrashIcon size={16} strokeWidth={1.75} />
-            Очистить всё
+            <TrashIcon size={18} strokeWidth={1.75} />
           </button>
         </div>
       </div>

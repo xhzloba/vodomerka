@@ -270,7 +270,8 @@ export function MainAppShell() {
               onClick: () => setHomeSettingsMenuOpen(true),
             },
             browse: {
-              ariaLabel: 'Настройки каталога',
+              ariaLabel: 'Отступы сетки каталога',
+              icon: 'cover-spacing',
               onClick: () => setBrowseSettingsMenuOpen(true),
             },
           }}
