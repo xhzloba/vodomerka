@@ -403,6 +403,7 @@
   position: absolute;
   top: 7px;
   right: 6px;
+  z-index: 3;
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
