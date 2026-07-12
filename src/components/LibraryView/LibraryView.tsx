@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { isMovieMedia, isSerialMedia } from '@/shared/domain/media';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
+import { playDeleteSound } from '@/shared/audio/uiSounds';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog/ConfirmDialog';
 import { FavoritesIcon } from '@/shared/ui/icons';
 import { LibraryCollectionView } from '../LibraryCollectionView/LibraryCollectionView';
@@ -29,6 +30,7 @@ export function LibraryView({ onMediaSelect }: LibraryViewProps) {
 
     try {
       await clearAllFavorites();
+      playDeleteSound();
       setConfirmOpen(false);
     } finally {
       setIsClearing(false);

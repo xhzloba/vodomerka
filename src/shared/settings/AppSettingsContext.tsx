@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { loadAppSettings, resetAppData, saveAppSettings } from './storage';
+import { setUiSoundsEnabled } from '@/shared/audio/uiSounds';
 import { applyAppTheme } from './themes';
 import { DEFAULT_APP_SETTINGS, type AppSettings } from './types';
 
@@ -25,6 +26,10 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [setupWelcomeEpoch, setSetupWelcomeEpoch] = useState(0);
+
+  useEffect(() => {
+    setUiSoundsEnabled(settings.uiSoundsEnabled);
+  }, [settings.uiSoundsEnabled]);
 
   useEffect(() => {
     let cancelled = false;

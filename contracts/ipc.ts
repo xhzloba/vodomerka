@@ -27,6 +27,7 @@ export interface AppSettings {
   setupWelcomeDismissed: boolean;
   browseCategoryHintDismissed: boolean;
   autoTipsEnabled: boolean;
+  uiSoundsEnabled: boolean;
   dismissedTipIds: string[];
   tipShownAt: Record<string, number>;
 }

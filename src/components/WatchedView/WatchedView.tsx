@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { isMovieMedia, isSerialMedia } from '@/shared/domain/media';
 import { useWatched } from '@/shared/domain/WatchedContext';
+import { playDeleteSound } from '@/shared/audio/uiSounds';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog/ConfirmDialog';
 import { EyeIcon } from '@/shared/ui/icons';
 import { LibraryCollectionView } from '../LibraryCollectionView/LibraryCollectionView';
@@ -29,6 +30,7 @@ export function WatchedView({ onMediaSelect }: WatchedViewProps) {
 
     try {
       await clearAllWatched();
+      playDeleteSound();
       setConfirmOpen(false);
     } finally {
       setIsClearing(false);

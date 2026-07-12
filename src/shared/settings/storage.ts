@@ -115,6 +115,7 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     setupWelcomeDismissed: value.setupWelcomeDismissed ?? true,
     browseCategoryHintDismissed: value.browseCategoryHintDismissed ?? false,
     autoTipsEnabled: value.autoTipsEnabled ?? DEFAULT_APP_SETTINGS.autoTipsEnabled,
+    uiSoundsEnabled: value.uiSoundsEnabled ?? DEFAULT_APP_SETTINGS.uiSoundsEnabled,
     dismissedTipIds: normalizeDismissedTipIds(value.dismissedTipIds),
     tipShownAt: normalizeTipShownAt(value.tipShownAt),
   };

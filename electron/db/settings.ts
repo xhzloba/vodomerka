@@ -24,6 +24,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   setupWelcomeDismissed: false,
   browseCategoryHintDismissed: false,
   autoTipsEnabled: true,
+  uiSoundsEnabled: true,
   dismissedTipIds: [],
   tipShownAt: {},
 };
@@ -54,6 +55,7 @@ const SETTING_KEYS = {
   setupWelcomeDismissed: 'setup_welcome_dismissed',
   browseCategoryHintDismissed: 'browse_category_hint_dismissed',
   autoTipsEnabled: 'auto_tips_enabled',
+  uiSoundsEnabled: 'ui_sounds_enabled',
   dismissedTipIds: 'dismissed_tip_ids',
   tipShownAt: 'tip_shown_at',
 } as const;
@@ -157,6 +159,10 @@ function getDefaultSettingEntries(): Array<{ key: string; value: string }> {
     {
       key: SETTING_KEYS.autoTipsEnabled,
       value: DEFAULT_SETTINGS.autoTipsEnabled ? '1' : '0',
+    },
+    {
+      key: SETTING_KEYS.uiSoundsEnabled,
+      value: DEFAULT_SETTINGS.uiSoundsEnabled ? '1' : '0',
     },
     {
       key: SETTING_KEYS.dismissedTipIds,
@@ -377,6 +383,7 @@ function parseSettings(database: Database.Database): AppSettings {
   const setupWelcomeDismissedRaw = readSetting(database, SETTING_KEYS.setupWelcomeDismissed);
   const browseCategoryHintDismissedRaw = readSetting(database, SETTING_KEYS.browseCategoryHintDismissed);
   const autoTipsEnabledRaw = readSetting(database, SETTING_KEYS.autoTipsEnabled);
+  const uiSoundsEnabledRaw = readSetting(database, SETTING_KEYS.uiSoundsEnabled);
   const dismissedTipIdsRaw = readSetting(database, SETTING_KEYS.dismissedTipIds);
   const tipShownAtRaw = readSetting(database, SETTING_KEYS.tipShownAt);
 
@@ -398,6 +405,7 @@ function parseSettings(database: Database.Database): AppSettings {
     setupWelcomeDismissed: setupWelcomeDismissedRaw === '1',
     browseCategoryHintDismissed: browseCategoryHintDismissedRaw === '1',
     autoTipsEnabled: autoTipsEnabledRaw !== '0',
+    uiSoundsEnabled: uiSoundsEnabledRaw !== '0',
     dismissedTipIds: parseDismissedTipIds(dismissedTipIdsRaw),
     tipShownAt: parseTipShownAt(tipShownAtRaw),
   });
@@ -531,6 +539,13 @@ export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
     upsert.run({
       key: SETTING_KEYS.autoTipsEnabled,
       value: patch.autoTipsEnabled ? '1' : '0',
+    });
+  }
+
+  if (patch.uiSoundsEnabled !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.uiSoundsEnabled,
+      value: patch.uiSoundsEnabled ? '1' : '0',
     });
   }
 

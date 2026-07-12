@@ -5,6 +5,7 @@ import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { useRecentlyViewed } from '@/shared/domain/RecentlyViewedContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
+import { playDeleteSound } from '@/shared/audio/uiSounds';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog/ConfirmDialog';
 import { TrashIcon } from '@/shared/ui/icons';
 import { APP_THEME_OPTIONS } from '@/shared/settings/themes';
@@ -18,6 +19,7 @@ const SETTINGS_TABS = [
   { id: 'appearance', label: 'Оформление' },
   { id: 'home', label: 'Главная' },
   { id: 'interface', label: 'Интерфейс' },
+  { id: 'sounds', label: 'Звуки' },
   { id: 'data', label: 'Данные' },
 ] as const;
 
@@ -36,12 +38,18 @@ export function SettingsView() {
 
   const handleResetAll = async () => {
     setIsResetting(true);
+    const shouldPlayResetSound = settings.uiSoundsEnabled;
 
     try {
       await resetToDefaults();
       await reloadFavorites();
       await reloadRecentlyViewed();
       await reloadWatched();
+
+      if (shouldPlayResetSound) {
+        playDeleteSound();
+      }
+
       setResetConfirmOpen(false);
       showToast('Все данные сброшены до значений по умолчанию', {
         kind: 'success',
@@ -188,6 +196,41 @@ export function SettingsView() {
                   role="switch"
                   aria-checked={settings.autoTipsEnabled}
                   onClick={() => void updateSettings({ autoTipsEnabled: !settings.autoTipsEnabled })}
+                >
+                  <span className="settings-toggle__thumb" />
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
+
+        {activeTab === 'sounds' ? (
+          <div className="settings-panels-grid">
+            <section className="settings-panel" aria-labelledby="settings-sounds-title">
+              <div className="settings-panel__intro">
+                <h2 id="settings-sounds-title" className="settings-panel__title">
+                  Звуки интерфейса
+                </h2>
+                <p className="settings-panel__description">
+                  Звуковые эффекты при действиях в приложении: очистка данных, подтверждения и другие
+                  UI-события.
+                </p>
+              </div>
+
+              <div className="settings-row settings-row--solo">
+                <div className="settings-row__body">
+                  <p className="settings-row__label">Включить звуки</p>
+                  <p className="settings-row__hint">
+                    Сейчас: звук при очистке избранного, просмотренного и сбросе данных
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className={`settings-toggle ${settings.uiSoundsEnabled ? 'settings-toggle--on' : ''}`}
+                  role="switch"
+                  aria-checked={settings.uiSoundsEnabled}
+                  onClick={() => void updateSettings({ uiSoundsEnabled: !settings.uiSoundsEnabled })}
                 >
                   <span className="settings-toggle__thumb" />
                 </button>

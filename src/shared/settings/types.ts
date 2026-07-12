@@ -51,6 +51,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   setupWelcomeDismissed: false,
   browseCategoryHintDismissed: false,
   autoTipsEnabled: true,
+  uiSoundsEnabled: true,
   dismissedTipIds: [],
   tipShownAt: {},
 };
