@@ -19,6 +19,7 @@ import {
 } from '@/shared/settings/types';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { PageError, PageLoading } from '@/shared/ui/PageState';
+import { ChevronDownIcon } from '@/shared/ui/icons';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { Tabs } from '@/shared/ui/Tabs';
 import { MediaGrid } from './MediaGrid';
@@ -37,6 +38,12 @@ function pickDefaultTab(tabs: BrowseTab[]): BrowseTab | null {
 
 let browseCategoriesCache: VokinoCategory[] | null = null;
 
+const BROWSE_CATEGORY_HINT_DURATION_MS = 6400;
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 export function BrowseView({
   onMediaSelect,
   settingsMenuOpen,
@@ -44,7 +51,7 @@ export function BrowseView({
 }: BrowseViewProps) {
   const scrollRef = useOverlayScroll<HTMLDivElement>();
   const requestIdRef = useRef(0);
-  const { settings, updateSettings } = useAppSettings();
+  const { settings, isLoading, updateSettings } = useAppSettings();
 
   const [categories, setCategories] = useState<VokinoCategory[]>(browseCategoriesCache ?? []);
   const [selectedCategory, setSelectedCategory] = useState<VokinoCategory | null>(() =>
@@ -60,6 +67,56 @@ export function BrowseView({
   const [error, setError] = useState<string | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
+  const [isCategoryHintActive, setIsCategoryHintActive] = useState(false);
+  const categoryHintStartedRef = useRef(false);
+
+  const categoryHintEligible =
+    !isLoading &&
+    !settings.browseCategoryHintDismissed &&
+    !prefersReducedMotion();
+
+  const dismissCategoryHint = useCallback(() => {
+    setIsCategoryHintActive(false);
+
+    if (!settings.browseCategoryHintDismissed) {
+      void updateSettings({ browseCategoryHintDismissed: true });
+    }
+  }, [settings.browseCategoryHintDismissed, updateSettings]);
+
+  useEffect(() => {
+    categoryHintStartedRef.current = false;
+    setIsCategoryHintActive(false);
+  }, [settings.browseCategoryHintDismissed]);
+
+  useEffect(() => {
+    if (!categoryHintEligible || categories.length === 0 || categoryHintStartedRef.current) {
+      return;
+    }
+
+    categoryHintStartedRef.current = true;
+
+    const delayId = window.setTimeout(() => {
+      setIsCategoryHintActive(true);
+    }, 700);
+
+    return () => {
+      window.clearTimeout(delayId);
+    };
+  }, [categoryHintEligible, categories.length]);
+
+  useEffect(() => {
+    if (!isCategoryHintActive) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      dismissCategoryHint();
+    }, BROWSE_CATEGORY_HINT_DURATION_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [dismissCategoryHint, isCategoryHintActive]);
 
   const catalogGridStyle = {
     '--catalog-row-gap': `${CATALOG_GAP_VALUES[settings.catalogRowGap].row}px`,
@@ -212,6 +269,7 @@ export function BrowseView({
   };
 
   const openCategoryMenu = () => {
+    dismissCategoryHint();
     onSettingsMenuOpenChange(false);
     setIsCategoryMenuOpen(true);
   };
@@ -294,10 +352,28 @@ export function BrowseView({
         {categories.length > 0 ? (
           <button
             type="button"
-            className="browse-view__category-trigger"
+            className={`browse-view__category-trigger${
+              isCategoryMenuOpen ? ' browse-view__category-trigger--open' : ''
+            }${isCategoryHintActive ? ' browse-view__category-trigger--hint' : ''}`}
             onClick={openCategoryMenu}
+            aria-haspopup="dialog"
+            aria-expanded={isCategoryMenuOpen}
+            aria-label={`Категория: ${selectedCategory?.title ?? 'не выбрана'}`}
           >
-            {selectedCategory?.title ?? 'Категория'}
+            {isCategoryHintActive ? (
+              <span className="browse-view__category-snake" aria-hidden="true">
+                <span className="browse-view__category-snake-ring">
+                  <span className="browse-view__category-snake-track" />
+                  <span className="browse-view__category-snake-draw" />
+                  <span className="browse-view__category-snake-beam browse-view__category-snake-beam--trail" />
+                  <span className="browse-view__category-snake-beam browse-view__category-snake-beam--core" />
+                </span>
+              </span>
+            ) : null}
+            <span className="browse-view__category-trigger-text">
+              {selectedCategory?.title ?? 'Категория'}
+            </span>
+            <ChevronDownIcon size={18} strokeWidth={1.75} />
           </button>
         ) : isCategoriesLoading ? (
           <span className="browse-view__category-placeholder">...</span>

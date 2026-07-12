@@ -25,6 +25,7 @@ export interface AppSettings {
   homeFavoritesSection: HomeSectionMode;
   homeRecentlyViewedSection: HomeSectionMode;
   setupWelcomeDismissed: boolean;
+  browseCategoryHintDismissed: boolean;
   autoTipsEnabled: boolean;
   dismissedTipIds: string[];
   tipShownAt: Record<string, number>;

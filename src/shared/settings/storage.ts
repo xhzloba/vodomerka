@@ -113,6 +113,7 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     homeFavoritesSection: normalizeHomeFavoritesSection(value.homeFavoritesSection),
     homeRecentlyViewedSection: normalizeHomeRecentlyViewedSection(value.homeRecentlyViewedSection),
     setupWelcomeDismissed: value.setupWelcomeDismissed ?? true,
+    browseCategoryHintDismissed: value.browseCategoryHintDismissed ?? false,
     autoTipsEnabled: value.autoTipsEnabled ?? DEFAULT_APP_SETTINGS.autoTipsEnabled,
     dismissedTipIds: normalizeDismissedTipIds(value.dismissedTipIds),
     tipShownAt: normalizeTipShownAt(value.tipShownAt),

@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   homeFavoritesSection: 'auto',
   homeRecentlyViewedSection: 'auto',
   setupWelcomeDismissed: false,
+  browseCategoryHintDismissed: false,
   autoTipsEnabled: true,
   dismissedTipIds: [],
   tipShownAt: {},
@@ -51,6 +52,7 @@ const SETTING_KEYS = {
   homeFavoritesSection: 'home_favorites_section',
   homeRecentlyViewedSection: 'home_recently_viewed_section',
   setupWelcomeDismissed: 'setup_welcome_dismissed',
+  browseCategoryHintDismissed: 'browse_category_hint_dismissed',
   autoTipsEnabled: 'auto_tips_enabled',
   dismissedTipIds: 'dismissed_tip_ids',
   tipShownAt: 'tip_shown_at',
@@ -147,6 +149,10 @@ function getDefaultSettingEntries(): Array<{ key: string; value: string }> {
     {
       key: SETTING_KEYS.setupWelcomeDismissed,
       value: DEFAULT_SETTINGS.setupWelcomeDismissed ? '1' : '0',
+    },
+    {
+      key: SETTING_KEYS.browseCategoryHintDismissed,
+      value: DEFAULT_SETTINGS.browseCategoryHintDismissed ? '1' : '0',
     },
     {
       key: SETTING_KEYS.autoTipsEnabled,
@@ -369,6 +375,7 @@ function parseSettings(database: Database.Database): AppSettings {
   const homeFavoritesSectionRaw = readSetting(database, SETTING_KEYS.homeFavoritesSection);
   const homeRecentlyViewedSectionRaw = readSetting(database, SETTING_KEYS.homeRecentlyViewedSection);
   const setupWelcomeDismissedRaw = readSetting(database, SETTING_KEYS.setupWelcomeDismissed);
+  const browseCategoryHintDismissedRaw = readSetting(database, SETTING_KEYS.browseCategoryHintDismissed);
   const autoTipsEnabledRaw = readSetting(database, SETTING_KEYS.autoTipsEnabled);
   const dismissedTipIdsRaw = readSetting(database, SETTING_KEYS.dismissedTipIds);
   const tipShownAtRaw = readSetting(database, SETTING_KEYS.tipShownAt);
@@ -389,6 +396,7 @@ function parseSettings(database: Database.Database): AppSettings {
     homeFavoritesSection: normalizeHomeFavoritesSection(homeFavoritesSectionRaw),
     homeRecentlyViewedSection: normalizeHomeRecentlyViewedSection(homeRecentlyViewedSectionRaw),
     setupWelcomeDismissed: setupWelcomeDismissedRaw === '1',
+    browseCategoryHintDismissed: browseCategoryHintDismissedRaw === '1',
     autoTipsEnabled: autoTipsEnabledRaw !== '0',
     dismissedTipIds: parseDismissedTipIds(dismissedTipIdsRaw),
     tipShownAt: parseTipShownAt(tipShownAtRaw),
@@ -509,6 +517,13 @@ export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
     upsert.run({
       key: SETTING_KEYS.setupWelcomeDismissed,
       value: patch.setupWelcomeDismissed ? '1' : '0',
+    });
+  }
+
+  if (patch.browseCategoryHintDismissed !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.browseCategoryHintDismissed,
+      value: patch.browseCategoryHintDismissed ? '1' : '0',
     });
   }
 

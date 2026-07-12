@@ -49,6 +49,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   homeFavoritesSection: 'auto',
   homeRecentlyViewedSection: 'auto',
   setupWelcomeDismissed: false,
+  browseCategoryHintDismissed: false,
   autoTipsEnabled: true,
   dismissedTipIds: [],
   tipShownAt: {},
