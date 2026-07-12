@@ -15,6 +15,7 @@ import {
   loadWatched,
   removeWatchedItem,
 } from '@/shared/domain/watchedStorage';
+import { playLikeSound } from '@/shared/audio/uiSounds';
 
 interface WatchedContextValue {
   watched: MediaItem[];
@@ -76,11 +77,13 @@ export function WatchedProvider({ children }: { children: ReactNode }) {
   const addWatched = useCallback(async (item: MediaItem) => {
     const next = await addWatchedItem(item);
     setWatched(next);
+    playLikeSound();
   }, []);
 
   const removeWatched = useCallback(async (mediaId: string) => {
     const next = await removeWatchedItem(mediaId);
     setWatched(next);
+    playLikeSound();
   }, []);
 
   const clearAllWatched = useCallback(async () => {

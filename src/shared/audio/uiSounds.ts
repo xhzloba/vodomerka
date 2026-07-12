@@ -1,9 +1,11 @@
 import deleteSoundUrl from './assets/delete.mp3';
+import likeSoundUrl from './assets/like.mp3';
 
-export type UiSoundId = 'delete';
+export type UiSoundId = 'delete' | 'like';
 
 const UI_SOUND_URLS: Record<UiSoundId, string> = {
   delete: deleteSoundUrl,
+  like: likeSoundUrl,
 };
 
 const audioCache = new Map<UiSoundId, HTMLAudioElement>();
@@ -35,4 +37,8 @@ export function playUiSound(sound: UiSoundId) {
 
 export function playDeleteSound() {
   playUiSound('delete');
+}
+
+export function playLikeSound() {
+  playUiSound('like');
 }

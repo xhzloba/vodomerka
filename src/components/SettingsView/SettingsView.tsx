@@ -221,7 +221,7 @@ export function SettingsView() {
                 <div className="settings-row__body">
                   <p className="settings-row__label">Включить звуки</p>
                   <p className="settings-row__hint">
-                    Сейчас: звук при очистке избранного, просмотренного и сбросе данных
+                    Сейчас: избранное и просмотренное, очистка данных
                   </p>
                 </div>
 

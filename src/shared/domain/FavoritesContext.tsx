@@ -15,6 +15,7 @@ import {
   loadFavorites,
   removeFavoriteItem,
 } from '@/shared/domain/favoritesStorage';
+import { playLikeSound } from '@/shared/audio/uiSounds';
 
 interface FavoritesContextValue {
   favorites: MediaItem[];
@@ -79,11 +80,13 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   const addFavorite = useCallback(async (item: MediaItem) => {
     const next = await addFavoriteItem(item);
     setFavorites(next);
+    playLikeSound();
   }, []);
 
   const removeFavorite = useCallback(async (mediaId: string) => {
     const next = await removeFavoriteItem(mediaId);
     setFavorites(next);
+    playLikeSound();
   }, []);
 
   const clearAllFavorites = useCallback(async () => {
