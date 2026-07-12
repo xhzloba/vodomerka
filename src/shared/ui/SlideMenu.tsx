@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { CloseIcon } from '@/shared/ui/icons';
 import './SlideMenu.css';
 
@@ -8,13 +9,24 @@ interface SlideMenuProps {
   open: boolean;
   title: string;
   onClose: () => void;
-  size?: 'default' | 'wide';
+  placement?: 'side' | 'bottom';
+  size?: 'default' | 'wide' | 'xlarge';
+  anchorSelector?: string;
   children: React.ReactNode;
 }
 
-export function SlideMenu({ open, title, onClose, size = 'default', children }: SlideMenuProps) {
+export function SlideMenu({
+  open,
+  title,
+  onClose,
+  placement = 'side',
+  size = 'default',
+  anchorSelector,
+  children,
+}: SlideMenuProps) {
   const [mounted, setMounted] = useState(open);
   const [closing, setClosing] = useState(false);
+  const [anchorStyle, setAnchorStyle] = useState<CSSProperties>({});
 
   useEffect(() => {
     if (open) {
@@ -39,6 +51,49 @@ export function SlideMenu({ open, title, onClose, size = 'default', children }: 
     return () => window.clearTimeout(timer);
   }, [closing]);
 
+  useLayoutEffect(() => {
+    if (placement !== 'bottom' || !anchorSelector || !mounted) {
+      setAnchorStyle({});
+      return;
+    }
+
+    const update = () => {
+      const anchor = document.querySelector(anchorSelector);
+      if (!anchor) return;
+
+      const rect = anchor.getBoundingClientRect();
+      setAnchorStyle({
+        '--slide-menu-anchor-left': `${rect.left}px`,
+        '--slide-menu-anchor-width': `${rect.width}px`,
+      } as CSSProperties);
+    };
+
+    update();
+
+    window.addEventListener('resize', update);
+
+    const observed = new Set<Element>();
+    const ro = new ResizeObserver(update);
+
+    const anchor = document.querySelector(anchorSelector);
+    if (anchor) {
+      ro.observe(anchor);
+      observed.add(anchor);
+    }
+
+    const shell = document.querySelector('.app-shell');
+    if (shell) {
+      ro.observe(shell);
+      observed.add(shell);
+    }
+
+    return () => {
+      window.removeEventListener('resize', update);
+      ro.disconnect();
+      observed.clear();
+    };
+  }, [placement, anchorSelector, mounted, open]);
+
   useEffect(() => {
     if (!mounted || closing) return;
 
@@ -59,9 +114,10 @@ export function SlideMenu({ open, title, onClose, size = 'default', children }: 
     return null;
   }
 
-  return (
+  return createPortal(
     <div
-      className={`slide-menu slide-menu--${size}${closing ? ' slide-menu--closing' : ''}`}
+      className={`slide-menu slide-menu--${placement} slide-menu--${size}${closing ? ' slide-menu--closing' : ''}`}
+      style={anchorStyle}
       role="presentation"
     >
       <button
@@ -76,6 +132,7 @@ export function SlideMenu({ open, title, onClose, size = 'default', children }: 
         <div className="slide-menu__shade" aria-hidden="true" />
 
         <div className="slide-menu__content">
+          {placement === 'bottom' ? <div className="slide-menu__handle" aria-hidden="true" /> : null}
           <div className="slide-menu__header">
             <h2 className="slide-menu__title">{title}</h2>
             <button
@@ -92,6 +149,7 @@ export function SlideMenu({ open, title, onClose, size = 'default', children }: 
           <div className="slide-menu__body scroll-overlay">{children}</div>
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body,
   );
 }

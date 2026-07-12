@@ -60,6 +60,89 @@
   flex: 1;
 }
 
+.browse-view__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.browse-view__filters-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--app-accent-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--app-text);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.browse-view__filters-trigger svg {
+  flex-shrink: 0;
+  color: var(--app-accent);
+  transition: color var(--transition-fast);
+}
+
+.browse-view__filters-trigger-label {
+  white-space: nowrap;
+}
+
+.browse-view__filters-trigger:hover:not(:disabled),
+.browse-view__filters-trigger--open {
+  border-color: color-mix(in srgb, var(--app-accent) 78%, var(--app-accent-border));
+}
+
+.browse-view__filters-trigger:hover:not(:disabled) svg,
+.browse-view__filters-trigger--open svg {
+  color: color-mix(in srgb, var(--app-accent) 88%, white);
+}
+
+.browse-view__filters-trigger--active {
+  background: color-mix(in srgb, var(--app-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--app-accent) 55%, var(--app-accent-border));
+}
+
+.browse-view__filters-trigger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.browse-view__filters-trigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--app-accent) 65%, transparent);
+  outline-offset: 2px;
+}
+
+.browse-view__filters-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  color: #fff;
+  background: var(--app-accent);
+  box-shadow: 0 0 0 2px var(--app-bg, #0d0d0d);
+}
+
 .library-view__title {
   font-size: var(--app-section-title-size);
   font-weight: 600;

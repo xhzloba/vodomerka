@@ -19,6 +19,7 @@ export {
   PlayIcon,
   PlayOverlayIcon,
   SearchIcon,
+  FilterIcon,
   SettingsIcon,
   TrashIcon,
   TrendingIcon,

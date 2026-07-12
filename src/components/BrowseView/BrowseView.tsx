@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import type { VokinoCategory } from '@/shared/api/vokino/types';
 import {
@@ -9,7 +9,18 @@ import {
   mergeUniqueItems,
   sortBrowseCategories,
 } from '@/shared/api/vokino/browse';
+import { createBrowseFilterFields } from '@/features/browse/model/filterDefinitions';
+import { useBrowseFilters } from '@/features/browse/model/useBrowseFilters';
+import { BrowseFiltersPanel } from '@/features/browse/ui/BrowseFiltersPanel';
+import '@/features/browse/ui/BrowseFiltersPanel.css';
 import { vokinoRepository } from '@/shared/api/vokino/repository';
+import {
+  buildBrowseListUrlFromContext,
+  buildBrowseScope,
+  mergeBrowseFilters,
+  pickActiveFilters,
+  type BrowseFilters,
+} from '@/shared/api/vokino/browseQuery';
 import { ensureMediaOverridesLoaded, hydrateMediaItems } from '@/shared/domain/overridesStore';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import {
@@ -19,7 +30,7 @@ import {
 } from '@/shared/settings/types';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { PageError, PageLoading } from '@/shared/ui/PageState';
-import { ChevronDownIcon } from '@/shared/ui/icons';
+import { ChevronDownIcon, FilterIcon } from '@/shared/ui/icons';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { Tabs } from '@/shared/ui/Tabs';
 import { MediaGrid } from './MediaGrid';
@@ -66,6 +77,7 @@ export function BrowseView({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
+  const [isFiltersMenuOpen, setIsFiltersMenuOpen] = useState(false);
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
   const [isCategoryHintActive, setIsCategoryHintActive] = useState(false);
   const categoryHintStartedRef = useRef(false);
@@ -118,6 +130,27 @@ export function BrowseView({
     };
   }, [dismissCategoryHint, isCategoryHintActive]);
 
+  const {
+    filters,
+    activeCount,
+    setFilter,
+    resetFilters,
+  } = useBrowseFilters();
+
+  const filterFields = useMemo(() => createBrowseFilterFields(), []);
+
+  const filtersSupported = Boolean(
+    selectedCategory && activeTab && buildBrowseScope(selectedCategory, activeTab),
+  );
+
+  const filtersContextLabel = useMemo(() => {
+    if (!selectedCategory?.title || !activeTab?.title) {
+      return 'Каталог';
+    }
+
+    return `${selectedCategory.title} · ${activeTab.title}`;
+  }, [activeTab?.title, selectedCategory?.title]);
+
   const catalogGridStyle = {
     '--catalog-row-gap': `${CATALOG_GAP_VALUES[settings.catalogRowGap].row}px`,
     '--catalog-column-gap': `${CATALOG_GAP_VALUES[settings.catalogRowGap].column}px`,
@@ -126,7 +159,12 @@ export function BrowseView({
   const loadContent = useCallback(
     async (
       category: VokinoCategory,
-      options?: { tab?: BrowseTab | null; pageUrl?: string | null; append?: boolean },
+      options?: {
+        tab?: BrowseTab | null;
+        pageUrl?: string | null;
+        append?: boolean;
+        filters?: BrowseFilters;
+      },
     ) => {
       const requestId = requestIdRef.current + 1;
       requestIdRef.current = requestId;
@@ -144,6 +182,7 @@ export function BrowseView({
       try {
         let playlistUrl = category.playlist_url;
         const pageUrl = options?.pageUrl ?? null;
+        let nextTab = options?.tab ?? null;
 
         if (!append) {
           const categoryTabs = category.is_category === 1 ? await fetchBrowseTabs(category) : [];
@@ -151,15 +190,23 @@ export function BrowseView({
 
           setTabs(categoryTabs);
 
-          const nextTab = options?.tab ?? pickDefaultTab(categoryTabs);
+          nextTab = options?.tab ?? pickDefaultTab(categoryTabs);
           setActiveTab(nextTab);
 
           if (nextTab) {
-            playlistUrl = nextTab.playlistUrl;
+            const appliedFilters = options?.filters ?? filters;
+            const builtUrl = buildBrowseListUrlFromContext(category, nextTab, appliedFilters);
+            playlistUrl = builtUrl ?? nextTab.playlistUrl;
           }
         }
 
-        const result = await fetchPaginatedList(playlistUrl, pageUrl);
+        const appliedFilters = pickActiveFilters(options?.filters ?? filters);
+        const requiredGenres = appliedFilters.genre;
+
+        const result = await fetchPaginatedList(playlistUrl, pageUrl, {
+          requiredGenres,
+          prefetchForGenreAnd: !append,
+        });
         if (requestId !== requestIdRef.current) return;
 
         setItems((current) =>
@@ -184,12 +231,13 @@ export function BrowseView({
         }
       }
     },
-    [],
+    [filters],
   );
 
   useEffect(() => {
     if (settingsMenuOpen) {
       setIsCategoryMenuOpen(false);
+      setIsFiltersMenuOpen(false);
     }
   }, [settingsMenuOpen]);
 
@@ -210,6 +258,9 @@ export function BrowseView({
       element.removeEventListener('scroll', onScroll);
     };
   }, [scrollRef, items.length, isContentLoading, error]);
+
+  const loadContentRef = useRef(loadContent);
+  loadContentRef.current = loadContent;
 
   useEffect(() => {
     let cancelled = false;
@@ -233,7 +284,7 @@ export function BrowseView({
         setSelectedCategory(defaultCategory);
 
         if (defaultCategory) {
-          void loadContent(defaultCategory);
+          loadContentRef.current(defaultCategory);
         }
       } catch (err) {
         if (!cancelled) {
@@ -250,7 +301,7 @@ export function BrowseView({
     return () => {
       cancelled = true;
     };
-  }, [loadContent]);
+  }, []);
 
   useEffect(() => {
     void ensureMediaOverridesLoaded().then(() => {
@@ -261,7 +312,8 @@ export function BrowseView({
   const handleCategorySelect = (category: VokinoCategory) => {
     setSelectedCategory(category);
     setIsCategoryMenuOpen(false);
-    void loadContent(category);
+    setIsFiltersMenuOpen(false);
+    void loadContent(category, { filters });
   };
 
   const handleCatalogGapSelect = (preset: CatalogRowGapPreset) => {
@@ -271,7 +323,34 @@ export function BrowseView({
   const openCategoryMenu = () => {
     dismissCategoryHint();
     onSettingsMenuOpenChange(false);
+    setIsFiltersMenuOpen(false);
     setIsCategoryMenuOpen(true);
+  };
+
+  const openFiltersMenu = () => {
+    dismissCategoryHint();
+    onSettingsMenuOpenChange(false);
+    setIsCategoryMenuOpen(false);
+    setIsFiltersMenuOpen(true);
+  };
+
+  const handleFiltersChange = (patch: Partial<BrowseFilters>) => {
+    if (!selectedCategory || !activeTab) {
+      return;
+    }
+
+    const nextFilters = mergeBrowseFilters(filters, patch);
+    setFilter(patch);
+    void loadContent(selectedCategory, { tab: activeTab, filters: nextFilters });
+  };
+
+  const handleFiltersReset = () => {
+    if (!selectedCategory || !activeTab) {
+      return;
+    }
+
+    resetFilters();
+    void loadContent(selectedCategory, { tab: activeTab, filters: {} });
   };
 
   const handleTabSelect = (tabId: string) => {
@@ -281,7 +360,7 @@ export function BrowseView({
     }
 
     setActiveTab(tab);
-    void loadContent(selectedCategory, { tab });
+    void loadContent(selectedCategory, { tab, filters });
   };
 
   const handleLoadMore = useCallback(() => {
@@ -350,31 +429,55 @@ export function BrowseView({
         </div>
 
         {categories.length > 0 ? (
-          <button
-            type="button"
-            className={`browse-view__category-trigger${
-              isCategoryMenuOpen ? ' browse-view__category-trigger--open' : ''
-            }${isCategoryHintActive ? ' browse-view__category-trigger--hint' : ''}`}
-            onClick={openCategoryMenu}
-            aria-haspopup="dialog"
-            aria-expanded={isCategoryMenuOpen}
-            aria-label={`Категория: ${selectedCategory?.title ?? 'не выбрана'}`}
-          >
-            {isCategoryHintActive ? (
-              <span className="browse-view__category-snake" aria-hidden="true">
-                <span className="browse-view__category-snake-ring">
-                  <span className="browse-view__category-snake-track" />
-                  <span className="browse-view__category-snake-draw" />
-                  <span className="browse-view__category-snake-beam browse-view__category-snake-beam--trail" />
-                  <span className="browse-view__category-snake-beam browse-view__category-snake-beam--core" />
+          <div className="browse-view__header-actions">
+            <button
+              type="button"
+              className={`browse-view__filters-trigger${
+                isFiltersMenuOpen ? ' browse-view__filters-trigger--open' : ''
+              }${activeCount > 0 ? ' browse-view__filters-trigger--active' : ''}`}
+              onClick={openFiltersMenu}
+              disabled={!filtersSupported}
+              aria-haspopup="dialog"
+              aria-expanded={isFiltersMenuOpen}
+              aria-label={
+                activeCount > 0 ? `Фильтры, активно: ${activeCount}` : 'Фильтры'
+              }
+            >
+              <FilterIcon size={18} />
+              <span className="browse-view__filters-trigger-label">Фильтры</span>
+              {activeCount > 0 ? (
+                <span className="browse-view__filters-badge" aria-hidden="true">
+                  {activeCount}
                 </span>
+              ) : null}
+            </button>
+
+            <button
+              type="button"
+              className={`browse-view__category-trigger${
+                isCategoryMenuOpen ? ' browse-view__category-trigger--open' : ''
+              }${isCategoryHintActive ? ' browse-view__category-trigger--hint' : ''}`}
+              onClick={openCategoryMenu}
+              aria-haspopup="dialog"
+              aria-expanded={isCategoryMenuOpen}
+              aria-label={`Категория: ${selectedCategory?.title ?? 'не выбрана'}`}
+            >
+              {isCategoryHintActive ? (
+                <span className="browse-view__category-snake" aria-hidden="true">
+                  <span className="browse-view__category-snake-ring">
+                    <span className="browse-view__category-snake-track" />
+                    <span className="browse-view__category-snake-draw" />
+                    <span className="browse-view__category-snake-beam browse-view__category-snake-beam--trail" />
+                    <span className="browse-view__category-snake-beam browse-view__category-snake-beam--core" />
+                  </span>
+                </span>
+              ) : null}
+              <span className="browse-view__category-trigger-text">
+                {selectedCategory?.title ?? 'Категория'}
               </span>
-            ) : null}
-            <span className="browse-view__category-trigger-text">
-              {selectedCategory?.title ?? 'Категория'}
-            </span>
-            <ChevronDownIcon size={18} strokeWidth={1.75} />
-          </button>
+              <ChevronDownIcon size={18} strokeWidth={1.75} />
+            </button>
+          </div>
         ) : isCategoriesLoading ? (
           <span className="browse-view__category-placeholder">...</span>
         ) : null}
@@ -402,6 +505,21 @@ export function BrowseView({
             );
           })}
         </ul>
+      </SlideMenu>
+
+      <SlideMenu
+        open={isFiltersMenuOpen}
+        title="Фильтры"
+        size="xlarge"
+        onClose={() => setIsFiltersMenuOpen(false)}
+      >
+        <BrowseFiltersPanel
+          fields={filterFields}
+          filters={filters}
+          contextLabel={filtersContextLabel}
+          onChange={handleFiltersChange}
+          onReset={handleFiltersReset}
+        />
       </SlideMenu>
 
       <SlideMenu

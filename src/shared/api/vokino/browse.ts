@@ -2,6 +2,10 @@ import type { MediaItem } from '@/shared/domain/media';
 import { mapChannelItem } from '@/shared/domain/media';
 import { ensureMediaOverridesLoaded, hydrateMediaItems } from '@/shared/domain/overridesStore';
 import { httpGet } from '@/shared/api/httpClient';
+import {
+  itemMatchesBrowseGenres,
+  normalizeBrowseGenres,
+} from '@/shared/api/vokino/browseQuery';
 import type {
   VokinoCategory,
   VokinoCategoryResponse,
@@ -17,6 +21,36 @@ export interface BrowseTab {
 export interface PaginatedListResult {
   items: MediaItem[];
   nextUrl: string | null;
+}
+
+export const BROWSE_GENRE_AND_MIN_ITEMS = 24;
+export const BROWSE_GENRE_AND_MAX_EXTRA_PAGES = 5;
+
+export function filterBrowseItemsByGenres(
+  items: MediaItem[],
+  requiredGenres: string[] | undefined,
+): MediaItem[] {
+  const genres = normalizeBrowseGenres(requiredGenres);
+
+  if (genres.length === 0) {
+    return items;
+  }
+
+  return items.filter((item) => itemMatchesBrowseGenres(item.genres, genres));
+}
+
+async function fetchPaginatedListRaw(
+  playlistUrl: string,
+  pageUrl?: string | null,
+): Promise<PaginatedListResult> {
+  const requestUrl = pageUrl ?? withPage(playlistUrl, 1);
+  const data = await httpGet<VokinoListResponse>(requestUrl);
+  await ensureMediaOverridesLoaded();
+
+  return {
+    items: hydrateMediaItems(mapListItems(data)),
+    nextUrl: data.page?.next ? normalizeUrl(data.page.next) : null,
+  };
 }
 
 function normalizeUrl(url: string): string {
@@ -173,14 +207,41 @@ export async function fetchBrowseTabs(category: VokinoCategory): Promise<BrowseT
 export async function fetchPaginatedList(
   playlistUrl: string,
   pageUrl?: string | null,
+  options?: { requiredGenres?: string[]; prefetchForGenreAnd?: boolean },
 ): Promise<PaginatedListResult> {
-  const requestUrl = pageUrl ?? withPage(playlistUrl, 1);
-  const data = await httpGet<VokinoListResponse>(requestUrl);
-  await ensureMediaOverridesLoaded();
+  const requiredGenres = normalizeBrowseGenres(options?.requiredGenres);
+  const shouldPrefetch = options?.prefetchForGenreAnd ?? requiredGenres.length > 1;
+
+  if (!shouldPrefetch || pageUrl) {
+    const result = await fetchPaginatedListRaw(playlistUrl, pageUrl);
+    return {
+      items: filterBrowseItemsByGenres(result.items, requiredGenres),
+      nextUrl: result.nextUrl,
+    };
+  }
+
+  let collectedItems: MediaItem[] = [];
+  let nextUrl: string | null = null;
+  let pagesFetched = 0;
+  const maxPages = 1 + BROWSE_GENRE_AND_MAX_EXTRA_PAGES;
+
+  while (pagesFetched < maxPages) {
+    const result = await fetchPaginatedListRaw(playlistUrl, pagesFetched === 0 ? null : nextUrl);
+    collectedItems = mergeUniqueItems(collectedItems, result.items);
+    nextUrl = result.nextUrl;
+    pagesFetched += 1;
+
+    if (
+      filterBrowseItemsByGenres(collectedItems, requiredGenres).length >= BROWSE_GENRE_AND_MIN_ITEMS ||
+      !nextUrl
+    ) {
+      break;
+    }
+  }
 
   return {
-    items: hydrateMediaItems(mapListItems(data)),
-    nextUrl: data.page?.next ? normalizeUrl(data.page.next) : null,
+    items: filterBrowseItemsByGenres(collectedItems, requiredGenres),
+    nextUrl,
   };
 }
 

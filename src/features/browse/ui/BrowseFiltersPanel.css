@@ -1,0 +1,128 @@
+.browse-filters-panels {
+  display: grid;
+  gap: 12px;
+}
+
+.browse-filters-panels--menu {
+  padding-right: 8px;
+}
+
+.browse-filters-panels--menu .settings-panel {
+  padding: 14px;
+}
+
+.browse-filters-panels--menu .settings-panel__title {
+  font-size: 1rem;
+}
+
+.browse-filters-panels--menu .settings-panel__description,
+.browse-filters-panels--menu .settings-subgroup__label {
+  font-size: 0.75rem;
+}
+
+.browse-filters-panels__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.browse-filters-panels__head .settings-panel__intro {
+  margin-bottom: 0;
+}
+
+.browse-filters-panels__head .settings-reset-btn {
+  flex-shrink: 0;
+  padding: 7px 11px;
+  font-size: 0.8125rem;
+}
+
+.browse-filters-panels__active {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.browse-filters-panels__active-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--app-accent-border);
+  background: var(--app-accent-soft);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--app-text);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.browse-filters-panels__active-chip:hover {
+  background: color-mix(in srgb, var(--app-accent-soft) 88%, white 12%);
+}
+
+.browse-filters-panels__combobox-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.browse-filters-panels__combobox-row .ui-combobox,
+.browse-filters-panels__combobox-row .ui-combobox--sm {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
+.browse-filters-panels__rating-picker {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.browse-filters-panels__rating-picker .settings-mode-picker__option {
+  align-items: center;
+  padding: 8px 6px;
+}
+
+.browse-filters-panels__rating-picker .settings-mode-picker__label {
+  font-size: 0.8125rem;
+}
+
+.browse-filters-panels__genre-picker {
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+}
+
+.browse-filters-panels__genre-picker .settings-mode-picker__option {
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+}
+
+.browse-filters-panels__genre-picker .settings-mode-picker__label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.browse-filters-panels--menu .settings-subgroup + .settings-subgroup {
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+@media (max-width: 520px) {
+  .browse-filters-panels__combobox-row {
+    grid-template-columns: 1fr;
+  }
+
+  .browse-filters-panels__rating-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
