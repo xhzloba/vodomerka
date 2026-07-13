@@ -256,6 +256,45 @@
   color: var(--app-text);
 }
 
+.hero__dots {
+  position: absolute;
+  left: 50%;
+  bottom: 124px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transform: translateX(-50%);
+}
+
+.hero__dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-text) 34%, transparent);
+  cursor: pointer;
+  transition:
+    width var(--transition-fast),
+    background var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.hero__dot:hover {
+  background: color-mix(in srgb, var(--app-text) 58%, transparent);
+}
+
+.hero__dot--active {
+  width: 22px;
+  background: var(--app-text);
+}
+
+.hero__dot:active {
+  transform: scale(0.94);
+}
+
 @media (max-width: 960px) {
   .hero__backdrop {
     grid-template-columns: minmax(0, 0.32fr) minmax(0, 0.68fr);

@@ -99,14 +99,16 @@ function createSlideQueue(items: MediaItem[], avoidFirstId?: string): MediaItem[
 }
 
 export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo }: HeroBannerProps) {
-  const [item, setItem] = useState(items[0]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [autoSlideItem, setAutoSlideItem] = useState(items[0]);
   const slideQueueRef = useRef<MediaItem[]>([]);
   const slideIndexRef = useRef(0);
 
   useEffect(() => {
     slideQueueRef.current = createSlideQueue(items);
     slideIndexRef.current = 0;
-    setItem(slideQueueRef.current[0] ?? items[0]);
+    setActiveIndex(0);
+    setAutoSlideItem(slideQueueRef.current[0] ?? items[0]);
   }, [items]);
 
   useEffect(() => {
@@ -115,7 +117,7 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
     }
 
     const timer = window.setInterval(() => {
-      setItem((current) => {
+      setAutoSlideItem((current) => {
         slideIndexRef.current += 1;
 
         if (
@@ -132,6 +134,9 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
 
     return () => window.clearInterval(timer);
   }, [items, autoSlide, slideIntervalSec]);
+
+  const item = autoSlide ? autoSlideItem : (items[activeIndex] ?? items[0]);
+  const showSlideDots = !autoSlide && items.length > 1;
 
   const metaParts = buildMetaParts(item);
   const { src: heroSrc, failed: heroImageFailed, ready: heroReady, loading, onError } = useMediaImage({
@@ -206,6 +211,26 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
           </button>
         </div>
       </div>
+
+      {showSlideDots ? (
+        <div className="hero__dots" role="tablist" aria-label="Слайды рекомендаций">
+          {items.map((slideItem, index) => {
+            const isActive = index === activeIndex;
+
+            return (
+              <button
+                key={slideItem.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-label={`Слайд ${index + 1}: ${slideItem.title}`}
+                className={`hero__dot${isActive ? ' hero__dot--active' : ''}`}
+                onClick={() => setActiveIndex(index)}
+              />
+            );
+          })}
+        </div>
+      ) : null}
     </section>
   );
 }
