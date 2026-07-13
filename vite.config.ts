@@ -43,6 +43,12 @@ export default defineConfig({
         secure: true,
         rewrite: (requestPath) => requestPath.replace(/^\/vokino-image/, ''),
       },
+      '/vokino-uploads': {
+        target: 'https://api.vokino.pro',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (requestPath) => requestPath.replace(/^\/vokino-uploads/, '/uploads'),
+      },
     },
   },
 });

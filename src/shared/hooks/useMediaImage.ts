@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import { delay, isVokinoProxyImage, loadMediaImage, resolveDirectImageUrl } from '@/shared/media/imageLoader';
+import { delay, loadMediaImage, resolveDirectImageUrl, shouldFetchVokinoImageViaIpc } from '@/shared/media/imageLoader';
 
 interface UseMediaImageOptions {
   primaryUrl: string;
@@ -59,7 +59,7 @@ export function useMediaImage({
         return;
       }
 
-      if (window.electronAPI?.images?.fetch && isVokinoProxyImage(url)) {
+      if (window.electronAPI?.images?.fetch && shouldFetchVokinoImageViaIpc(url)) {
         setSrc(resolveDirectImageUrl(url));
         setFailed(false);
         setReady(false);

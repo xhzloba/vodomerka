@@ -1,4 +1,11 @@
-export type NavItem = 'home' | 'browse' | 'library' | 'watched' | 'search' | 'settings';
+export type NavItem =
+  | 'home'
+  | 'browse'
+  | 'compilations'
+  | 'library'
+  | 'watched'
+  | 'search'
+  | 'settings';
 
 export interface AppState {
   activeNav: NavItem;

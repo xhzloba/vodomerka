@@ -1,5 +1,6 @@
 const IMAGE_CONCURRENCY = 8;
 const PROXY_HOST = 'proxy.vokino.pro';
+const VOKINO_UPLOADS_HOST_PATTERN = /api\.vokino\.(?:pro|tv)\/uploads\//i;
 
 let activeLoads = 0;
 const loadQueue: Array<() => void> = [];
@@ -37,28 +38,53 @@ export function isVokinoProxyImage(url: string): boolean {
   return url.includes(PROXY_HOST);
 }
 
-export function resolveDirectImageUrl(url: string): string {
+export function isVokinoUploadImage(url: string): boolean {
+  return VOKINO_UPLOADS_HOST_PATTERN.test(url);
+}
+
+export function shouldFetchVokinoImageViaIpc(url: string): boolean {
+  return isVokinoProxyImage(url) || isVokinoUploadImage(url);
+}
+
+export function normalizeVokinoImageUrl(url: string): string {
   if (!url) {
     return '';
   }
 
-  if (import.meta.env.DEV && !window.electronAPI?.images?.fetch && isVokinoProxyImage(url)) {
-    return url.replace(`https://${PROXY_HOST}`, '/vokino-image');
+  return url.trim().replace(/^http:\/\//i, 'https://');
+}
+
+export function resolveDirectImageUrl(url: string): string {
+  const normalized = normalizeVokinoImageUrl(url);
+  if (!normalized) {
+    return '';
   }
 
-  return url;
+  if (import.meta.env.DEV && !window.electronAPI?.images?.fetch) {
+    if (isVokinoProxyImage(normalized)) {
+      return normalized.replace(`https://${PROXY_HOST}`, '/vokino-image');
+    }
+
+    if (isVokinoUploadImage(normalized)) {
+      const { pathname } = new URL(normalized);
+      return `/vokino-uploads${pathname.replace(/^\/uploads/, '')}`;
+    }
+  }
+
+  return normalized;
 }
 
 export async function loadMediaImage(url: string): Promise<string> {
-  if (!url) {
+  const normalized = normalizeVokinoImageUrl(url);
+  if (!normalized) {
     throw new Error('Empty image url');
   }
 
-  if (window.electronAPI?.images?.fetch && isVokinoProxyImage(url)) {
-    return runWithImageConcurrency(() => window.electronAPI!.images!.fetch(url));
+  if (window.electronAPI?.images?.fetch && shouldFetchVokinoImageViaIpc(normalized)) {
+    return runWithImageConcurrency(() => window.electronAPI!.images!.fetch(normalized));
   }
 
-  return resolveDirectImageUrl(url);
+  return resolveDirectImageUrl(normalized);
 }
 
 export function delay(ms: number): Promise<void> {

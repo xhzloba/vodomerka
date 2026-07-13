@@ -7,6 +7,7 @@ import { SetupWelcomeBanner } from '@/features/onboarding/ui/SetupWelcomeBanner'
 import { HomeSettingsPanels } from '@/features/home/ui/HomeSettingsPanels';
 import { useSystemUserDisplayName } from '@/features/onboarding/model/useSystemUserDisplayName';
 import { BrowseView } from '@/components/BrowseView/BrowseView';
+import { CompilationsView } from '@/components/CompilationsView/CompilationsView';
 import { HomeView } from '@/components/HomeView/HomeView';
 import { LibraryView } from '@/components/LibraryView/LibraryView';
 import { WatchedView } from '@/components/WatchedView/WatchedView';
@@ -246,6 +247,8 @@ export function MainAppShell() {
             onBrowseTargetConsumed={clearBrowseTarget}
           />
         );
+      case 'compilations':
+        return <CompilationsView onMediaSelect={handleMediaSelect} />;
       case 'search':
         return (
           <SearchView

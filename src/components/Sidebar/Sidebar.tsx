@@ -6,6 +6,7 @@ import { getSearchShortcutLabel } from '@/features/onboarding/tips/platformShort
 import { playMenuSound, playSubmenuSound } from '@/shared/audio/uiSounds';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import {
+  BookOpenIcon,
   EyeIcon,
   FavoritesIcon,
   GridIcon,
@@ -34,6 +35,7 @@ interface SidebarProps {
 const navItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
   { id: 'home', label: 'Главная', icon: <HomeIcon size={24} /> },
   { id: 'browse', label: 'Каталог', icon: <GridIcon size={24} /> },
+  { id: 'compilations', label: 'Подборки', icon: <BookOpenIcon size={24} /> },
   { id: 'library', label: 'Избранное', icon: <FavoritesIcon size={24} /> },
   { id: 'watched', label: 'Просмотренное', icon: <EyeIcon size={24} /> },
   { id: 'search', label: 'Поиск', icon: <SearchIcon size={24} /> },
