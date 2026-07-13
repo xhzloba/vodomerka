@@ -28,6 +28,7 @@ import {
   type CatalogRowGapPreset,
 } from '@/shared/settings/types';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
+import { playSubmenuSound } from '@/shared/audio/uiSounds';
 import { PageError, PageLoading } from '@/shared/ui/PageState';
 import { ChevronDownIcon, FilterIcon } from '@/shared/ui/icons';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
@@ -314,6 +315,7 @@ export function BrowseView({
   };
 
   const openCategoryMenu = () => {
+    playSubmenuSound();
     dismissCategoryHint();
     onSettingsMenuOpenChange(false);
     setIsFiltersMenuOpen(false);
@@ -321,6 +323,7 @@ export function BrowseView({
   };
 
   const openFiltersMenu = () => {
+    playSubmenuSound();
     dismissCategoryHint();
     onSettingsMenuOpenChange(false);
     setIsCategoryMenuOpen(false);

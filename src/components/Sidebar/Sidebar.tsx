@@ -3,7 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { NavItem } from '@/types';
 import type { SidebarMenuAnimation } from '@/shared/settings/types';
 import { getSearchShortcutLabel } from '@/features/onboarding/tips/platformShortcut';
-import { playMenuSound } from '@/shared/audio/uiSounds';
+import { playMenuSound, playSubmenuSound } from '@/shared/audio/uiSounds';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import {
   EyeIcon,
@@ -225,6 +225,11 @@ export function Sidebar({
                   type="button"
                   className="sidebar__item-action"
                   aria-label={settingsAction.ariaLabel}
+                  onPointerDown={(event) => {
+                    if (event.button === 0) {
+                      playSubmenuSound();
+                    }
+                  }}
                   onClick={settingsAction.onClick}
                 >
                   <SettingsActionIcon size={18} strokeWidth={1.75} />
