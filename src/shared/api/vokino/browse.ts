@@ -2,6 +2,13 @@ import type { MediaItem } from '@/shared/domain/media';
 import { mapChannelItem } from '@/shared/domain/media';
 import { ensureMediaOverridesLoaded, hydrateMediaItems } from '@/shared/domain/overridesStore';
 import { httpGet } from '@/shared/api/httpClient';
+import { extractBrowseType } from '@/shared/api/vokino/browseQuery';
+import {
+  getTop250PlaylistUrl,
+  isTop250PlaylistUrl,
+  isTop250TabTitle,
+  TOP250_SECTION_TITLE,
+} from '@/shared/api/vokino/top250';
 import type {
   VokinoCategory,
   VokinoCategoryResponse,
@@ -138,7 +145,43 @@ function tabSortPriority(tab: BrowseTab): number {
     return 3;
   }
 
-  return 4;
+  if (isBrowseTop250Tab(tab)) {
+    return 4;
+  }
+
+  return 5;
+}
+
+export function createBrowseTop250Tab(): BrowseTab {
+  const playlistUrl = getTop250PlaylistUrl();
+
+  return {
+    id: `${normalizeUrl(playlistUrl)}::${TOP250_SECTION_TITLE}`,
+    title: TOP250_SECTION_TITLE,
+    playlistUrl,
+  };
+}
+
+export function isBrowseTop250Tab(tab: Pick<BrowseTab, 'id' | 'title' | 'playlistUrl'>): boolean {
+  return isTop250PlaylistUrl(tab.playlistUrl) || isTop250TabTitle(tab.title);
+}
+
+export function enrichBrowseTabs(tabs: BrowseTab[], category: VokinoCategory): BrowseTab[] {
+  if (extractBrowseType(category) !== 'movie') {
+    return tabs;
+  }
+
+  const top250Tab = createBrowseTop250Tab();
+  const merged = tabs.some((tab) => tab.id === top250Tab.id) ? tabs : [...tabs, top250Tab];
+
+  return [...merged].sort((a, b) => tabSortPriority(a) - tabSortPriority(b));
+}
+
+export function findBrowseCategoryByType(
+  categories: VokinoCategory[],
+  type: string,
+): VokinoCategory | null {
+  return categories.find((category) => extractBrowseType(category) === type) ?? null;
 }
 
 export function pickBrowseTabs(tabs: VokinoCategory[]): BrowseTab[] {

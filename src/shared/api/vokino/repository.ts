@@ -8,9 +8,12 @@ import {
   HOME_MULTFILM_SECTION_TITLE,
   HOME_SERIAL_UPDATES_SECTION_ID,
   HOME_SERIAL_UPDATES_SECTION_TITLE,
+  HOME_TOP250_SECTION_ID,
+  HOME_TOP250_SECTION_TITLE,
   isBuiltinHomeSectionId,
 } from '@/shared/domain/homeSections';
 import { httpGet } from '@/shared/api/httpClient';
+import { getTop250PlaylistUrl } from '@/shared/api/vokino/top250';
 import { HOME_ROW_LIMIT, HOME_TRENDING_ROW_LIMIT, resolveVokinoUrl } from '@/shared/config/api';
 import { getVokinoMainUrl } from '@/shared/api/vokino/endpoints';
 import type {
@@ -28,6 +31,7 @@ export interface HomePageData {
 
 const HOME_UPDATES_PLAYLIST_URL = resolveVokinoUrl('/list?sort=updatings&display=grid');
 const HOME_MULTFILM_PLAYLIST_URL = resolveVokinoUrl('/list?sort=popular&type=multfilm');
+const HOME_TOP250_PLAYLIST_URL = getTop250PlaylistUrl();
 const HOME_UPDATES_FETCH_LIMIT = HOME_ROW_LIMIT * 4;
 
 function isExcludedHomeRow(row: ContentRow): boolean {
@@ -113,7 +117,10 @@ function sortHomeRows(rows: ContentRow[]): ContentRow[] {
     if (row.playlistUrl.includes('sort=watching') || row.title === 'Сейчас смотрят') {
       return 1;
     }
-    return 2;
+    if (row.id === HOME_TOP250_SECTION_ID) {
+      return 2;
+    }
+    return 3;
   };
 
   return [...rows]
@@ -199,9 +206,11 @@ class VokinoRepository {
       rows.filter((row) => row.items.length > 0 && !isExcludedHomeRow(row)),
     );
     const multfilmRow = await this.loadHomeMultfilmSection();
+    const top250Row = await this.loadHomeTop250Section();
     const updatesRows = await this.loadHomeUpdatesSections();
     const mergedRows = sortHomeRows([
       ...visibleRows,
+      ...(top250Row ? [top250Row] : []),
       ...(multfilmRow ? [multfilmRow] : []),
       ...updatesRows,
     ]);
@@ -251,6 +260,21 @@ class VokinoRepository {
       id: HOME_MULTFILM_SECTION_ID,
       title: HOME_MULTFILM_SECTION_TITLE,
       playlistUrl: HOME_MULTFILM_PLAYLIST_URL,
+      items,
+    };
+  }
+
+  private async loadHomeTop250Section(): Promise<ContentRow | null> {
+    const items = await this.getPlaylistItems(HOME_TOP250_PLAYLIST_URL, HOME_ROW_LIMIT);
+
+    if (items.length === 0) {
+      return null;
+    }
+
+    return {
+      id: HOME_TOP250_SECTION_ID,
+      title: HOME_TOP250_SECTION_TITLE,
+      playlistUrl: HOME_TOP250_PLAYLIST_URL,
       items,
     };
   }

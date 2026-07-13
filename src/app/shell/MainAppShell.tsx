@@ -30,7 +30,8 @@ const SETUP_WELCOME_SHOW_DELAY_MS = 5_000;
 export function MainAppShell() {
   const { settings, isLoading, setupWelcomeEpoch, updateSettings } = useAppSettings();
   const { showToast } = useToast();
-  const { activeNav, searchQuery, setSearchQuery, navigate } = useAppNavigation();
+  const { activeNav, searchQuery, setSearchQuery, navigate, openBrowse, browseTarget, clearBrowseTarget } =
+    useAppNavigation();
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [isOpeningDetail, setIsOpeningDetail] = useState(false);
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
@@ -228,13 +229,21 @@ export function MainAppShell() {
   const renderPrimaryView = () => {
     switch (activeNav) {
       case 'home':
-        return <HomeView onMediaSelect={handleMediaSelect} onPlay={handlePlay} />;
+        return (
+          <HomeView
+            onMediaSelect={handleMediaSelect}
+            onPlay={handlePlay}
+            onOpenBrowse={openBrowse}
+          />
+        );
       case 'browse':
         return (
           <BrowseView
             onMediaSelect={handleMediaSelect}
             settingsMenuOpen={browseSettingsMenuOpen}
             onSettingsMenuOpenChange={setBrowseSettingsMenuOpen}
+            browseTarget={browseTarget}
+            onBrowseTargetConsumed={clearBrowseTarget}
           />
         );
       case 'search':

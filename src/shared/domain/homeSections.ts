@@ -18,6 +18,9 @@ export const HOME_MOVIE_UPDATES_SECTION_TITLE = 'Обновление фильм
 export const HOME_MULTFILM_SECTION_ID = '__home_multfilm__';
 export const HOME_MULTFILM_SECTION_TITLE = 'Мультфильмы';
 
+export const HOME_TOP250_SECTION_ID = '__home_top250__';
+export const HOME_TOP250_SECTION_TITLE = 'Топ 250';
+
 export const DEFAULT_HIDDEN_BUILTIN_HOME_SECTIONS: HiddenHomeSection[] = [
   { id: HOME_SERIAL_UPDATES_SECTION_ID, title: HOME_SERIAL_UPDATES_SECTION_TITLE },
   { id: HOME_MOVIE_UPDATES_SECTION_ID, title: HOME_MOVIE_UPDATES_SECTION_TITLE },
@@ -40,8 +43,20 @@ export function isBuiltinMultfilmHomeSectionId(id: string): boolean {
   return id === HOME_MULTFILM_SECTION_ID;
 }
 
+export function isBuiltinTop250HomeSectionId(id: string): boolean {
+  return id === HOME_TOP250_SECTION_ID;
+}
+
+export function isTop250HomeRow(row: Pick<ContentRow, 'id'>): boolean {
+  return row.id === HOME_TOP250_SECTION_ID;
+}
+
 export function isBuiltinHomeSectionId(id: string): boolean {
-  return isBuiltinUpdatesHomeSectionId(id) || isBuiltinMultfilmHomeSectionId(id);
+  return (
+    isBuiltinUpdatesHomeSectionId(id) ||
+    isBuiltinMultfilmHomeSectionId(id) ||
+    isBuiltinTop250HomeSectionId(id)
+  );
 }
 
 export function isMoviesHomeRow(row: Pick<ContentRow, 'title' | 'playlistUrl'>): boolean {

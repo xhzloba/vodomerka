@@ -85,6 +85,23 @@
   opacity: 0.92;
 }
 
+.content-row__title-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.content-row__title-link:hover,
+.content-row__title-link:focus-visible {
+  color: var(--app-text);
+}
+
 .content-row__title-count {
   font-size: 1.125rem;
   font-weight: 600;

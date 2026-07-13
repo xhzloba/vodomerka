@@ -3,9 +3,13 @@ import type { MediaItem } from '@/shared/domain/media';
 import type { VokinoCategory } from '@/shared/api/vokino/types';
 import {
   type BrowseTab,
+  createBrowseTop250Tab,
+  enrichBrowseTabs,
   fetchBrowseTabs,
   fetchPaginatedList,
+  findBrowseCategoryByType,
   getDefaultBrowseCategory,
+  isBrowseTop250Tab,
   mergeUniqueItems,
   sortBrowseCategories,
 } from '@/shared/api/vokino/browse';
@@ -29,6 +33,7 @@ import {
 } from '@/shared/settings/types';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { playSubmenuSound } from '@/shared/audio/uiSounds';
+import type { BrowseNavigationTarget } from '@/app/navigation/browseTarget';
 import { PageError, PageLoading } from '@/shared/ui/PageState';
 import { ChevronDownIcon, FilterIcon } from '@/shared/ui/icons';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
@@ -41,6 +46,8 @@ interface BrowseViewProps {
   onMediaSelect: (item: MediaItem) => void;
   settingsMenuOpen: boolean;
   onSettingsMenuOpenChange: (open: boolean) => void;
+  browseTarget?: BrowseNavigationTarget | null;
+  onBrowseTargetConsumed?: () => void;
 }
 
 function pickDefaultTab(tabs: BrowseTab[]): BrowseTab | null {
@@ -59,9 +66,15 @@ export function BrowseView({
   onMediaSelect,
   settingsMenuOpen,
   onSettingsMenuOpenChange,
+  browseTarget = null,
+  onBrowseTargetConsumed,
 }: BrowseViewProps) {
   const scrollRef = useOverlayScroll<HTMLDivElement>();
   const requestIdRef = useRef(0);
+  const browseTargetRef = useRef(browseTarget);
+  browseTargetRef.current = browseTarget;
+  const onBrowseTargetConsumedRef = useRef(onBrowseTargetConsumed);
+  onBrowseTargetConsumedRef.current = onBrowseTargetConsumed;
   const { settings, isLoading, updateSettings } = useAppSettings();
 
   const [categories, setCategories] = useState<VokinoCategory[]>(browseCategoriesCache ?? []);
@@ -140,7 +153,10 @@ export function BrowseView({
   const filterFields = useMemo(() => createBrowseFilterFields(), []);
 
   const filtersSupported = Boolean(
-    selectedCategory && activeTab && buildBrowseScope(selectedCategory, activeTab),
+    selectedCategory &&
+      activeTab &&
+      !isBrowseTop250Tab(activeTab) &&
+      buildBrowseScope(selectedCategory, activeTab),
   );
 
   const filtersContextLabel = useMemo(() => {
@@ -188,15 +204,20 @@ export function BrowseView({
           const categoryTabs = category.is_category === 1 ? await fetchBrowseTabs(category) : [];
           if (requestId !== requestIdRef.current) return;
 
-          setTabs(categoryTabs);
+          const enrichedTabs = enrichBrowseTabs(categoryTabs, category);
+          setTabs(enrichedTabs);
 
-          nextTab = options?.tab ?? pickDefaultTab(categoryTabs);
+          nextTab = options?.tab ?? pickDefaultTab(enrichedTabs);
           setActiveTab(nextTab);
 
           if (nextTab) {
-            const appliedFilters = options?.filters ?? filters;
-            const builtUrl = buildBrowseListUrlFromContext(category, nextTab, appliedFilters);
-            playlistUrl = builtUrl ?? nextTab.playlistUrl;
+            if (isBrowseTop250Tab(nextTab)) {
+              playlistUrl = nextTab.playlistUrl;
+            } else {
+              const appliedFilters = options?.filters ?? filters;
+              const builtUrl = buildBrowseListUrlFromContext(category, nextTab, appliedFilters);
+              playlistUrl = builtUrl ?? nextTab.playlistUrl;
+            }
           }
         }
 
@@ -271,11 +292,24 @@ export function BrowseView({
         if (cancelled) return;
 
         const nextCategories = sortBrowseCategories(main.channels);
-        const defaultCategory = getDefaultBrowseCategory(nextCategories);
+        const pendingTarget = browseTargetRef.current;
+        const targetCategory = pendingTarget
+          ? findBrowseCategoryByType(nextCategories, pendingTarget.categoryType)
+          : null;
 
         browseCategoriesCache = nextCategories;
         setCategories(nextCategories);
-        setSelectedCategory(defaultCategory);
+        setSelectedCategory(targetCategory ?? getDefaultBrowseCategory(nextCategories));
+
+        if (targetCategory && pendingTarget) {
+          const tab =
+            pendingTarget.tabMarker === 'top250' ? createBrowseTop250Tab() : undefined;
+          loadContentRef.current(targetCategory, { tab, filters: {} });
+          onBrowseTargetConsumedRef.current?.();
+          return;
+        }
+
+        const defaultCategory = getDefaultBrowseCategory(nextCategories);
 
         if (defaultCategory) {
           loadContentRef.current(defaultCategory);
@@ -356,6 +390,13 @@ export function BrowseView({
     }
 
     setActiveTab(tab);
+
+    if (isBrowseTop250Tab(tab)) {
+      resetFilters();
+      void loadContent(selectedCategory, { tab, filters: {} });
+      return;
+    }
+
     void loadContent(selectedCategory, { tab, filters });
   };
 

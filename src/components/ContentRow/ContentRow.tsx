@@ -13,6 +13,7 @@ interface ContentRowProps {
   hideTitle?: boolean;
   icon?: ReactNode;
   titleCount?: number;
+  onTitleClick?: () => void;
   onHide?: () => void;
   onMediaSelect: (item: MediaItem) => void;
   edgeFade?: boolean;
@@ -29,6 +30,7 @@ export function ContentRow({
   hideTitle = false,
   icon,
   titleCount,
+  onTitleClick,
   onHide,
   onMediaSelect,
   edgeFade = false,
@@ -152,7 +154,17 @@ export function ContentRow({
           {!hideTitle && (
             <h2 className="content-row__title">
               {icon ? <span className="content-row__title-icon">{icon}</span> : null}
-              <span>{title}</span>
+              {onTitleClick ? (
+                <button
+                  type="button"
+                  className="content-row__title-link"
+                  onClick={onTitleClick}
+                >
+                  {title}
+                </button>
+              ) : (
+                <span>{title}</span>
+              )}
               {titleCount != null ? (
                 <span className="content-row__title-count">{titleCount}</span>
               ) : null}
