@@ -29,11 +29,13 @@ export function playUiSound(sound: UiSoundId) {
 
     if (!audio) {
       audio = new Audio(UI_SOUND_URLS[sound]);
+      audio.preload = 'auto';
       audioCache.set(sound, audio);
     }
 
-    audio.currentTime = 0;
-    void audio.play();
+    const playback = audio.cloneNode(true) as HTMLAudioElement;
+    playback.currentTime = 0;
+    void playback.play();
   } catch {
     // Ignore playback errors (autoplay restrictions, missing audio device, etc.)
   }

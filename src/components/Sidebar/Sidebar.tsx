@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, PointerEvent } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { NavItem } from '@/types';
 import type { SidebarMenuAnimation } from '@/shared/settings/types';
@@ -113,15 +113,22 @@ export function Sidebar({
     };
   }, [collapsed, magneticEnabled, syncMagneticIndicator]);
 
-  const handleNavClick = useCallback(
-    (nav: NavItem) => {
-      if (activeNav !== nav) {
-        playMenuSound();
+  const handleNavPointerDown = useCallback(
+    (event: PointerEvent<HTMLButtonElement>, nav: NavItem) => {
+      if (event.button !== 0 || activeNav === nav) {
+        return;
       }
 
+      playMenuSound();
+    },
+    [activeNav],
+  );
+
+  const handleNavClick = useCallback(
+    (nav: NavItem) => {
       onNavChange(nav);
     },
-    [activeNav, onNavChange],
+    [onNavChange],
   );
 
   const magneticIndicatorStyle = magneticIndicator.ready
@@ -158,6 +165,7 @@ export function Sidebar({
                 className={`sidebar__item ${isActive ? 'sidebar__item--active' : ''}${
                   showItemSettings ? ' sidebar__item--with-action' : ''
                 }`}
+                onPointerDown={(event) => handleNavPointerDown(event, item.id)}
                 onClick={() => handleNavClick(item.id)}
                 aria-label={
                   item.id === 'library' && favoritesCount > 0
