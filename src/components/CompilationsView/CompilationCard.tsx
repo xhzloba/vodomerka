@@ -1,7 +1,9 @@
 import { useRef } from 'react';
 import type { VokinoCompilationItem } from '@/shared/api/vokino/compilations';
 import { useMediaImage } from '@/shared/hooks/useMediaImage';
+import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { MediaCoverPlaceholder } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
+import '../MediaCard/MediaCard.css';
 import './CompilationCard.css';
 
 interface CompilationCardProps {
@@ -10,6 +12,7 @@ interface CompilationCardProps {
 }
 
 export function CompilationCard({ item, onSelect }: CompilationCardProps) {
+  const { settings } = useAppSettings();
   const cardRef = useRef<HTMLElement>(null);
   const posterUrl = item.details.poster ?? '';
   const hasPoster = Boolean(posterUrl);
@@ -54,7 +57,11 @@ export function CompilationCard({ item, onSelect }: CompilationCardProps) {
             />
           ) : null}
         </div>
-        <h2 className="compilation-card__title">{item.details.name}</h2>
+        {settings.cardShowInfo ? (
+          <div className="media-card__info">
+            <h3 className="media-card__title">{item.details.name}</h3>
+          </div>
+        ) : null}
       </button>
     </article>
   );

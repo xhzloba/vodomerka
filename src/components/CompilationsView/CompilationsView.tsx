@@ -196,38 +196,36 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
 
   if (error && !selectedCompilation && compilations.length === 0 && !isListLoading) {
     return (
-      <div className="compilations-view browse-view">
-        <div ref={scrollRef} className="browse-view__scroll scroll-overlay">
-          <PageError title="Ошибка подборок" text={error} onAction={() => void loadCompilations()} />
+      <div ref={scrollRef} className="library-view compilations-view compilations-view--list scroll-overlay">
+        <div className="library-view__header">
+          <div className="library-view__title-group">
+            <h1 className="library-view__title">Подборки</h1>
+          </div>
         </div>
+        <PageError title="Ошибка подборок" text={error} onAction={() => void loadCompilations()} />
       </div>
     );
   }
 
-  return (
-    <div className="compilations-view browse-view">
-      <div className="compilations-view__header browse-view__header">
-        {selectedCompilation ? (
-          <button
-            type="button"
-            className="compilations-view__back"
-            onClick={handleBackToList}
-            aria-label="Назад к подборкам"
-          >
-            <ChevronLeftIcon size={18} strokeWidth={1.75} />
-            <span>Подборки</span>
-          </button>
-        ) : (
-          <h1 className="compilations-view__title">Подборки</h1>
-        )}
+  if (selectedCompilation) {
+    return (
+      <div className="library-view compilations-view compilations-view--detail">
+        <div className="library-view__header compilations-view__header">
+          <nav className="compilations-view__breadcrumb" aria-label="Навигация по подборкам">
+            <button
+              type="button"
+              className="compilations-view__back"
+              onClick={handleBackToList}
+              aria-label="Назад к подборкам"
+            >
+              <ChevronLeftIcon size={18} strokeWidth={1.75} />
+              <span>Подборки</span>
+            </button>
+            <h1 className="compilations-view__detail-title">{selectedCompilation.details.name}</h1>
+          </nav>
+        </div>
 
-        {selectedCompilation ? (
-          <h1 className="compilations-view__detail-title">{selectedCompilation.details.name}</h1>
-        ) : null}
-      </div>
-
-      <div ref={scrollRef} className="browse-view__scroll scroll-overlay">
-        {selectedCompilation ? (
+        <div ref={scrollRef} className="compilations-view__detail-scroll scroll-overlay">
           <div className="compilations-view__detail">
             {error ? <p className="browse-view__error">{error}</p> : null}
 
@@ -251,44 +249,54 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
               <p className="browse-view__empty">В этой подборке пока нет контента</p>
             ) : null}
           </div>
-        ) : (
-          <div className="compilations-view__content">
-            {isListLoading ? (
-              <div className="page-state-overlay" aria-busy="true" aria-label="Загрузка подборок">
-                <PageLoading />
-              </div>
-            ) : null}
+        </div>
+      </div>
+    );
+  }
 
-            {!isListLoading && compilations.length > 0 ? (
-              <div className="compilations-view__grid">
-                {compilations.map((item) => (
-                  <CompilationCard
-                    key={item.details.id}
-                    item={item}
-                    onSelect={handleCompilationSelect}
-                  />
-                ))}
-                {listHasMore ? (
-                  <>
-                    <div ref={listSentinelRef} className="media-grid__sentinel" aria-hidden="true" />
-                    <div
-                      className={`compilations-view__list-footer${
-                        isListLoadingMore ? ' compilations-view__list-footer--loading' : ''
-                      }`}
-                      aria-hidden={!isListLoadingMore}
-                    >
-                      {isListLoadingMore ? <div className="media-grid__loader" /> : null}
-                    </div>
-                  </>
-                ) : null}
-              </div>
-            ) : null}
+  return (
+    <div ref={scrollRef} className="library-view compilations-view compilations-view--list scroll-overlay">
+      <div className="library-view__header">
+        <div className="library-view__title-group">
+          <h1 className="library-view__title">Подборки</h1>
+        </div>
+      </div>
 
-            {!isListLoading && compilations.length === 0 ? (
-              <p className="browse-view__empty">Подборки пока недоступны</p>
+      <div className="compilations-view__content">
+        {isListLoading ? (
+          <div className="page-state-overlay" aria-busy="true" aria-label="Загрузка подборок">
+            <PageLoading />
+          </div>
+        ) : null}
+
+        {!isListLoading && compilations.length > 0 ? (
+          <div className="compilations-view__grid">
+            {compilations.map((item) => (
+              <CompilationCard
+                key={item.details.id}
+                item={item}
+                onSelect={handleCompilationSelect}
+              />
+            ))}
+            {listHasMore ? (
+              <>
+                <div ref={listSentinelRef} className="media-grid__sentinel" aria-hidden="true" />
+                <div
+                  className={`compilations-view__list-footer${
+                    isListLoadingMore ? ' compilations-view__list-footer--loading' : ''
+                  }`}
+                  aria-hidden={!isListLoadingMore}
+                >
+                  {isListLoadingMore ? <div className="media-grid__loader" /> : null}
+                </div>
+              </>
             ) : null}
           </div>
-        )}
+        ) : null}
+
+        {!isListLoading && compilations.length === 0 ? (
+          <p className="browse-view__empty">Подборки пока недоступны</p>
+        ) : null}
       </div>
     </div>
   );

@@ -228,7 +228,7 @@ export function HomeSettingsPanels({ variant = 'settings' }: HomeSettingsPanelsP
             Подписи к карточкам
           </h2>
           <p className="settings-panel__description">
-            Название, год и рейтинг под обложками в рядах на главной, в каталоге и в поиске.
+            Название, год и рейтинг под обложками на главной, в каталоге, в поиске и в подборках.
           </p>
         </div>
 
