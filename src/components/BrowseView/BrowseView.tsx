@@ -3,13 +3,11 @@ import type { MediaItem } from '@/shared/domain/media';
 import type { VokinoCategory } from '@/shared/api/vokino/types';
 import {
   type BrowseTab,
-  createBrowseTop250Tab,
   enrichBrowseTabs,
   fetchBrowseTabs,
   fetchPaginatedList,
   findBrowseCategoryByType,
   getDefaultBrowseCategory,
-  isBrowseTop250Tab,
   mergeUniqueItems,
   sortBrowseCategories,
 } from '@/shared/api/vokino/browse';
@@ -153,10 +151,7 @@ export function BrowseView({
   const filterFields = useMemo(() => createBrowseFilterFields(), []);
 
   const filtersSupported = Boolean(
-    selectedCategory &&
-      activeTab &&
-      !isBrowseTop250Tab(activeTab) &&
-      buildBrowseScope(selectedCategory, activeTab),
+    selectedCategory && activeTab && buildBrowseScope(selectedCategory, activeTab),
   );
 
   const filtersContextLabel = useMemo(() => {
@@ -215,13 +210,9 @@ export function BrowseView({
           setActiveTab(nextTab);
 
           if (nextTab) {
-            if (isBrowseTop250Tab(nextTab)) {
-              playlistUrl = nextTab.playlistUrl;
-            } else {
-              const appliedFilters = options?.filters ?? filters;
-              const builtUrl = buildBrowseListUrlFromContext(category, nextTab, appliedFilters);
-              playlistUrl = builtUrl ?? nextTab.playlistUrl;
-            }
+            const appliedFilters = options?.filters ?? filters;
+            const builtUrl = buildBrowseListUrlFromContext(category, nextTab, appliedFilters);
+            playlistUrl = builtUrl ?? nextTab.playlistUrl;
           }
         }
 
@@ -317,11 +308,6 @@ export function BrowseView({
           return;
         }
 
-        const tab =
-          targetCategory && pendingTarget && pendingTarget.tabMarker === 'top250'
-            ? createBrowseTop250Tab()
-            : undefined;
-
         if (targetCategory && pendingTarget) {
           onBrowseTargetConsumedRef.current?.();
         }
@@ -332,7 +318,6 @@ export function BrowseView({
         setNextPageUrl(null);
 
         await loadContentRef.current(category, {
-          tab,
           filters: {},
           manageLoading: false,
         });
@@ -416,13 +401,6 @@ export function BrowseView({
     }
 
     setActiveTab(tab);
-
-    if (isBrowseTop250Tab(tab)) {
-      resetFilters();
-      void loadContent(selectedCategory, { tab, filters: {} });
-      return;
-    }
-
     void loadContent(selectedCategory, { tab, filters });
   };
 

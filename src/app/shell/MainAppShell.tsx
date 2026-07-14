@@ -31,8 +31,17 @@ const SETUP_WELCOME_SHOW_DELAY_MS = 5_000;
 export function MainAppShell() {
   const { settings, isLoading, setupWelcomeEpoch, updateSettings } = useAppSettings();
   const { showToast } = useToast();
-  const { activeNav, searchQuery, setSearchQuery, navigate, openBrowse, browseTarget, clearBrowseTarget } =
-    useAppNavigation();
+  const {
+    activeNav,
+    searchQuery,
+    setSearchQuery,
+    navigate,
+    openCompilation,
+    browseTarget,
+    compilationTarget,
+    clearBrowseTarget,
+    clearCompilationTarget,
+  } = useAppNavigation();
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [isOpeningDetail, setIsOpeningDetail] = useState(false);
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
@@ -234,7 +243,7 @@ export function MainAppShell() {
           <HomeView
             onMediaSelect={handleMediaSelect}
             onPlay={handlePlay}
-            onOpenBrowse={openBrowse}
+            onOpenCompilation={openCompilation}
           />
         );
       case 'browse':
@@ -248,7 +257,13 @@ export function MainAppShell() {
           />
         );
       case 'compilations':
-        return <CompilationsView onMediaSelect={handleMediaSelect} />;
+        return (
+          <CompilationsView
+            onMediaSelect={handleMediaSelect}
+            compilationTarget={compilationTarget}
+            onCompilationTargetConsumed={clearCompilationTarget}
+          />
+        );
       case 'search':
         return (
           <SearchView

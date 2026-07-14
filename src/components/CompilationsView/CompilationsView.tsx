@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import {
   fetchAllCompilations,
   type VokinoCompilationItem,
 } from '@/shared/api/vokino/compilations';
 import { fetchPaginatedList, mergeUniqueItems } from '@/shared/api/vokino/browse';
+import type { CompilationNavigationTarget } from '@/app/navigation/compilationTarget';
+import {
+  createTop250CompilationItem,
+  TOP250_COMPILATION_ID,
+} from '@/shared/api/vokino/top250';
 import { applyCompilationFilters } from '@/features/compilations/model/applyCompilationFilters';
 import {
   CompilationFiltersPanel,
@@ -24,10 +29,20 @@ import './CompilationsView.css';
 
 interface CompilationsViewProps {
   onMediaSelect: (item: MediaItem) => void;
+  compilationTarget?: CompilationNavigationTarget | null;
+  onCompilationTargetConsumed?: () => void;
 }
 
-export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
+export function CompilationsView({
+  onMediaSelect,
+  compilationTarget = null,
+  onCompilationTargetConsumed,
+}: CompilationsViewProps) {
   const scrollRef = useOverlayScroll<HTMLDivElement>();
+  const compilationTargetRef = useRef(compilationTarget);
+  compilationTargetRef.current = compilationTarget;
+  const onCompilationTargetConsumedRef = useRef(onCompilationTargetConsumed);
+  onCompilationTargetConsumedRef.current = onCompilationTargetConsumed;
 
   const [compilations, setCompilations] = useState<VokinoCompilationItem[]>([]);
   const [selectedCompilation, setSelectedCompilation] = useState<VokinoCompilationItem | null>(null);
@@ -121,16 +136,44 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
     [],
   );
 
-  useEffect(() => {
-    void loadCompilations();
-  }, [loadCompilations]);
+  const loadCompilationContentRef = useRef(loadCompilationContent);
+  loadCompilationContentRef.current = loadCompilationContent;
 
-  const handleCompilationSelect = (compilation: VokinoCompilationItem) => {
+  const openCompilation = useCallback((compilation: VokinoCompilationItem) => {
     resetFilters();
     setIsFiltersMenuOpen(false);
     setSelectedCompilation(compilation);
     scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' });
-    void loadCompilationContent(compilation);
+    void loadCompilationContentRef.current(compilation);
+  }, [resetFilters, scrollRef]);
+
+  useEffect(() => {
+    void loadCompilations();
+  }, [loadCompilations]);
+
+  useEffect(() => {
+    const target = compilationTargetRef.current;
+    if (!target) {
+      return;
+    }
+
+    if (target.compilationId === TOP250_COMPILATION_ID) {
+      openCompilation(createTop250CompilationItem());
+      onCompilationTargetConsumedRef.current?.();
+      return;
+    }
+
+    const match = compilations.find((item) => item.details.id === target.compilationId);
+    if (!match) {
+      return;
+    }
+
+    openCompilation(match);
+    onCompilationTargetConsumedRef.current?.();
+  }, [compilationTarget, compilations, openCompilation]);
+
+  const handleCompilationSelect = (compilation: VokinoCompilationItem) => {
+    openCompilation(compilation);
   };
 
   const handleBackToList = () => {

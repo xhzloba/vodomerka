@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BROWSE_MOVIES_TOP250_TARGET, type BrowseNavigationTarget } from '@/app/navigation/browseTarget';
+import { TOP250_COMPILATION_TARGET, type CompilationNavigationTarget } from '@/app/navigation/compilationTarget';
 import { useHomePage } from '@/features/home/model/useHomePage';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
@@ -32,10 +32,10 @@ import './HomeView.css';
 interface HomeViewProps {
   onMediaSelect: (item: MediaItem) => void;
   onPlay: (item: MediaItem) => void;
-  onOpenBrowse?: (target: BrowseNavigationTarget) => void;
+  onOpenCompilation?: (target: CompilationNavigationTarget) => void;
 }
 
-export function HomeView({ onMediaSelect, onPlay, onOpenBrowse }: HomeViewProps) {
+export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewProps) {
   const scrollRef = useOverlayScroll<HTMLDivElement>();
   const { settings, updateSettings } = useAppSettings();
   const { showToast } = useToast();
@@ -201,7 +201,7 @@ export function HomeView({ onMediaSelect, onPlay, onOpenBrowse }: HomeViewProps)
             icon={getHomeRowIcon(row)}
             items={row.items}
             onTitleClick={
-              isTop250HomeRow(row) ? () => onOpenBrowse?.(BROWSE_MOVIES_TOP250_TARGET) : undefined
+              isTop250HomeRow(row) ? () => onOpenCompilation?.(TOP250_COMPILATION_TARGET) : undefined
             }
             onMediaSelect={onMediaSelect}
             edgeFade

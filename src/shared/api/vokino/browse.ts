@@ -166,15 +166,10 @@ export function isBrowseTop250Tab(tab: Pick<BrowseTab, 'id' | 'title' | 'playlis
   return isTop250PlaylistUrl(tab.playlistUrl) || isTop250TabTitle(tab.title);
 }
 
-export function enrichBrowseTabs(tabs: BrowseTab[], category: VokinoCategory): BrowseTab[] {
-  if (extractBrowseType(category) !== 'movie') {
-    return tabs;
-  }
-
-  const top250Tab = createBrowseTop250Tab();
-  const merged = tabs.some((tab) => tab.id === top250Tab.id) ? tabs : [...tabs, top250Tab];
-
-  return [...merged].sort((a, b) => tabSortPriority(a) - tabSortPriority(b));
+export function enrichBrowseTabs(tabs: BrowseTab[], _category: VokinoCategory): BrowseTab[] {
+  return tabs
+    .filter((tab) => !isBrowseTop250Tab(tab))
+    .sort((a, b) => tabSortPriority(a) - tabSortPriority(b));
 }
 
 export function findBrowseCategoryByType(
