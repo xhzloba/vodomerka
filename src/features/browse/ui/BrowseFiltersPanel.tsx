@@ -105,7 +105,13 @@ export function BrowseFiltersPanel({
 
         {countryField || yearField ? (
           <div className="settings-subgroup">
-            <p className="settings-subgroup__label">Страна и год</p>
+            <p className="settings-subgroup__label">
+              {countryField && yearField
+                ? 'Страна и год'
+                : countryField
+                  ? 'Страна'
+                  : 'Год'}
+            </p>
             <div className="browse-filters-panels__combobox-row">
               {countryField ? (
                 <Combobox

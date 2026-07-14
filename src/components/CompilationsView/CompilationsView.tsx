@@ -1,17 +1,24 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import {
   fetchAllCompilations,
   type VokinoCompilationItem,
 } from '@/shared/api/vokino/compilations';
 import { fetchPaginatedList, mergeUniqueItems } from '@/shared/api/vokino/browse';
+import { applyCompilationFilters } from '@/features/compilations/model/applyCompilationFilters';
+import {
+  CompilationFiltersPanel,
+  useCompilationFilters,
+} from '@/features/compilations/ui/CompilationFiltersPanel';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
-import { ChevronLeftIcon } from '@/shared/ui/icons';
+import { ChevronLeftIcon, FilterIcon } from '@/shared/ui/icons';
 import { PageError, PageLoading } from '@/shared/ui/PageState';
+import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { CompilationCard } from '@/components/CompilationsView/CompilationCard';
 import { MediaGrid } from '@/components/BrowseView/MediaGrid';
 import '../BrowseView/BrowseView.css';
 import '../BrowseView/MediaGrid.css';
+import '@/features/browse/ui/BrowseFiltersPanel.css';
 import './CompilationsView.css';
 
 interface CompilationsViewProps {
@@ -30,7 +37,24 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
   const [isListLoadingMore, setIsListLoadingMore] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isDetailLoadingMore, setIsDetailLoadingMore] = useState(false);
+  const [isFiltersMenuOpen, setIsFiltersMenuOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const {
+    filters,
+    activeCount,
+    setFilter,
+    resetFilters,
+  } = useCompilationFilters();
+
+  const filteredDetailItems = useMemo(
+    () => applyCompilationFilters(detailItems, filters),
+    [detailItems, filters],
+  );
+
+  const filtersContextLabel = selectedCompilation
+    ? `Фильтрация «${selectedCompilation.details.name}» на текущем списке`
+    : 'Подборка';
 
   const loadCompilations = useCallback(async () => {
     setIsListLoading(true);
@@ -92,12 +116,16 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
   }, [loadCompilations]);
 
   const handleCompilationSelect = (compilation: VokinoCompilationItem) => {
+    resetFilters();
+    setIsFiltersMenuOpen(false);
     setSelectedCompilation(compilation);
     scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     void loadCompilationContent(compilation);
   };
 
   const handleBackToList = () => {
+    resetFilters();
+    setIsFiltersMenuOpen(false);
     setSelectedCompilation(null);
     setDetailItems([]);
     setDetailNextUrl(null);
@@ -133,6 +161,10 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
   }
 
   if (selectedCompilation) {
+    const hasActiveFilters = activeCount > 0;
+    const showFilteredEmpty =
+      !isDetailLoading && detailItems.length > 0 && filteredDetailItems.length === 0;
+
     return (
       <div className="library-view compilations-view compilations-view--detail">
         <div className="library-view__header compilations-view__header">
@@ -148,7 +180,44 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
             </button>
             <h1 className="compilations-view__detail-title">{selectedCompilation.details.name}</h1>
           </nav>
+
+          <div className="compilations-view__header-actions">
+            <button
+              type="button"
+              className={`browse-view__filters-trigger${
+                isFiltersMenuOpen ? ' browse-view__filters-trigger--open' : ''
+              }${hasActiveFilters ? ' browse-view__filters-trigger--active' : ''}`}
+              onClick={() => setIsFiltersMenuOpen(true)}
+              disabled={isDetailLoading || detailItems.length === 0}
+              aria-haspopup="dialog"
+              aria-expanded={isFiltersMenuOpen}
+              aria-label={hasActiveFilters ? `Фильтры, активно: ${activeCount}` : 'Фильтры'}
+            >
+              <FilterIcon size={18} />
+              <span className="browse-view__filters-trigger-label">Фильтры</span>
+              {hasActiveFilters ? (
+                <span className="browse-view__filters-badge" aria-hidden="true">
+                  {activeCount}
+                </span>
+              ) : null}
+            </button>
+          </div>
         </div>
+
+        <SlideMenu
+          open={isFiltersMenuOpen}
+          title="Фильтры"
+          size="xlarge"
+          onClose={() => setIsFiltersMenuOpen(false)}
+        >
+          <CompilationFiltersPanel
+            items={detailItems}
+            filters={filters}
+            contextLabel={filtersContextLabel}
+            onChange={setFilter}
+            onReset={resetFilters}
+          />
+        </SlideMenu>
 
         <div ref={scrollRef} className="compilations-view__detail-scroll scroll-overlay">
           <div className="compilations-view__detail">
@@ -160,14 +229,18 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
               </div>
             ) : null}
 
-            {!isDetailLoading && detailItems.length > 0 ? (
+            {!isDetailLoading && filteredDetailItems.length > 0 ? (
               <MediaGrid
-                items={detailItems}
-                isLoadingMore={isDetailLoadingMore}
-                hasMore={Boolean(detailNextUrl)}
+                items={filteredDetailItems}
+                isLoadingMore={isDetailLoadingMore && !hasActiveFilters}
+                hasMore={Boolean(detailNextUrl) && !hasActiveFilters}
                 onLoadMore={handleDetailLoadMore}
                 onMediaSelect={onMediaSelect}
               />
+            ) : null}
+
+            {showFilteredEmpty ? (
+              <p className="browse-view__empty">Ничего не найдено по выбранным фильтрам</p>
             ) : null}
 
             {!isDetailLoading && !error && detailItems.length === 0 ? (
