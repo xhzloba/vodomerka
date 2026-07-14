@@ -57,7 +57,7 @@
   height: 100%;
   min-height: 100vh;
   overflow: hidden;
-  background: #000;
+  background: var(--app-bg);
 }
 
 .detail-window-shell .titlebar {
