@@ -21,6 +21,7 @@ import {
 } from '@/shared/domain/homeSections';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import { FavoritesIcon, HistoryIcon } from '@/shared/ui/icons';
+import { useAppTopProgress } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog/ConfirmDialog';
 import { PageError, PageLoading } from '@/shared/ui/PageState';
 import { HeroBanner } from '../HeroBanner/HeroBanner';
@@ -40,7 +41,13 @@ export function HomeView({ onMediaSelect, onPlay, onOpenBrowse }: HomeViewProps)
   const { showToast } = useToast();
   const { favorites } = useFavorites();
   const { recentlyViewed } = useRecentlyViewed();
-  const { data, isLoading, isError, error, reload } = useHomePage();
+  const { data, isLoading, isError, error, reload, isRefreshing } = useHomePage();
+
+  useAppTopProgress(
+    'home',
+    isLoading || isRefreshing,
+    isRefreshing ? 'Обновление главной' : 'Загрузка главной',
+  );
   const [hideConfirmSection, setHideConfirmSection] = useState<{ id: string; title: string } | null>(
     null,
   );

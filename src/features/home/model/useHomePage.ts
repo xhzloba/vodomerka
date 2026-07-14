@@ -1,27 +1,34 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { HomePageData } from '@/shared/api/vokino/repository';
 import { sanitizeHomePageData, vokinoRepository } from '@/shared/api/vokino/repository';
 import { ensureMediaOverridesLoaded } from '@/shared/domain/overridesStore';
 
 type AsyncStatus = 'idle' | 'loading' | 'success' | 'error';
 
-interface AsyncState<T> {
+interface AsyncState {
   status: AsyncStatus;
-  data: T | null;
+  data: HomePageData | null;
   error: string | null;
+  isRefreshing: boolean;
 }
 
-const initialState: AsyncState<HomePageData> = {
+const initialState: AsyncState = {
   status: 'idle',
   data: null,
   error: null,
+  isRefreshing: false,
 };
 
 let homePageCache: HomePageData | null = null;
 
-function createInitialState(): AsyncState<HomePageData> {
+function createInitialState(): AsyncState {
   if (homePageCache) {
-    return { status: 'success', data: sanitizeHomePageData(homePageCache), error: null };
+    return {
+      status: 'success',
+      data: sanitizeHomePageData(homePageCache),
+      error: null,
+      isRefreshing: false,
+    };
   }
 
   return initialState;
@@ -29,32 +36,69 @@ function createInitialState(): AsyncState<HomePageData> {
 
 export function useHomePage() {
   const [state, setState] = useState(createInitialState);
+  const requestIdRef = useRef(0);
 
   const load = useCallback(async (options?: { force?: boolean }) => {
     const force = options?.force ?? false;
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
 
     await ensureMediaOverridesLoaded();
+    if (requestId !== requestIdRef.current) {
+      return;
+    }
+
+    const staleData = !force ? homePageCache : null;
+    const hasStaleData = staleData !== null;
 
     if (force) {
       vokinoRepository.clearCache();
       homePageCache = null;
-      setState({ status: 'loading', data: null, error: null });
-    } else if (homePageCache) {
-      setState({ status: 'success', data: sanitizeHomePageData(homePageCache), error: null });
-      return;
+      setState({ status: 'loading', data: null, error: null, isRefreshing: false });
+    } else if (hasStaleData) {
+      setState({
+        status: 'success',
+        data: sanitizeHomePageData(staleData),
+        error: null,
+        isRefreshing: true,
+      });
     } else {
-      setState({ status: 'loading', data: null, error: null });
+      setState({ status: 'loading', data: null, error: null, isRefreshing: false });
     }
+
+    vokinoRepository.clearCache();
 
     try {
       const data = sanitizeHomePageData(await vokinoRepository.getHomePage());
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
       homePageCache = data;
-      setState({ status: 'success', data, error: null });
+      setState({ status: 'success', data, error: null, isRefreshing: false });
     } catch (error) {
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
+      if (hasStaleData) {
+        if (import.meta.env.DEV) {
+          console.warn('[home] background refresh failed', error);
+        }
+
+        setState((current) => ({
+          ...current,
+          status: 'success',
+          isRefreshing: false,
+        }));
+        return;
+      }
+
       setState({
         status: 'error',
         data: homePageCache,
         error: error instanceof Error ? error.message : 'Не удалось загрузить главную',
+        isRefreshing: false,
       });
     }
   }, []);

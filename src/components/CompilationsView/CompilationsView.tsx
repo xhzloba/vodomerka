@@ -13,6 +13,7 @@ import {
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { ChevronLeftIcon, FilterIcon } from '@/shared/ui/icons';
 import { PageError, PageLoading } from '@/shared/ui/PageState';
+import { useAppTopProgress } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { CompilationCard } from '@/components/CompilationsView/CompilationCard';
 import { MediaGrid } from '@/components/BrowseView/MediaGrid';
@@ -55,6 +56,15 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
   const filtersContextLabel = selectedCompilation
     ? `Фильтрация «${selectedCompilation.details.name}» на текущем списке`
     : 'Подборка';
+
+  const showListProgress = isListLoading || isListLoadingMore;
+  const showDetailProgress = isDetailLoading;
+
+  useAppTopProgress(
+    'compilations',
+    selectedCompilation ? showDetailProgress : showListProgress,
+    selectedCompilation ? 'Загрузка подборки' : 'Загрузка подборок',
+  );
 
   const loadCompilations = useCallback(async () => {
     setIsListLoading(true);
