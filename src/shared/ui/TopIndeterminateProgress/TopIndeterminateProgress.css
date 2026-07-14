@@ -36,6 +36,11 @@
   animation: app-top-progress-slide 1.15s ease-in-out infinite;
 }
 
+.app-top-progress--completing .app-top-progress__fill {
+  width: 100%;
+  animation: app-top-progress-complete 0.38s ease-out forwards;
+}
+
 @keyframes app-top-progress-slide {
   0% {
     transform: translateX(-110%);
@@ -46,10 +51,26 @@
   }
 }
 
+@keyframes app-top-progress-complete {
+  0% {
+    transform: translateX(-110%);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(0);
+    opacity: 0.85;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .app-top-progress__fill {
     width: 100%;
     animation: none;
     opacity: 0.55;
+  }
+
+  .app-top-progress--completing .app-top-progress__fill {
+    opacity: 0.35;
   }
 }

@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from 'react';
 import { loadAppSettings, resetAppData, saveAppSettings } from './storage';
-import { clearBrowseCatalogCache } from '@/features/browse/model/browseCatalogCache';
 import { setUiSoundsEnabled } from '@/shared/audio/uiSounds';
 import { applyAppTheme } from './themes';
 import { DEFAULT_APP_SETTINGS, type AppSettings } from './types';
@@ -62,7 +61,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetToDefaults = useCallback(async () => {
-    clearBrowseCatalogCache();
     const next = await resetAppData();
     applyAppTheme(next.theme);
     setSettings(next);

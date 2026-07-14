@@ -14,11 +14,6 @@ import {
   sortBrowseCategories,
 } from '@/shared/api/vokino/browse';
 import { createBrowseFilterFields } from '@/features/browse/model/filterDefinitions';
-import {
-  getBrowseCatalogCache,
-  setBrowseCatalogCache,
-  type BrowseCatalogCache,
-} from '@/features/browse/model/browseCatalogCache';
 import { useBrowseFilters } from '@/features/browse/model/useBrowseFilters';
 import { BrowseFiltersPanel } from '@/features/browse/ui/BrowseFiltersPanel';
 import '@/features/browse/ui/BrowseFiltersPanel.css';
@@ -75,25 +70,21 @@ export function BrowseView({
 }: BrowseViewProps) {
   const scrollRef = useOverlayScroll<HTMLDivElement>();
   const requestIdRef = useRef(0);
+  const bootstrapSessionRef = useRef(0);
   const browseTargetRef = useRef(browseTarget);
   browseTargetRef.current = browseTarget;
   const onBrowseTargetConsumedRef = useRef(onBrowseTargetConsumed);
   onBrowseTargetConsumedRef.current = onBrowseTargetConsumed;
   const { settings, isLoading, updateSettings } = useAppSettings();
 
-  const initialCache = getBrowseCatalogCache();
-
-  const [categories, setCategories] = useState<VokinoCategory[]>(() => initialCache?.categories ?? []);
-  const [selectedCategory, setSelectedCategory] = useState<VokinoCategory | null>(
-    () => initialCache?.category ?? null,
-  );
-  const [tabs, setTabs] = useState<BrowseTab[]>(() => initialCache?.tabs ?? []);
-  const [activeTab, setActiveTab] = useState<BrowseTab | null>(() => initialCache?.activeTab ?? null);
-  const [items, setItems] = useState<MediaItem[]>(() => initialCache?.items ?? []);
-  const [nextPageUrl, setNextPageUrl] = useState<string | null>(() => initialCache?.nextPageUrl ?? null);
-  const [isCategoriesLoading, setIsCategoriesLoading] = useState(!initialCache);
+  const [categories, setCategories] = useState<VokinoCategory[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<VokinoCategory | null>(null);
+  const [tabs, setTabs] = useState<BrowseTab[]>([]);
+  const [activeTab, setActiveTab] = useState<BrowseTab | null>(null);
+  const [items, setItems] = useState<MediaItem[]>([]);
+  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
   const [isContentLoading, setIsContentLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
@@ -101,16 +92,8 @@ export function BrowseView({
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
   const [isCategoryHintActive, setIsCategoryHintActive] = useState(false);
   const categoryHintStartedRef = useRef(false);
-  const categoriesRef = useRef(categories);
-  categoriesRef.current = categories;
 
-  const showTopProgress = isCategoriesLoading || isContentLoading || isRefreshing;
-
-  useAppTopProgress(
-    'browse',
-    showTopProgress,
-    isRefreshing ? 'Обновление каталога' : 'Загрузка каталога',
-  );
+  useAppTopProgress('browse', isCategoriesLoading || isContentLoading, 'Загрузка каталога');
 
   const categoryHintEligible =
     !isLoading &&
@@ -197,19 +180,17 @@ export function BrowseView({
         pageUrl?: string | null;
         append?: boolean;
         filters?: BrowseFilters;
-        silent?: boolean;
+        manageLoading?: boolean;
       },
     ) => {
       const requestId = requestIdRef.current + 1;
       requestIdRef.current = requestId;
       const append = options?.append ?? false;
-      const silent = options?.silent ?? false;
+      const manageLoading = options?.manageLoading ?? true;
 
       if (append) {
         setIsLoadingMore(true);
-      } else if (silent) {
-        setError(null);
-      } else {
+      } else if (manageLoading) {
         setIsContentLoading(true);
         setError(null);
         setItems([]);
@@ -255,20 +236,10 @@ export function BrowseView({
 
         setItems(result.items);
         setNextPageUrl(result.nextUrl);
-
-        const snapshot: BrowseCatalogCache = {
-          categories: categoriesRef.current,
-          category,
-          tabs: enrichedTabs,
-          activeTab: nextTab,
-          items: result.items,
-          nextPageUrl: result.nextUrl,
-        };
-        setBrowseCatalogCache(snapshot);
       } catch (err) {
         if (requestId !== requestIdRef.current) return;
 
-        if (!append && !silent) {
+        if (!append) {
           setError(err instanceof Error ? err.message : 'Не удалось загрузить каталог');
           setItems([]);
           setNextPageUrl(null);
@@ -278,7 +249,7 @@ export function BrowseView({
 
         if (append) {
           setIsLoadingMore(false);
-        } else if (!silent) {
+        } else if (manageLoading) {
           setIsContentLoading(false);
         }
       }
@@ -314,119 +285,75 @@ export function BrowseView({
   const loadContentRef = useRef(loadContent);
   loadContentRef.current = loadContent;
 
-  const revalidateCatalog = useCallback(
-    async (baseline: { category: VokinoCategory; activeTab: BrowseTab | null }) => {
-      setIsRefreshing(true);
-
-      try {
-        vokinoRepository.clearCache();
-        const main = await vokinoRepository.getMain();
-        const nextCategories = sortBrowseCategories(main.channels);
-        setCategories(nextCategories);
-        categoriesRef.current = nextCategories;
-
-        const category =
-          nextCategories.find((item) => item.playlist_url === baseline.category.playlist_url) ??
-          getDefaultBrowseCategory(nextCategories);
-
-        if (!category) {
-          return;
-        }
-
-        setSelectedCategory(category);
-        await loadContentRef.current(category, {
-          tab: baseline.activeTab ?? undefined,
-          filters: {},
-          silent: true,
-        });
-      } catch (error) {
-        if (import.meta.env.DEV) {
-          console.warn('[browse] background refresh failed', error);
-        }
-      } finally {
-        setIsRefreshing(false);
-      }
-    },
-    [],
-  );
-
-  const revalidateCatalogRef = useRef(revalidateCatalog);
-  revalidateCatalogRef.current = revalidateCatalog;
-
   useEffect(() => {
+    const sessionId = bootstrapSessionRef.current + 1;
+    bootstrapSessionRef.current = sessionId;
     let cancelled = false;
 
-    async function loadCategories() {
-      const cached = getBrowseCatalogCache();
+    async function bootstrapCatalog() {
       const pendingTarget = browseTargetRef.current;
 
-      if (cached && !pendingTarget) {
-        setCategories(cached.categories);
-        setSelectedCategory(cached.category);
-        setTabs(cached.tabs);
-        setActiveTab(cached.activeTab);
-        setItems(cached.items);
-        setNextPageUrl(cached.nextPageUrl);
-        setIsCategoriesLoading(false);
-        setIsContentLoading(false);
-        setError(null);
-
-        if (!cancelled) {
-          await revalidateCatalogRef.current({
-            category: cached.category,
-            activeTab: cached.activeTab,
-          });
-        }
-
-        return;
-      }
-
-      if (!cached) {
-        setIsCategoriesLoading(true);
-      }
-
+      setIsCategoriesLoading(true);
+      setIsContentLoading(false);
       setError(null);
 
       try {
         const main = await vokinoRepository.getMain();
-        if (cancelled) return;
+        if (cancelled || bootstrapSessionRef.current !== sessionId) {
+          return;
+        }
 
         const nextCategories = sortBrowseCategories(main.channels);
         const targetCategory = pendingTarget
           ? findBrowseCategoryByType(nextCategories, pendingTarget.categoryType)
           : null;
+        const defaultCategory = getDefaultBrowseCategory(nextCategories);
+        const category = targetCategory ?? defaultCategory;
 
         setCategories(nextCategories);
-        categoriesRef.current = nextCategories;
-        setSelectedCategory(targetCategory ?? getDefaultBrowseCategory(nextCategories));
+        setSelectedCategory(category);
 
-        if (targetCategory && pendingTarget) {
-          const tab =
-            pendingTarget.tabMarker === 'top250' ? createBrowseTop250Tab() : undefined;
-          loadContentRef.current(targetCategory, { tab, filters: {} });
-          onBrowseTargetConsumedRef.current?.();
+        if (!category) {
           return;
         }
 
-        const defaultCategory = getDefaultBrowseCategory(nextCategories);
+        const tab =
+          targetCategory && pendingTarget && pendingTarget.tabMarker === 'top250'
+            ? createBrowseTop250Tab()
+            : undefined;
 
-        if (defaultCategory) {
-          loadContentRef.current(defaultCategory);
+        if (targetCategory && pendingTarget) {
+          onBrowseTargetConsumedRef.current?.();
         }
+
+        setIsCategoriesLoading(false);
+        setIsContentLoading(true);
+        setItems([]);
+        setNextPageUrl(null);
+
+        await loadContentRef.current(category, {
+          tab,
+          filters: {},
+          manageLoading: false,
+        });
       } catch (err) {
-        if (!cancelled) {
+        if (!cancelled && bootstrapSessionRef.current === sessionId) {
           setError(err instanceof Error ? err.message : 'Не удалось загрузить каталог');
         }
       } finally {
-        if (!cancelled) {
-          setIsCategoriesLoading(false);
-        }
+        window.queueMicrotask(() => {
+          if (!cancelled && bootstrapSessionRef.current === sessionId) {
+            setIsCategoriesLoading(false);
+            setIsContentLoading(false);
+          }
+        });
       }
     }
 
-    void loadCategories();
+    void bootstrapCatalog();
     return () => {
       cancelled = true;
+      bootstrapSessionRef.current += 1;
     };
   }, []);
 
