@@ -32,8 +32,7 @@
 
 .compilations-view__detail-title {
   min-width: 0;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -43,11 +42,15 @@
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   border: none;
   background: none;
   cursor: pointer;
   transition: color var(--transition-fast);
+}
+
+.compilations-view__back svg {
+  flex-shrink: 0;
 }
 
 .compilations-view__back:hover,

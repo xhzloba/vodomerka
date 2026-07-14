@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import {
-  fetchCompilationsPage,
+  fetchAllCompilations,
   type VokinoCompilationItem,
 } from '@/shared/api/vokino/compilations';
 import { fetchPaginatedList, mergeUniqueItems } from '@/shared/api/vokino/browse';
@@ -20,11 +20,8 @@ interface CompilationsViewProps {
 
 export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
   const scrollRef = useOverlayScroll<HTMLDivElement>();
-  const listSentinelRef = useRef<HTMLDivElement>(null);
-  const listLoadingMoreRef = useRef(false);
 
   const [compilations, setCompilations] = useState<VokinoCompilationItem[]>([]);
-  const [listNextUrl, setListNextUrl] = useState<string | null>(null);
   const [selectedCompilation, setSelectedCompilation] = useState<VokinoCompilationItem | null>(null);
   const [detailItems, setDetailItems] = useState<MediaItem[]>([]);
   const [detailNextUrl, setDetailNextUrl] = useState<string | null>(null);
@@ -35,62 +32,26 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
   const [isDetailLoadingMore, setIsDetailLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadCompilations = useCallback(async (pageUrl?: string | null, append = false) => {
-    if (append) {
-      if (listLoadingMoreRef.current || !pageUrl) {
-        return;
-      }
-
-      listLoadingMoreRef.current = true;
-      setIsListLoadingMore(true);
-    } else {
-      setIsListLoading(true);
-      setError(null);
-      setCompilations([]);
-      setListNextUrl(null);
-    }
+  const loadCompilations = useCallback(async () => {
+    setIsListLoading(true);
+    setIsListLoadingMore(false);
+    setError(null);
+    setCompilations([]);
 
     try {
-      const result = await fetchCompilationsPage(pageUrl);
-      let appendedCount = 0;
+      await fetchAllCompilations((items) => {
+        setCompilations(items);
 
-      setCompilations((current) => {
-        if (!append) {
-          return result.items;
+        if (items.length > 0) {
+          setIsListLoading(false);
+          setIsListLoadingMore(true);
         }
-
-        const seen = new Set(current.map((item) => item.details.id));
-        const merged = [...current];
-
-        for (const item of result.items) {
-          if (seen.has(item.details.id)) {
-            continue;
-          }
-
-          seen.add(item.details.id);
-          merged.push(item);
-          appendedCount += 1;
-        }
-
-        return merged;
       });
-
-      if (append && appendedCount === 0) {
-        setListNextUrl(null);
-      } else {
-        setListNextUrl(result.nextUrl);
-      }
     } catch (err) {
-      if (!append) {
-        setError(err instanceof Error ? err.message : 'Не удалось загрузить подборки');
-      }
+      setError(err instanceof Error ? err.message : 'Не удалось загрузить подборки');
     } finally {
-      if (append) {
-        listLoadingMoreRef.current = false;
-        setIsListLoadingMore(false);
-      } else {
-        setIsListLoading(false);
-      }
+      setIsListLoading(false);
+      setIsListLoadingMore(false);
     }
   }, []);
 
@@ -129,42 +90,6 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
   useEffect(() => {
     void loadCompilations();
   }, [loadCompilations]);
-
-  const listHasMore = listNextUrl !== null;
-
-  useEffect(() => {
-    if (selectedCompilation || !listHasMore || isListLoading || isListLoadingMore) {
-      return;
-    }
-
-    const root = scrollRef.current;
-    const sentinel = listSentinelRef.current;
-    if (!root || !sentinel) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          void loadCompilations(listNextUrl, true);
-        }
-      },
-      { root, rootMargin: '480px 0px', threshold: 0 },
-    );
-
-    observer.observe(sentinel);
-
-    return () => observer.disconnect();
-  }, [
-    isListLoading,
-    isListLoadingMore,
-    listHasMore,
-    listNextUrl,
-    loadCompilations,
-    scrollRef,
-    selectedCompilation,
-    compilations.length,
-  ]);
 
   const handleCompilationSelect = (compilation: VokinoCompilationItem) => {
     setSelectedCompilation(compilation);
@@ -218,7 +143,7 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
               onClick={handleBackToList}
               aria-label="Назад к подборкам"
             >
-              <ChevronLeftIcon size={18} strokeWidth={1.75} />
+              <ChevronLeftIcon size={24} strokeWidth={1.75} />
               <span>Подборки</span>
             </button>
             <h1 className="compilations-view__detail-title">{selectedCompilation.details.name}</h1>
@@ -278,18 +203,10 @@ export function CompilationsView({ onMediaSelect }: CompilationsViewProps) {
                 onSelect={handleCompilationSelect}
               />
             ))}
-            {listHasMore ? (
-              <>
-                <div ref={listSentinelRef} className="media-grid__sentinel" aria-hidden="true" />
-                <div
-                  className={`compilations-view__list-footer${
-                    isListLoadingMore ? ' compilations-view__list-footer--loading' : ''
-                  }`}
-                  aria-hidden={!isListLoadingMore}
-                >
-                  {isListLoadingMore ? <div className="media-grid__loader" /> : null}
-                </div>
-              </>
+            {isListLoadingMore ? (
+              <div className="compilations-view__list-footer compilations-view__list-footer--loading">
+                <div className="media-grid__loader" />
+              </div>
             ) : null}
           </div>
         ) : null}

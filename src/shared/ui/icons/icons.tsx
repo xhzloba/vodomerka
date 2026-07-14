@@ -267,6 +267,15 @@ export function BookOpenIcon(props: IconProps) {
   );
 }
 
+export function CompilationsIcon(props: IconProps) {
+  return (
+    <StrokeIcon {...props}>
+      <rect x="4.5" y="7" width="9.5" height="12.5" rx="1.75" />
+      <rect x="10" y="4.5" width="9.5" height="12.5" rx="1.75" />
+    </StrokeIcon>
+  );
+}
+
 export function TrendingIcon(props: IconProps) {
   return (
     <StrokeIcon {...props}>

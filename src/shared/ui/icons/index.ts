@@ -7,6 +7,7 @@ export {
   ChevronRightIcon,
   ClockIcon,
   CloseIcon,
+  CompilationsIcon,
   CopyIcon,
   CoverSpacingIcon,
   EyeIcon,

@@ -73,3 +73,42 @@ export async function fetchCompilationsPage(
         : null,
   };
 }
+
+const MAX_COMPILATIONS_PAGES = 20;
+
+export async function fetchAllCompilations(
+  onProgress?: (items: VokinoCompilationItem[]) => void,
+): Promise<VokinoCompilationItem[]> {
+  const accumulated: VokinoCompilationItem[] = [];
+  const seen = new Set<string>();
+  let nextUrl: string | null = getCompilationsListUrl(1);
+
+  for (let page = 0; page < MAX_COMPILATIONS_PAGES && nextUrl; page += 1) {
+    const result = await fetchCompilationsPage(nextUrl);
+    let added = 0;
+
+    for (const item of result.items) {
+      if (seen.has(item.details.id)) {
+        continue;
+      }
+
+      seen.add(item.details.id);
+      accumulated.push(item);
+      added += 1;
+    }
+
+    onProgress?.(accumulated);
+
+    if (result.items.length === 0) {
+      break;
+    }
+
+    if (added === 0) {
+      break;
+    }
+
+    nextUrl = result.nextUrl;
+  }
+
+  return accumulated;
+}
