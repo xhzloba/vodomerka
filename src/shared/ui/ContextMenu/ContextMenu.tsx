@@ -20,6 +20,7 @@ interface ContextMenuProps {
   title?: string;
   header?: ReactNode;
   items: ContextMenuItem[];
+  className?: string;
   onClose: () => void;
   onItemClick?: (id: string) => void;
 }
@@ -34,6 +35,7 @@ export function ContextMenu({
   title,
   header,
   items,
+  className,
   onClose,
   onItemClick,
 }: ContextMenuProps) {
@@ -142,10 +144,12 @@ export function ContextMenu({
     return null;
   }
 
+  const menuClassName = ['context-menu', className].filter(Boolean).join(' ');
+
   return createPortal(
     <div
       ref={menuRef}
-      className="context-menu"
+      className={menuClassName}
       style={{
         top: position.y + MENU_OFFSET,
         left: position.x + MENU_OFFSET,
@@ -190,7 +194,7 @@ export function ContextMenu({
                 <span className="context-menu__label">{item.label}</span>
                 {item.active ? (
                   <span className="context-menu__check" aria-hidden="true">
-                    <CheckIcon size={14} strokeWidth={2.4} />
+                    <CheckIcon size={12} strokeWidth={2.5} />
                   </span>
                 ) : null}
               </button>

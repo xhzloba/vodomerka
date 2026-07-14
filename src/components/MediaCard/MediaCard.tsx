@@ -183,7 +183,7 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
         open={contextMenu != null}
         x={contextMenu?.x ?? 0}
         y={contextMenu?.y ?? 0}
-        title={item.title}
+        className="context-menu--media"
         header={<MediaContextMenuHeader item={item} posterUrl={showImage ? src : undefined} />}
         items={getMediaContextMenuItems(item, {
           isFavorite: inFavorites,

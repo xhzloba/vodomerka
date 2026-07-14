@@ -51,27 +51,26 @@ export function getMediaContextMenuItems(
     {
       id: 'details',
       label: 'Подробнее',
-      icon: <InfoIcon size={16} />,
+      icon: <InfoIcon size={15} />,
     },
     {
       id: 'description',
       label: 'Описание',
-      icon: <BookOpenIcon size={16} />,
+      icon: <BookOpenIcon size={15} />,
       disabled: !item.description && item.genres.length === 0,
     },
     {
       id: 'favorite',
-      label: isFavorite ? 'Убрать из избранного' : 'Добавить в избранное',
-      icon: <FavoritesIcon size={16} filled={isFavorite} />,
+      label: 'Избранное',
+      icon: <FavoritesIcon size={15} filled={isFavorite} strokeWidth={isFavorite ? 2 : 1.75} />,
       active: isFavorite,
       separatorBefore: true,
     },
     {
       id: 'watched',
-      label: isWatched ? 'Убрать из просмотренного' : 'Отметить просмотренным',
-      icon: <EyeIcon size={16} strokeWidth={isWatched ? 2.1 : 1.75} />,
+      label: 'Просмотрено',
+      icon: <EyeIcon size={15} strokeWidth={isWatched ? 2.1 : 1.75} />,
       active: isWatched,
-      tone: isWatched ? 'danger' : 'default',
     },
   ];
 }
