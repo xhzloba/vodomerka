@@ -9,7 +9,7 @@ import { playDeleteSound } from '@/shared/audio/uiSounds';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog/ConfirmDialog';
 import { TrashIcon } from '@/shared/ui/icons';
 import { APP_THEME_OPTIONS } from '@/shared/settings/themes';
-import { SIDEBAR_MENU_ANIMATION_OPTIONS } from '@/shared/settings/types';
+import { POSTER_SIZE_OPTIONS, SIDEBAR_MENU_ANIMATION_OPTIONS } from '@/shared/settings/types';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { PageLoading } from '@/shared/ui/PageState';
 import { Tabs } from '@/shared/ui/Tabs';
@@ -164,6 +164,35 @@ export function SettingsView() {
                         : ''
                     }`}
                     onClick={() => void updateSettings({ sidebarMenuAnimation: option.id })}
+                  >
+                    <span className="settings-mode-picker__label">{option.label}</span>
+                    <span className="settings-mode-picker__hint">{option.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="settings-panel" aria-labelledby="settings-poster-size-title">
+              <div className="settings-panel__intro">
+                <h2 id="settings-poster-size-title" className="settings-panel__title">
+                  Размер постеров
+                </h2>
+                <p className="settings-panel__description">
+                  Главная, каталог, подборки, избранное и просмотренное.
+                </p>
+              </div>
+
+              <div className="settings-mode-picker" role="radiogroup" aria-label="Размер постеров">
+                {POSTER_SIZE_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={settings.posterSize === option.id}
+                    className={`settings-mode-picker__option${
+                      settings.posterSize === option.id ? ' settings-mode-picker__option--active' : ''
+                    }`}
+                    onClick={() => void updateSettings({ posterSize: option.id })}
                   >
                     <span className="settings-mode-picker__label">{option.label}</span>
                     <span className="settings-mode-picker__hint">{option.hint}</span>

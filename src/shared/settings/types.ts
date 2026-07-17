@@ -3,6 +3,7 @@ import type {
   CatalogRowGapPreset,
   HiddenHomeSection,
   HomeSectionMode,
+  PosterSizePreset,
   SidebarMenuAnimation,
 } from '../../../contracts/ipc';
 
@@ -12,6 +13,7 @@ export type {
   CatalogRowGapPreset,
   HiddenHomeSection,
   HomeSectionMode as HomeFavoritesSectionMode,
+  PosterSizePreset,
   SidebarMenuAnimation,
 } from '../../../contracts/ipc';
 
@@ -31,6 +33,18 @@ export const CATALOG_GAP_VALUES: Record<CatalogRowGapPreset, { row: number; colu
   spacious: { row: 36, column: 28 },
 };
 
+export const POSTER_SIZE_OPTIONS: Array<{ id: PosterSizePreset; label: string; hint: string }> = [
+  { id: 'small', label: 'Маленькие', hint: 'Больше карточек в ряду и сетке' },
+  { id: 'medium', label: 'Средние', hint: 'Текущий размер по умолчанию' },
+  { id: 'large', label: 'Большие', hint: 'Крупные постеры, меньше в ряду' },
+];
+
+export const POSTER_SIZE_VALUES: Record<PosterSizePreset, { cardWidth: number; gridMin: number }> = {
+  small: { cardWidth: 140, gridMin: 132 },
+  medium: { cardWidth: 180, gridMin: 168 },
+  large: { cardWidth: 220, gridMin: 200 },
+};
+
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   theme: 'obsidian',
   heroEnabled: true,
@@ -39,6 +53,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   heroSourceSectionIds: [],
   cardShowInfo: false,
   catalogRowGap: 'normal',
+  posterSize: 'medium',
   sidebarCollapsed: false,
   sidebarMenuAnimation: 'magnetic-water',
   hiddenHomeSections: [
@@ -74,6 +89,21 @@ export function normalizeCatalogRowGap(value: unknown): CatalogRowGapPreset {
   }
 
   return DEFAULT_APP_SETTINGS.catalogRowGap;
+}
+
+export function normalizePosterSize(value: unknown): PosterSizePreset {
+  if (value === 'small' || value === 'large') {
+    return value;
+  }
+
+  return DEFAULT_APP_SETTINGS.posterSize;
+}
+
+export function applyPosterSizeCssVars(posterSize: PosterSizePreset): void {
+  const values = POSTER_SIZE_VALUES[posterSize];
+  const root = document.documentElement;
+  root.style.setProperty('--media-card-width', `${values.cardWidth}px`);
+  root.style.setProperty('--media-grid-min', `${values.gridMin}px`);
 }
 
 export function normalizeSidebarMenuAnimation(value: unknown): SidebarMenuAnimation {

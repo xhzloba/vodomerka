@@ -10,7 +10,7 @@ import {
 import { loadAppSettings, resetAppData, saveAppSettings } from './storage';
 import { setUiSoundsEnabled } from '@/shared/audio/uiSounds';
 import { applyAppTheme } from './themes';
-import { DEFAULT_APP_SETTINGS, type AppSettings } from './types';
+import { applyPosterSizeCssVars, DEFAULT_APP_SETTINGS, type AppSettings } from './types';
 
 interface AppSettingsContextValue {
   settings: AppSettings;
@@ -32,12 +32,17 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   }, [settings.uiSoundsEnabled]);
 
   useEffect(() => {
+    applyPosterSizeCssVars(settings.posterSize);
+  }, [settings.posterSize]);
+
+  useEffect(() => {
     let cancelled = false;
 
     void loadAppSettings()
       .then((loaded) => {
         if (!cancelled) {
           applyAppTheme(loaded.theme);
+          applyPosterSizeCssVars(loaded.posterSize);
           setSettings(loaded);
         }
       })
@@ -57,12 +62,16 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     if (patch.theme) {
       applyAppTheme(next.theme);
     }
+    if (patch.posterSize !== undefined) {
+      applyPosterSizeCssVars(next.posterSize);
+    }
     setSettings(next);
   }, []);
 
   const resetToDefaults = useCallback(async () => {
     const next = await resetAppData();
     applyAppTheme(next.theme);
+    applyPosterSizeCssVars(next.posterSize);
     setSettings(next);
     setSetupWelcomeEpoch((value) => value + 1);
   }, []);

@@ -14,7 +14,7 @@
   --media-snake-grow: 0.48s;
 
   flex-shrink: 0;
-  width: 180px;
+  width: var(--media-card-width, 180px);
   cursor: pointer;
   scroll-snap-align: start;
 }

@@ -2,6 +2,8 @@ export type AppTheme = 'obsidian' | 'onyx' | 'nocturne' | 'ember' | 'aurora';
 
 export type CatalogRowGapPreset = 'compact' | 'normal' | 'relaxed' | 'spacious';
 
+export type PosterSizePreset = 'small' | 'medium' | 'large';
+
 export type HomeSectionMode = 'auto' | 'on' | 'off';
 
 export type SidebarMenuAnimation = 'liquid' | 'snake' | 'magnetic' | 'magnetic-water' | 'edge-pulse';
@@ -19,6 +21,7 @@ export interface AppSettings {
   heroSourceSectionIds: string[];
   cardShowInfo: boolean;
   catalogRowGap: CatalogRowGapPreset;
+  posterSize: PosterSizePreset;
   sidebarCollapsed: boolean;
   sidebarMenuAnimation: SidebarMenuAnimation;
   hiddenHomeSections: HiddenHomeSection[];
