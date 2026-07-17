@@ -394,6 +394,54 @@
   background: transparent;
 }
 
+.media-detail__edge-pulse {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  width: 12px;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.media-detail__edge-pulse-core {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 1.5px;
+  height: 38%;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--app-accent) 22%, transparent) 14%,
+    color-mix(in srgb, var(--app-accent) 70%, transparent) 32%,
+    color-mix(in srgb, var(--app-accent) 94%, white 16%) 50%,
+    color-mix(in srgb, var(--app-accent) 70%, transparent) 68%,
+    color-mix(in srgb, var(--app-accent) 22%, transparent) 86%,
+    transparent 100%
+  );
+  box-shadow: 0 0 6px color-mix(in srgb, var(--app-accent) 45%, transparent);
+  animation: media-detail-edge-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes media-detail-edge-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translateY(-50%) scaleY(0.88);
+    filter: brightness(0.85);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scaleY(1.06);
+    filter: brightness(1.25);
+  }
+}
+
 .media-detail__window-hero.hero {
   margin-top: 0;
   padding-top: var(--app-titlebar-height);
@@ -517,5 +565,12 @@
   .media-detail__snake-beam--trail,
   .media-detail__snake-beam--core {
     animation: none;
+  }
+
+  .media-detail__edge-pulse-core {
+    animation: none;
+    opacity: 0.7;
+    filter: none;
+    transform: translateY(-50%);
   }
 }

@@ -299,6 +299,10 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
     return (
       <div className="media-detail media-detail--window">
         <div className="media-detail__panel">
+          <div className="media-detail__edge-pulse" aria-hidden="true">
+            <span className="media-detail__edge-pulse-core" />
+          </div>
+
           <section className="hero media-detail__window-hero">
             <div className="hero__backdrop" aria-hidden="true">
               <div className="hero__image-panel">
