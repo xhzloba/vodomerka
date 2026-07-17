@@ -67,12 +67,6 @@ export function isSerialsHomeRow(row: Pick<ContentRow, 'title' | 'playlistUrl'>)
   return /^сериалы$/i.test(row.title.trim()) && row.playlistUrl.includes('type=serial');
 }
 
-export function isDefaultHiddenCatalogHomeRow(
-  row: Pick<ContentRow, 'title' | 'playlistUrl'>,
-): boolean {
-  return isMoviesHomeRow(row) || isSerialsHomeRow(row);
-}
-
 export function isTrendingHomeRow(row: Pick<ContentRow, 'title' | 'playlistUrl'>): boolean {
   return (
     /тренд/i.test(row.title) ||
@@ -303,12 +297,6 @@ export function getEffectiveHiddenHomeSections(
 
     if (!isRestored && !isHidden) {
       result = addHiddenHomeSection(result, section);
-    }
-  }
-
-  for (const row of rows) {
-    if (isDefaultHiddenCatalogHomeRow(row) && !restoreOrder.includes(row.id)) {
-      result = addHiddenHomeSection(result, { id: row.id, title: row.title });
     }
   }
 
