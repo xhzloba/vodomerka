@@ -1,4 +1,4 @@
-import type { ContentRow } from '@/shared/domain/media';
+import type { ContentRow, MediaItem } from '@/shared/domain/media';
 import type { HiddenHomeSection, HomeFavoritesSectionMode } from '@/shared/settings/types';
 
 export const HOME_FAVORITES_SECTION_ID = '__home_favorites__';
@@ -78,6 +78,95 @@ export function isTrendingHomeRow(row: Pick<ContentRow, 'title' | 'playlistUrl'>
     /тренд/i.test(row.title) ||
     (row.playlistUrl.includes('sort=popular') && !row.playlistUrl.includes('type='))
   );
+}
+
+export function isWatchingHomeRow(row: Pick<ContentRow, 'title' | 'playlistUrl'>): boolean {
+  return row.title === 'Сейчас смотрят' || row.playlistUrl.includes('sort=watching');
+}
+
+export function isRecommendedHomeRow(row: Pick<ContentRow, 'title'>): boolean {
+  return /понравится/i.test(row.title);
+}
+
+export function isHeroSliderSourceRow(
+  row: Pick<ContentRow, 'id' | 'title' | 'playlistUrl'>,
+): boolean {
+  return (
+    isTrendingHomeRow(row) ||
+    isWatchingHomeRow(row) ||
+    isTop250HomeRow(row) ||
+    isRecommendedHomeRow(row) ||
+    isMoviesHomeRow(row) ||
+    isSerialsHomeRow(row)
+  );
+}
+
+function heroSliderSourcePriority(
+  row: Pick<ContentRow, 'id' | 'title' | 'playlistUrl'>,
+): number {
+  if (isTrendingHomeRow(row)) {
+    return 0;
+  }
+  if (isWatchingHomeRow(row)) {
+    return 1;
+  }
+  if (isTop250HomeRow(row)) {
+    return 2;
+  }
+  if (isRecommendedHomeRow(row)) {
+    return 3;
+  }
+  if (isMoviesHomeRow(row)) {
+    return 4;
+  }
+  if (isSerialsHomeRow(row)) {
+    return 5;
+  }
+  return 99;
+}
+
+export function getHeroSliderSourceRows(rows: ContentRow[]): ContentRow[] {
+  return rows
+    .filter(isHeroSliderSourceRow)
+    .slice()
+    .sort((a, b) => heroSliderSourcePriority(a) - heroSliderSourcePriority(b));
+}
+
+export function getDefaultHeroSourceSectionIds(rows: ContentRow[]): string[] {
+  const options = getHeroSliderSourceRows(rows);
+  const trending = options.find((row) => isTrendingHomeRow(row)) ?? options[0];
+  return trending ? [trending.id] : [];
+}
+
+export function resolveHeroSourceSectionIds(
+  rows: ContentRow[],
+  heroSourceSectionIds: string[],
+): string[] {
+  const options = getHeroSliderSourceRows(rows);
+  if (options.length === 0) {
+    return [];
+  }
+
+  const optionIds = new Set(options.map((row) => row.id));
+  const selectedId = heroSourceSectionIds.find((id) => optionIds.has(id));
+
+  if (selectedId) {
+    return [selectedId];
+  }
+
+  return getDefaultHeroSourceSectionIds(rows);
+}
+
+export function resolveHeroItems(
+  rows: ContentRow[],
+  heroSourceSectionIds: string[],
+): MediaItem[] {
+  const [sourceId] = resolveHeroSourceSectionIds(rows, heroSourceSectionIds);
+  if (!sourceId) {
+    return [];
+  }
+
+  return rows.find((row) => row.id === sourceId)?.items ?? [];
 }
 
 export function addHiddenHomeSection(

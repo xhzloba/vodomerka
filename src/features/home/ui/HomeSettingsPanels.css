@@ -26,3 +26,44 @@
 .home-settings-panels--menu .settings-mode-picker {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
+
+.settings-subgroup--hero-sources {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--app-border);
+}
+
+.settings-hero-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-hero-sources__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--app-border);
+  background: var(--app-elevated);
+}
+
+.settings-hero-sources__title {
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.home-settings-panels--menu .settings-hero-sources__item {
+  padding: 8px 10px;
+}
+
+.home-settings-panels--menu .settings-hero-sources__title {
+  font-size: 0.8125rem;
+}

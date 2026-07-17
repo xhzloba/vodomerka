@@ -36,6 +36,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   heroEnabled: true,
   heroAutoSlide: true,
   heroSlideIntervalSec: 5,
+  heroSourceSectionIds: [],
   cardShowInfo: false,
   catalogRowGap: 'normal',
   sidebarCollapsed: false,
@@ -109,6 +110,20 @@ export function normalizeHomeSectionRestoreOrder(value: unknown): string[] {
   }
 
   return value.filter((item): item is string => typeof item === 'string' && item.length > 0);
+}
+
+export function normalizeHeroSourceSectionIds(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return DEFAULT_APP_SETTINGS.heroSourceSectionIds;
+  }
+
+  for (const item of value) {
+    if (typeof item === 'string' && item.length > 0) {
+      return [item];
+    }
+  }
+
+  return DEFAULT_APP_SETTINGS.heroSourceSectionIds;
 }
 
 export function normalizeHomeFavoritesSection(value: unknown): HomeFavoritesSectionMode {

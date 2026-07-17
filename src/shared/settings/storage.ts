@@ -4,6 +4,7 @@ import {
   DEFAULT_APP_SETTINGS,
   normalizeCatalogRowGap,
   normalizeDismissedTipIds,
+  normalizeHeroSourceSectionIds,
   normalizeHiddenHomeSections,
   normalizeHomeSectionRestoreOrder,
   normalizeHomeFavoritesSection,
@@ -104,6 +105,7 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     heroSlideIntervalSec: clampHeroSlideIntervalSec(
       value.heroSlideIntervalSec ?? DEFAULT_APP_SETTINGS.heroSlideIntervalSec,
     ),
+    heroSourceSectionIds: normalizeHeroSourceSectionIds(value.heroSourceSectionIds),
     cardShowInfo: readCardShowInfo(value),
     catalogRowGap: normalizeCatalogRowGap(value.catalogRowGap),
     sidebarCollapsed: readSidebarCollapsed(value),

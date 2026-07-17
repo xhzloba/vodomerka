@@ -1,7 +1,10 @@
+import { useEffect, useMemo } from 'react';
 import { useHomePage } from '@/features/home/model/useHomePage';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import {
   getEffectiveHiddenHomeSections,
+  getHeroSliderSourceRows,
+  resolveHeroSourceSectionIds,
   restoreHomeSection,
   HOME_RECENTLY_VIEWED_SECTION_TITLE,
 } from '@/shared/domain/homeSections';
@@ -25,10 +28,40 @@ export function HomeSettingsPanels({ variant = 'settings' }: HomeSettingsPanelsP
   const { showToast } = useToast();
   const { data: homeData } = useHomePage();
 
+  const homeRows = homeData?.rows ?? [];
+  const heroSourceOptions = useMemo(() => getHeroSliderSourceRows(homeRows), [homeRows]);
+
+  useEffect(() => {
+    const rows = homeData?.rows;
+    if (!rows?.length) {
+      return;
+    }
+
+    const resolved = resolveHeroSourceSectionIds(rows, settings.heroSourceSectionIds);
+    if (resolved.length === 0) {
+      return;
+    }
+
+    const current = settings.heroSourceSectionIds;
+    const alreadySingle =
+      current.length === 1 && current[0] === resolved[0];
+
+    if (alreadySingle) {
+      return;
+    }
+
+    void updateSettings({ heroSourceSectionIds: resolved });
+  }, [homeData?.rows, settings.heroSourceSectionIds, updateSettings]);
+
+  const selectedHeroSourceId = useMemo(
+    () => resolveHeroSourceSectionIds(homeRows, settings.heroSourceSectionIds)[0] ?? null,
+    [homeRows, settings.heroSourceSectionIds],
+  );
+
   const hiddenSections = getEffectiveHiddenHomeSections(
     settings.hiddenHomeSections,
     settings.homeSectionRestoreOrder,
-    homeData?.rows ?? [],
+    homeRows,
   );
 
   return (
@@ -114,6 +147,46 @@ export function HomeSettingsPanels({ variant = 'settings' }: HomeSettingsPanelsP
             />
             <span className="settings-interval__suffix">сек</span>
           </div>
+        </div>
+
+        <div className="settings-subgroup settings-subgroup--hero-sources">
+          <p className="settings-subgroup__label">Категория в слайдере</p>
+          <p className="settings-subgroup__hint">
+            Только одна секция. По умолчанию — «В тренде»
+          </p>
+
+          {!heroSourceOptions.length ? (
+            <p className="settings-hidden-empty">Секции главной ещё не загружены</p>
+          ) : (
+            <ul className="settings-hero-sources" role="radiogroup" aria-label="Категория в слайдере">
+              {heroSourceOptions.map((row) => {
+                const checked = selectedHeroSourceId === row.id;
+
+                return (
+                  <li key={row.id} className="settings-hero-sources__item">
+                    <span className="settings-hero-sources__title">{row.title}</span>
+                    <button
+                      type="button"
+                      className={`settings-toggle ${checked ? 'settings-toggle--on' : ''}`}
+                      role="radio"
+                      aria-checked={checked}
+                      aria-label={`Источник слайдера: ${row.title}`}
+                      disabled={!settings.heroEnabled}
+                      onClick={() => {
+                        if (checked) {
+                          return;
+                        }
+
+                        void updateSettings({ heroSourceSectionIds: [row.id] });
+                      }}
+                    >
+                      <span className="settings-toggle__thumb" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       </section>
 

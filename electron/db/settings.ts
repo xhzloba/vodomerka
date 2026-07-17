@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   heroEnabled: true,
   heroAutoSlide: true,
   heroSlideIntervalSec: 5,
+  heroSourceSectionIds: [],
   cardShowInfo: false,
   catalogRowGap: 'normal',
   sidebarCollapsed: false,
@@ -44,6 +45,7 @@ const SETTING_KEYS = {
   heroEnabled: 'hero_enabled',
   heroAutoSlide: 'hero_auto_slide',
   heroSlideIntervalSec: 'hero_slide_interval_sec',
+  heroSourceSectionIds: 'hero_source_section_ids',
   cardShowInfo: 'card_show_info',
   catalogRowGap: 'catalog_row_gap',
   sidebarCollapsed: 'sidebar_collapsed',
@@ -121,6 +123,10 @@ function getDefaultSettingEntries(): Array<{ key: string; value: string }> {
     {
       key: SETTING_KEYS.heroSlideIntervalSec,
       value: String(DEFAULT_SETTINGS.heroSlideIntervalSec),
+    },
+    {
+      key: SETTING_KEYS.heroSourceSectionIds,
+      value: JSON.stringify(DEFAULT_SETTINGS.heroSourceSectionIds),
     },
     { key: SETTING_KEYS.cardShowInfo, value: DEFAULT_SETTINGS.cardShowInfo ? '1' : '0' },
     { key: SETTING_KEYS.catalogRowGap, value: DEFAULT_SETTINGS.catalogRowGap },
@@ -302,6 +308,29 @@ function parseHomeSectionRestoreOrder(value: string | undefined): AppSettings['h
   }
 }
 
+function parseHeroSourceSectionIds(value: string | undefined): AppSettings['heroSourceSectionIds'] {
+  if (!value) {
+    return DEFAULT_SETTINGS.heroSourceSectionIds;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) {
+      return DEFAULT_SETTINGS.heroSourceSectionIds;
+    }
+
+    for (const item of parsed) {
+      if (typeof item === 'string' && item.length > 0) {
+        return [item];
+      }
+    }
+
+    return DEFAULT_SETTINGS.heroSourceSectionIds;
+  } catch {
+    return DEFAULT_SETTINGS.heroSourceSectionIds;
+  }
+}
+
 function parseDismissedTipIds(value: string | undefined): AppSettings['dismissedTipIds'] {
   if (!value) {
     return DEFAULT_SETTINGS.dismissedTipIds;
@@ -373,6 +402,7 @@ function parseSettings(database: Database.Database): AppSettings {
   const heroEnabledRaw = readSetting(database, SETTING_KEYS.heroEnabled);
   const autoSlideRaw = readSetting(database, SETTING_KEYS.heroAutoSlide);
   const intervalRaw = readSetting(database, SETTING_KEYS.heroSlideIntervalSec);
+  const heroSourceSectionIdsRaw = readSetting(database, SETTING_KEYS.heroSourceSectionIds);
   const catalogRowGapRaw = readSetting(database, SETTING_KEYS.catalogRowGap);
   const sidebarCollapsedRaw = readSetting(database, SETTING_KEYS.sidebarCollapsed);
   const sidebarMenuAnimationRaw = readSetting(database, SETTING_KEYS.sidebarMenuAnimation);
@@ -394,6 +424,7 @@ function parseSettings(database: Database.Database): AppSettings {
     heroEnabled: heroEnabledRaw !== '0',
     heroAutoSlide: autoSlideRaw !== '0',
     heroSlideIntervalSec,
+    heroSourceSectionIds: parseHeroSourceSectionIds(heroSourceSectionIdsRaw),
     cardShowInfo: readCardShowInfo(database),
     catalogRowGap: normalizeCatalogRowGap(catalogRowGapRaw),
     sidebarCollapsed: sidebarCollapsedRaw === '1',
@@ -458,6 +489,17 @@ export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
     upsert.run({
       key: SETTING_KEYS.heroSlideIntervalSec,
       value: String(clampInterval(patch.heroSlideIntervalSec)),
+    });
+  }
+
+  if (patch.heroSourceSectionIds !== undefined) {
+    const selected = patch.heroSourceSectionIds.find(
+      (item): item is string => typeof item === 'string' && item.length > 0,
+    );
+
+    upsert.run({
+      key: SETTING_KEYS.heroSourceSectionIds,
+      value: JSON.stringify(selected ? [selected] : []),
     });
   }
 

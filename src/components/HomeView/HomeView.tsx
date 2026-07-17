@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { TOP250_COMPILATION_TARGET, type CompilationNavigationTarget } from '@/app/navigation/compilationTarget';
 import { useHomePage } from '@/features/home/model/useHomePage';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
@@ -16,6 +16,8 @@ import {
   isTop250HomeRow,
   isTrendingHomeRow,
   orderVisibleHomeRows,
+  resolveHeroItems,
+  resolveHeroSourceSectionIds,
   shouldShowHomeFavoritesSection,
   shouldShowHomeRecentlyViewedSection,
 } from '@/shared/domain/homeSections';
@@ -53,6 +55,24 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
     null,
   );
 
+  useEffect(() => {
+    if (!data?.rows.length) {
+      return;
+    }
+
+    const resolved = resolveHeroSourceSectionIds(data.rows, settings.heroSourceSectionIds);
+    if (resolved.length === 0) {
+      return;
+    }
+
+    const current = settings.heroSourceSectionIds;
+    if (current.length === 1 && current[0] === resolved[0]) {
+      return;
+    }
+
+    void updateSettings({ heroSourceSectionIds: resolved });
+  }, [data?.rows, settings.heroSourceSectionIds, updateSettings]);
+
   const hiddenSectionIds = useMemo(
     () =>
       getHiddenHomeSectionIds(
@@ -83,6 +103,11 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
     settings.homeRecentlyViewedSection,
     recentlyViewed.length,
     hiddenSectionIds,
+  );
+
+  const heroItems = useMemo(
+    () => resolveHeroItems(data?.rows ?? [], settings.heroSourceSectionIds),
+    [data?.rows, settings.heroSourceSectionIds],
   );
 
   const requestHideSection = (section: { id: string; title: string }) => {
@@ -146,14 +171,11 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
     );
   }
 
-  const trendingRow =
-    data.rows.find((row) => isTrendingHomeRow(row)) ?? data.rows[0];
-
   return (
     <div ref={scrollRef} className="home-view scroll-overlay">
-      {settings.heroEnabled && trendingRow?.items.length ? (
+      {settings.heroEnabled && heroItems.length ? (
         <HeroBanner
-          items={trendingRow.items}
+          items={heroItems}
           autoSlide={settings.heroAutoSlide}
           slideIntervalSec={settings.heroSlideIntervalSec}
           onPlay={onPlay}

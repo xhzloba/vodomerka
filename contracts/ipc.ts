@@ -16,6 +16,7 @@ export interface AppSettings {
   heroEnabled: boolean;
   heroAutoSlide: boolean;
   heroSlideIntervalSec: number;
+  heroSourceSectionIds: string[];
   cardShowInfo: boolean;
   catalogRowGap: CatalogRowGapPreset;
   sidebarCollapsed: boolean;
