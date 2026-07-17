@@ -11,7 +11,7 @@ import { loadAppSettings, resetAppData, saveAppSettings } from './storage';
 import { setUiSoundsEnabled } from '@/shared/audio/uiSounds';
 import { setVokinoApiServer, VOKINO_API_SERVER_CHANGED_EVENT } from '@/shared/config/api';
 import { vokinoRepository } from '@/shared/api/vokino/repository';
-import { applyAppTheme } from './themes';
+import { applyResolvedTheme } from './themes';
 import { applyPosterSizeCssVars, DEFAULT_APP_SETTINGS, type AppSettings } from './types';
 
 interface AppSettingsContextValue {
@@ -50,13 +50,15 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     void loadAppSettings()
-      .then((loaded) => {
-        if (!cancelled) {
-          applyAppTheme(loaded.theme);
-          applyPosterSizeCssVars(loaded.posterSize);
-          applyApiServer(loaded.apiServer);
-          setSettings(loaded);
+      .then(async (loaded) => {
+        if (cancelled) {
+          return;
         }
+
+        await applyResolvedTheme(loaded.theme);
+        applyPosterSizeCssVars(loaded.posterSize);
+        applyApiServer(loaded.apiServer);
+        setSettings(loaded);
       })
       .finally(() => {
         if (!cancelled) {
@@ -72,8 +74,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const updateSettings = useCallback(async (patch: Partial<AppSettings>) => {
     const prevServer = settings.apiServer;
     const next = await saveAppSettings(patch);
-    if (patch.theme) {
-      applyAppTheme(next.theme);
+    if (patch.theme !== undefined) {
+      await applyResolvedTheme(next.theme);
     }
     if (patch.posterSize !== undefined) {
       applyPosterSizeCssVars(next.posterSize);
@@ -86,7 +88,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
 
   const resetToDefaults = useCallback(async () => {
     const next = await resetAppData();
-    applyAppTheme(next.theme);
+    await applyResolvedTheme(next.theme);
     applyPosterSizeCssVars(next.posterSize);
     applyApiServer(next.apiServer, true);
     setSettings(next);
@@ -95,7 +97,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
 
   const reloadSettings = useCallback(async () => {
     const next = await loadAppSettings();
-    applyAppTheme(next.theme);
+    await applyResolvedTheme(next.theme);
     applyPosterSizeCssVars(next.posterSize);
     applyApiServer(next.apiServer, true);
     setSettings(next);

@@ -1,0 +1,13 @@
+{
+  "id": "crimson",
+  "name": "Кримсон",
+  "description": "Тёмный уголь с багровым акцентом",
+  "version": "1.0.0",
+  "engine": 1,
+  "windowBackground": "#12090b",
+  "preview": {
+    "bg": "#12090b",
+    "accent": "#e57373"
+  },
+  "css": "color-scheme: dark;\n  --app-bg: #12090b;\n  --app-surface: rgba(255, 140, 140, 0.03);\n  --app-surface-hover: rgba(255, 140, 140, 0.05);\n  --app-border: rgba(255, 160, 160, 0.07);\n  --app-border-strong: rgba(255, 140, 140, 0.14);\n  --app-text: #f6ecec;\n  --app-text-muted: #9a8888;\n  --app-accent: #e57373;\n  --app-accent-soft: rgba(229, 115, 115, 0.15);\n  --app-accent-border: rgba(229, 115, 115, 0.32);\n  --app-accent-nav: rgba(229, 115, 115, 0.1);\n  --app-elevated: #1a1012;\n  --app-glow-1: rgba(229, 115, 115, 0.16);\n  --app-glow-2: rgba(160, 40, 50, 0.1);\n  --app-card-shadow: 0 20px 40px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 180, 180, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.42);\n  --app-sidebar-bg: radial-gradient(circle at 14% -3%, var(--app-glow-1), transparent 42%), radial-gradient(circle at 90% 106%, var(--app-glow-2), transparent 40%), var(--app-bg);\n  --app-shell-bg: var(--app-sidebar-bg);\n  --media-snake-1: rgba(180, 70, 70, 0.14);\n  --media-snake-2: rgba(229, 115, 115, 0.58);\n  --media-snake-3: rgba(255, 200, 200, 0.96);\n  --media-snake-4: rgba(200, 80, 90, 0.72);\n  --bg-primary: var(--app-bg);\n  --bg-secondary: var(--app-elevated);\n  --bg-elevated: #221416;\n  --bg-glass: rgba(18, 10, 12, 0.88);\n  --text-primary: var(--app-text);\n  --text-secondary: var(--app-text-muted);\n  --text-tertiary: rgba(154, 136, 136, 0.72);\n  --accent: var(--app-accent);\n  --accent-blue: var(--app-accent);\n  --focus-glow: rgba(229, 115, 115, 0.24);"
+}

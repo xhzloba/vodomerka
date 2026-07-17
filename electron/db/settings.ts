@@ -1,11 +1,15 @@
 import Database from 'better-sqlite3';
+import { readFileSync } from 'fs';
+import path from 'path';
+import { app } from 'electron';
 import type { AppSettings, AppTheme } from '../../contracts/ipc';
+import { BUILTIN_THEME_IDS, DEFAULT_THEME_ID } from '../../contracts/themes';
 import { getDatabase } from './database';
 
 export type { AppSettings, AppTheme } from '../../contracts/ipc';
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'obsidian',
+  theme: DEFAULT_THEME_ID,
   heroEnabled: true,
   heroAutoSlide: true,
   heroSlideIntervalSec: 5,
@@ -34,13 +38,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 const DEFAULT_HIDDEN_BUILTIN_HOME_SECTIONS = DEFAULT_SETTINGS.hiddenHomeSections;
 
-const THEME_BACKGROUNDS: Record<AppTheme, string> = {
+const BUILTIN_THEME_BACKGROUNDS: Record<(typeof BUILTIN_THEME_IDS)[number], string> = {
   obsidian: '#0a0a0e',
-  onyx: '#050508',
-  nocturne: '#07060c',
-  ember: '#0b0907',
-  aurora: '#060a0c',
 };
+
+const THEME_ID_PATTERN = /^[a-z][a-z0-9-]{1,47}$/;
 
 const SETTING_KEYS = {
   theme: 'theme',
@@ -221,12 +223,7 @@ function normalizeApiServer(value: string | undefined): AppSettings['apiServer']
 }
 
 function normalizeTheme(value: string | undefined): AppTheme {
-  if (
-    value === 'onyx' ||
-    value === 'nocturne' ||
-    value === 'ember' ||
-    value === 'aurora'
-  ) {
+  if (typeof value === 'string' && THEME_ID_PATTERN.test(value)) {
     return value;
   }
 
@@ -234,7 +231,22 @@ function normalizeTheme(value: string | undefined): AppTheme {
 }
 
 export function getThemeBackgroundColor(theme: AppTheme): string {
-  return THEME_BACKGROUNDS[theme];
+  if ((BUILTIN_THEME_IDS as readonly string[]).includes(theme)) {
+    return BUILTIN_THEME_BACKGROUNDS[theme as (typeof BUILTIN_THEME_IDS)[number]];
+  }
+
+  try {
+    const filePath = path.join(app.getPath('userData'), 'plugins', 'themes', `${theme}.json`);
+    const raw = readFileSync(filePath, 'utf8');
+    const parsed = JSON.parse(raw) as { windowBackground?: unknown };
+    if (typeof parsed.windowBackground === 'string' && parsed.windowBackground.length > 0) {
+      return parsed.windowBackground;
+    }
+  } catch {
+    // fallback
+  }
+
+  return BUILTIN_THEME_BACKGROUNDS.obsidian;
 }
 
 function normalizeHomeFavoritesSection(value: string | undefined): AppSettings['homeFavoritesSection'] {

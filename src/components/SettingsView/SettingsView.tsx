@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { HomeSettingsPanels } from '@/features/home/ui/HomeSettingsPanels';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { useApiServerHealth } from '@/shared/settings/useApiServerHealth';
+import { listInstalledThemePlugins } from '@/shared/plugins/themePlugins';
+import type { InstalledThemePlugin } from '../../../contracts/ipc';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { useRecentlyViewed } from '@/shared/domain/RecentlyViewedContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
@@ -56,12 +58,30 @@ export function SettingsView() {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<SettingsTabId>('appearance');
   const { health, isChecking, check: checkApiServers } = useApiServerHealth();
+  const [installedThemes, setInstalledThemes] = useState<InstalledThemePlugin[]>([]);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [importConfirmOpen, setImportConfirmOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const canBackup = Boolean(window.electronAPI?.backup);
+
+  useEffect(() => {
+    if (activeTab !== 'appearance') {
+      return;
+    }
+
+    let cancelled = false;
+    void listInstalledThemePlugins().then((themes) => {
+      if (!cancelled) {
+        setInstalledThemes(themes);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, settings.theme]);
 
   const handleResetAll = async () => {
     setIsResetting(true);
@@ -180,7 +200,8 @@ export function SettingsView() {
                 Тема оформления
               </h2>
               <p className="settings-panel__description">
-                Цвета интерфейса, акценты и фон приложения. Выбор сохраняется в базе данных.
+                Встроенная тема — Обсидиан. Остальные ставятся в разделе «Плагины» и появляются
+                здесь после установки.
               </p>
             </div>
 
@@ -194,7 +215,7 @@ export function SettingsView() {
                     type="button"
                     role="radio"
                     aria-checked={isActive}
-                    className={`settings-theme-card settings-theme-card--${option.id}${
+                    className={`settings-theme-card${
                       isActive ? ' settings-theme-card--active' : ''
                     }`}
                     onClick={() => {
@@ -204,12 +225,54 @@ export function SettingsView() {
                     }}
                   >
                     <span className="settings-theme-card__preview" aria-hidden="true">
-                      <span className="settings-theme-card__swatch settings-theme-card__swatch--bg" />
-                      <span className="settings-theme-card__swatch settings-theme-card__swatch--accent" />
+                      <span
+                        className="settings-theme-card__swatch settings-theme-card__swatch--bg"
+                        style={{ background: option.preview.bg }}
+                      />
+                      <span
+                        className="settings-theme-card__swatch settings-theme-card__swatch--accent"
+                        style={{ background: option.preview.accent }}
+                      />
                     </span>
                     <span className="settings-theme-card__body">
                       <span className="settings-theme-card__label">{option.label}</span>
                       <span className="settings-theme-card__description">{option.description}</span>
+                    </span>
+                  </button>
+                );
+              })}
+
+              {installedThemes.map((theme) => {
+                const isActive = settings.theme === theme.id;
+
+                return (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={isActive}
+                    className={`settings-theme-card${
+                      isActive ? ' settings-theme-card--active' : ''
+                    }`}
+                    onClick={() => {
+                      if (!isActive) {
+                        void updateSettings({ theme: theme.id });
+                      }
+                    }}
+                  >
+                    <span className="settings-theme-card__preview" aria-hidden="true">
+                      <span
+                        className="settings-theme-card__swatch settings-theme-card__swatch--bg"
+                        style={{ background: theme.preview.bg }}
+                      />
+                      <span
+                        className="settings-theme-card__swatch settings-theme-card__swatch--accent"
+                        style={{ background: theme.preview.accent }}
+                      />
+                    </span>
+                    <span className="settings-theme-card__body">
+                      <span className="settings-theme-card__label">{theme.name}</span>
+                      <span className="settings-theme-card__description">{theme.description}</span>
                     </span>
                   </button>
                 );

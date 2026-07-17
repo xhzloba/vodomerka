@@ -1,0 +1,13 @@
+{
+  "id": "mist",
+  "name": "Туман",
+  "description": "Холодный серо-голубой сумрак",
+  "version": "1.0.0",
+  "engine": 1,
+  "windowBackground": "#0a0d12",
+  "preview": {
+    "bg": "#0a0d12",
+    "accent": "#9db4c8"
+  },
+  "css": "color-scheme: dark;\n  --app-bg: #0a0d12;\n  --app-surface: rgba(180, 200, 220, 0.03);\n  --app-surface-hover: rgba(180, 200, 220, 0.05);\n  --app-border: rgba(180, 200, 220, 0.07);\n  --app-border-strong: rgba(180, 200, 220, 0.12);\n  --app-text: #e8eef4;\n  --app-text-muted: #84909c;\n  --app-accent: #9db4c8;\n  --app-accent-soft: rgba(157, 180, 200, 0.14);\n  --app-accent-border: rgba(157, 180, 200, 0.28);\n  --app-accent-nav: rgba(157, 180, 200, 0.1);\n  --app-elevated: #10141a;\n  --app-glow-1: rgba(140, 170, 200, 0.14);\n  --app-glow-2: rgba(90, 120, 150, 0.1);\n  --app-card-shadow: 0 20px 40px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(200, 220, 240, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.42);\n  --app-sidebar-bg: radial-gradient(circle at 14% -3%, var(--app-glow-1), transparent 42%), radial-gradient(circle at 88% 106%, var(--app-glow-2), transparent 40%), var(--app-bg);\n  --app-shell-bg: var(--app-sidebar-bg);\n  --media-snake-1: rgba(100, 130, 160, 0.14);\n  --media-snake-2: rgba(157, 180, 200, 0.55);\n  --media-snake-3: rgba(220, 232, 244, 0.95);\n  --media-snake-4: rgba(120, 150, 180, 0.7);\n  --bg-primary: var(--app-bg);\n  --bg-secondary: var(--app-elevated);\n  --bg-elevated: #161b22;\n  --bg-glass: rgba(12, 16, 20, 0.88);\n  --text-primary: var(--app-text);\n  --text-secondary: var(--app-text-muted);\n  --text-tertiary: rgba(132, 144, 156, 0.72);\n  --accent: var(--app-accent);\n  --accent-blue: var(--app-accent);\n  --focus-glow: rgba(157, 180, 200, 0.22);"
+}

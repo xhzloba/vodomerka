@@ -287,7 +287,7 @@ export function shouldShowHomeRecentlyViewedSection(
 export function getEffectiveHiddenHomeSections(
   hidden: HiddenHomeSection[],
   restoreOrder: string[],
-  rows: ReadonlyArray<Pick<ContentRow, 'id' | 'title' | 'playlistUrl'>> = [],
+  _rows: ReadonlyArray<Pick<ContentRow, 'id' | 'title' | 'playlistUrl'>> = [],
 ): HiddenHomeSection[] {
   let result = hidden;
 

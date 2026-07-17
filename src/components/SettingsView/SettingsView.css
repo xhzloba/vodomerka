@@ -147,46 +147,6 @@
   border-radius: 999px;
 }
 
-.settings-theme-card--obsidian .settings-theme-card__swatch--bg {
-  background: #0a0a0e;
-}
-
-.settings-theme-card--obsidian .settings-theme-card__swatch--accent {
-  background: #c8ced8;
-}
-
-.settings-theme-card--onyx .settings-theme-card__swatch--bg {
-  background: #050508;
-}
-
-.settings-theme-card--onyx .settings-theme-card__swatch--accent {
-  background: #7eb4ff;
-}
-
-.settings-theme-card--nocturne .settings-theme-card__swatch--bg {
-  background: #07060c;
-}
-
-.settings-theme-card--nocturne .settings-theme-card__swatch--accent {
-  background: linear-gradient(90deg, #c8a8ff, #e88cc8);
-}
-
-.settings-theme-card--ember .settings-theme-card__swatch--bg {
-  background: #0b0907;
-}
-
-.settings-theme-card--ember .settings-theme-card__swatch--accent {
-  background: linear-gradient(90deg, #e4a855, #c87840);
-}
-
-.settings-theme-card--aurora .settings-theme-card__swatch--bg {
-  background: #060a0c;
-}
-
-.settings-theme-card--aurora .settings-theme-card__swatch--accent {
-  background: linear-gradient(90deg, #6ee7cf, #34d399);
-}
-
 .settings-theme-card__body {
   min-width: 0;
 }

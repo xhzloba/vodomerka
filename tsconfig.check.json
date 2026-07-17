@@ -4,6 +4,6 @@
     "composite": false,
     "noEmit": true
   },
-  "include": ["contracts", "electron", "src", "vite.config.ts"],
+  "include": ["contracts", "electron", "src", "plugins", "vite.config.ts"],
   "references": []
 }

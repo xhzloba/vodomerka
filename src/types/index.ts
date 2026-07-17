@@ -5,6 +5,7 @@ export type NavItem =
   | 'library'
   | 'watched'
   | 'search'
+  | 'plugins'
   | 'settings';
 
 export interface AppState {

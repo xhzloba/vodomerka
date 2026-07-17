@@ -44,6 +44,12 @@
     "asarUnpack": [
       "**/node_modules/better-sqlite3/**"
     ],
+    "extraResources": [
+      {
+        "from": "plugins",
+        "to": "plugins"
+      }
+    ],
     "mac": {
       "category": "public.app-category.entertainment",
       "target": [

@@ -1,0 +1,13 @@
+{
+  "id": "nocturne",
+  "name": "Ноктюрн",
+  "description": "Аметистовый сумрак с лавандово-розовым сиянием",
+  "version": "1.0.0",
+  "engine": 1,
+  "windowBackground": "#07060c",
+  "preview": {
+    "bg": "#07060c",
+    "accent": "#c8a8ff"
+  },
+  "css": "color-scheme: dark;\n  --app-bg: #07060c;\n  --app-surface: rgba(255, 255, 255, 0.028);\n  --app-surface-hover: rgba(255, 255, 255, 0.045);\n  --app-border: rgba(255, 255, 255, 0.065);\n  --app-border-strong: rgba(255, 255, 255, 0.11);\n  --app-text: #f0edf5;\n  --app-text-muted: #8d8798;\n  --app-accent: #c8a8ff;\n  --app-accent-soft: rgba(200, 168, 255, 0.14);\n  --app-accent-border: rgba(200, 168, 255, 0.3);\n  --app-accent-nav: rgba(200, 168, 255, 0.1);\n  --app-elevated: #0d0b13;\n  --app-glow-1: rgba(170, 120, 255, 0.13);\n  --app-glow-2: rgba(230, 130, 190, 0.09);\n  --app-card-shadow: 0 20px 40px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -1px 0 rgba(0, 0, 0, 0.42);\n  --app-sidebar-bg: radial-gradient(circle at 14% -3%, var(--app-glow-1), transparent 42%), radial-gradient(circle at 90% 106%, var(--app-glow-2), transparent 40%), var(--app-bg);\n  --app-shell-bg: var(--app-sidebar-bg);\n  --media-snake-1: rgba(140, 100, 220, 0.14);\n  --media-snake-2: rgba(190, 150, 255, 0.58);\n  --media-snake-3: rgba(230, 210, 255, 0.96);\n  --media-snake-4: rgba(220, 140, 200, 0.72);\n  --bg-primary: var(--app-bg);\n  --bg-secondary: var(--app-elevated);\n  --bg-elevated: #12101a;\n  --bg-glass: rgba(12, 10, 18, 0.86);\n  --text-primary: var(--app-text);\n  --text-secondary: var(--app-text-muted);\n  --text-tertiary: rgba(141, 135, 152, 0.72);\n  --accent: var(--app-accent);\n  --accent-blue: var(--app-accent);\n  --focus-glow: rgba(200, 168, 255, 0.22);"
+}

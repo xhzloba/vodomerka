@@ -15,6 +15,7 @@ import { MediaDetail } from '@/components/MediaDetail/MediaDetail';
 import { SearchView } from '@/components/SearchView/SearchView';
 import { SearchOverlay } from '@/components/SearchView/SearchOverlay';
 import { SettingsView } from '@/components/SettingsView/SettingsView';
+import { PluginsView } from '@/components/PluginsView/PluginsView';
 import { Sidebar } from '@/components/Sidebar/Sidebar';
 import type { MediaItem } from '@/shared/domain/media';
 import { ensureMediaOverridesLoaded } from '@/shared/domain/overridesStore';
@@ -274,6 +275,8 @@ export function MainAppShell() {
         );
       case 'settings':
         return <SettingsView />;
+      case 'plugins':
+        return <PluginsView />;
       default:
         return null;
     }

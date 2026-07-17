@@ -1,4 +1,26 @@
-export type AppTheme = 'obsidian' | 'onyx' | 'nocturne' | 'ember' | 'aurora';
+import type {
+  AppTheme,
+  InstalledThemePlugin,
+  PluginResult,
+  ThemeCatalog,
+} from './themes';
+
+export type {
+  AppTheme,
+  BuiltinThemeId,
+  InstalledThemePlugin,
+  PluginResult,
+  ThemeCatalog,
+  ThemeCatalogEntry,
+  ThemePluginPackage,
+  ThemePreviewSwatch,
+} from './themes';
+
+export {
+  BUILTIN_THEME_IDS,
+  DEFAULT_THEME_ID,
+  THEME_PLUGIN_ENGINE,
+} from './themes';
 
 export type CatalogRowGapPreset = 'compact' | 'normal' | 'relaxed' | 'spacious';
 
@@ -87,6 +109,13 @@ export const IPC_CHANNELS = {
     export: 'backup:export',
     import: 'backup:import',
   },
+  plugins: {
+    listThemes: 'plugins:listThemes',
+    getTheme: 'plugins:getTheme',
+    installTheme: 'plugins:installTheme',
+    uninstallTheme: 'plugins:uninstallTheme',
+    fetchCatalog: 'plugins:fetchCatalog',
+  },
   favorites: {
     list: 'favorites:list',
     add: 'favorites:add',
@@ -156,6 +185,13 @@ export interface ElectronApi {
   backup: {
     export: () => Promise<BackupResult>;
     import: () => Promise<BackupResult>;
+  };
+  plugins: {
+    listThemes: () => Promise<InstalledThemePlugin[]>;
+    getTheme: (id: string) => Promise<InstalledThemePlugin | null>;
+    installTheme: (urlOrLocalId: string) => Promise<PluginResult<InstalledThemePlugin>>;
+    uninstallTheme: (id: string) => Promise<PluginResult<{ removed: boolean }>>;
+    fetchCatalog: () => Promise<PluginResult<ThemeCatalog>>;
   };
   favorites: {
     list: () => Promise<StoredMediaItem[]>;

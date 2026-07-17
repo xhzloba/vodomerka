@@ -1,0 +1,13 @@
+{
+  "id": "aurora",
+  "name": "Аврора",
+  "description": "Полярная ночь с бирюзово-мятным сиянием",
+  "version": "1.0.0",
+  "engine": 1,
+  "windowBackground": "#060a0c",
+  "preview": {
+    "bg": "#060a0c",
+    "accent": "#6ee7cf"
+  },
+  "css": "color-scheme: dark;\n  --app-bg: #060a0c;\n  --app-surface: rgba(180, 255, 240, 0.028);\n  --app-surface-hover: rgba(180, 255, 240, 0.045);\n  --app-border: rgba(180, 255, 240, 0.07);\n  --app-border-strong: rgba(180, 255, 240, 0.12);\n  --app-text: #ecf8f5;\n  --app-text-muted: #7f9691;\n  --app-accent: #6ee7cf;\n  --app-accent-soft: rgba(110, 231, 207, 0.14);\n  --app-accent-border: rgba(110, 231, 207, 0.3);\n  --app-accent-nav: rgba(110, 231, 207, 0.1);\n  --app-elevated: #0a1012;\n  --app-glow-1: rgba(45, 212, 191, 0.16);\n  --app-glow-2: rgba(52, 211, 153, 0.1);\n  --app-card-shadow: 0 20px 40px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(180, 255, 240, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.42);\n  --app-sidebar-bg: radial-gradient(circle at 14% -3%, var(--app-glow-1), transparent 42%), radial-gradient(circle at 88% 106%, var(--app-glow-2), transparent 40%), var(--app-bg);\n  --app-shell-bg: var(--app-sidebar-bg);\n  --media-snake-1: rgba(45, 180, 160, 0.14);\n  --media-snake-2: rgba(94, 234, 212, 0.58);\n  --media-snake-3: rgba(204, 251, 241, 0.96);\n  --media-snake-4: rgba(52, 211, 153, 0.72);\n  --bg-primary: var(--app-bg);\n  --bg-secondary: var(--app-elevated);\n  --bg-elevated: #0e1518;\n  --bg-glass: rgba(8, 14, 16, 0.86);\n  --text-primary: var(--app-text);\n  --text-secondary: var(--app-text-muted);\n  --text-tertiary: rgba(127, 150, 145, 0.72);\n  --accent: var(--app-accent);\n  --accent-blue: var(--app-accent);\n  --focus-glow: rgba(110, 231, 207, 0.22);"
+}

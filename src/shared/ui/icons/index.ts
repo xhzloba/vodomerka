@@ -25,4 +25,5 @@ export {
   TrashIcon,
   TrendingIcon,
   WatchingIcon,
+  PuzzleIcon,
 } from './icons';

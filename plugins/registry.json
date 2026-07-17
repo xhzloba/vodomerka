@@ -1,0 +1,84 @@
+{
+  "engine": 1,
+  "updatedAt": "2026-07-17",
+  "themes": [
+    {
+      "id": "onyx",
+      "name": "Оникс",
+      "description": "Глубокий чёрный с холодным синим акцентом",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/xhzloba/vodomerka/main/plugins/themes/onyx.json",
+      "localPath": "themes/onyx.json",
+      "preview": {
+        "bg": "#050508",
+        "accent": "#7eb4ff"
+      },
+      "windowBackground": "#050508"
+    },
+    {
+      "id": "nocturne",
+      "name": "Ноктюрн",
+      "description": "Аметистовый сумрак с лавандово-розовым сиянием",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/xhzloba/vodomerka/main/plugins/themes/nocturne.json",
+      "localPath": "themes/nocturne.json",
+      "preview": {
+        "bg": "#07060c",
+        "accent": "#c8a8ff"
+      },
+      "windowBackground": "#07060c"
+    },
+    {
+      "id": "ember",
+      "name": "Янтарь",
+      "description": "Тёплый уголь с медово-золотым сиянием",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/xhzloba/vodomerka/main/plugins/themes/ember.json",
+      "localPath": "themes/ember.json",
+      "preview": {
+        "bg": "#0b0907",
+        "accent": "#e4a855"
+      },
+      "windowBackground": "#0b0907"
+    },
+    {
+      "id": "aurora",
+      "name": "Аврора",
+      "description": "Полярная ночь с бирюзово-мятным сиянием",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/xhzloba/vodomerka/main/plugins/themes/aurora.json",
+      "localPath": "themes/aurora.json",
+      "preview": {
+        "bg": "#060a0c",
+        "accent": "#6ee7cf"
+      },
+      "windowBackground": "#060a0c"
+    },
+    {
+      "id": "crimson",
+      "name": "Кримсон",
+      "description": "Тёмный уголь с багровым акцентом",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/xhzloba/vodomerka/main/plugins/themes/crimson.json",
+      "localPath": "themes/crimson.json",
+      "preview": {
+        "bg": "#12090b",
+        "accent": "#e57373"
+      },
+      "windowBackground": "#12090b"
+    },
+    {
+      "id": "mist",
+      "name": "Туман",
+      "description": "Холодный серо-голубой сумрак",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/xhzloba/vodomerka/main/plugins/themes/mist.json",
+      "localPath": "themes/mist.json",
+      "preview": {
+        "bg": "#0a0d12",
+        "accent": "#9db4c8"
+      },
+      "windowBackground": "#0a0d12"
+    }
+  ]
+}

@@ -4,8 +4,11 @@ import {
   type AppSettings,
   type BackupResult,
   type ElectronApi,
+  type InstalledThemePlugin,
   type MediaOverridesMap,
+  type PluginResult,
   type StoredMediaItem,
+  type ThemeCatalog,
 } from '../contracts/ipc';
 
 const electronApi: ElectronApi = {
@@ -29,6 +32,18 @@ const electronApi: ElectronApi = {
   backup: {
     export: (): Promise<BackupResult> => ipcRenderer.invoke(IPC_CHANNELS.backup.export),
     import: (): Promise<BackupResult> => ipcRenderer.invoke(IPC_CHANNELS.backup.import),
+  },
+  plugins: {
+    listThemes: (): Promise<InstalledThemePlugin[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.plugins.listThemes),
+    getTheme: (id: string): Promise<InstalledThemePlugin | null> =>
+      ipcRenderer.invoke(IPC_CHANNELS.plugins.getTheme, id),
+    installTheme: (urlOrLocalId: string): Promise<PluginResult<InstalledThemePlugin>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.plugins.installTheme, urlOrLocalId),
+    uninstallTheme: (id: string): Promise<PluginResult<{ removed: boolean }>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.plugins.uninstallTheme, id),
+    fetchCatalog: (): Promise<PluginResult<ThemeCatalog>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.plugins.fetchCatalog),
   },
   favorites: {
     list: (): Promise<StoredMediaItem[]> => ipcRenderer.invoke(IPC_CHANNELS.favorites.list),

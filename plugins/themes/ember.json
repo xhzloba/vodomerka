@@ -1,0 +1,13 @@
+{
+  "id": "ember",
+  "name": "Янтарь",
+  "description": "Тёплый уголь с медово-золотым сиянием",
+  "version": "1.0.0",
+  "engine": 1,
+  "windowBackground": "#0b0907",
+  "preview": {
+    "bg": "#0b0907",
+    "accent": "#e4a855"
+  },
+  "css": "color-scheme: dark;\n  --app-bg: #0b0907;\n  --app-surface: rgba(255, 220, 180, 0.03);\n  --app-surface-hover: rgba(255, 220, 180, 0.05);\n  --app-border: rgba(255, 220, 180, 0.07);\n  --app-border-strong: rgba(255, 200, 140, 0.14);\n  --app-text: #f5f0ea;\n  --app-text-muted: #9a9188;\n  --app-accent: #e4a855;\n  --app-accent-soft: rgba(228, 168, 85, 0.15);\n  --app-accent-border: rgba(228, 168, 85, 0.32);\n  --app-accent-nav: rgba(228, 168, 85, 0.1);\n  --app-elevated: #12100c;\n  --app-glow-1: rgba(255, 190, 90, 0.14);\n  --app-glow-2: rgba(180, 80, 50, 0.08);\n  --app-card-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 220, 180, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.4);\n  --app-sidebar-bg: radial-gradient(circle at 16% -2%, var(--app-glow-1), transparent 44%), radial-gradient(circle at 88% 108%, var(--app-glow-2), transparent 42%), var(--app-bg);\n  --app-shell-bg: var(--app-sidebar-bg);\n  --media-snake-1: rgba(180, 120, 50, 0.14);\n  --media-snake-2: rgba(230, 175, 90, 0.6);\n  --media-snake-3: rgba(255, 230, 190, 0.95);\n  --media-snake-4: rgba(220, 130, 70, 0.75);\n  --bg-primary: var(--app-bg);\n  --bg-secondary: var(--app-elevated);\n  --bg-elevated: #181410;\n  --bg-glass: rgba(14, 12, 9, 0.88);\n  --text-primary: var(--app-text);\n  --text-secondary: var(--app-text-muted);\n  --text-tertiary: rgba(154, 145, 136, 0.72);\n  --accent: var(--app-accent);\n  --accent-blue: var(--app-accent);\n  --focus-glow: rgba(228, 168, 85, 0.24);"
+}

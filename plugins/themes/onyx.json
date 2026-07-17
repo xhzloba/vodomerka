@@ -1,0 +1,13 @@
+{
+  "id": "onyx",
+  "name": "Оникс",
+  "description": "Глубокий чёрный с холодным синим акцентом",
+  "version": "1.0.0",
+  "engine": 1,
+  "windowBackground": "#050508",
+  "preview": {
+    "bg": "#050508",
+    "accent": "#7eb4ff"
+  },
+  "css": "color-scheme: dark;\n  --app-bg: #050508;\n  --app-surface: rgba(255, 255, 255, 0.03);\n  --app-surface-hover: rgba(255, 255, 255, 0.05);\n  --app-border: rgba(255, 255, 255, 0.07);\n  --app-border-strong: rgba(255, 255, 255, 0.12);\n  --app-text: #f2f4f8;\n  --app-text-muted: #7d8494;\n  --app-accent: #7eb4ff;\n  --app-accent-soft: rgba(126, 180, 255, 0.14);\n  --app-accent-border: rgba(126, 180, 255, 0.28);\n  --app-accent-nav: rgba(126, 180, 255, 0.1);\n  --app-elevated: #0c0c12;\n  --app-glow-1: rgba(55, 145, 255, 0.14);\n  --app-glow-2: rgba(55, 145, 255, 0.14);\n  --app-card-shadow: 0 20px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.45);\n  --app-sidebar-bg: radial-gradient(circle at 12% -2%, var(--app-glow-1), transparent 38%), radial-gradient(circle at 94% 102%, var(--app-glow-2), transparent 36%), var(--app-bg);\n  --app-shell-bg: var(--app-sidebar-bg);\n  --media-snake-1: rgba(70, 120, 220, 0.14);\n  --media-snake-2: rgba(110, 170, 255, 0.55);\n  --media-snake-3: rgba(180, 210, 255, 0.95);\n  --media-snake-4: rgba(90, 150, 255, 0.7);\n  --bg-primary: var(--app-bg);\n  --bg-secondary: var(--app-elevated);\n  --bg-elevated: #101018;\n  --bg-glass: rgba(10, 10, 16, 0.88);\n  --text-primary: var(--app-text);\n  --text-secondary: var(--app-text-muted);\n  --text-tertiary: rgba(125, 132, 148, 0.72);\n  --accent: var(--app-accent);\n  --accent-blue: var(--app-accent);\n  --focus-glow: rgba(126, 180, 255, 0.24);"
+}
