@@ -13,6 +13,7 @@ import {
   type ThemeCatalogEntry,
   type ThemePluginPackage,
 } from '../../contracts/ipc';
+import { fetchJsonWithProgress, type DownloadProgressCallback } from './download';
 
 const REMOTE_REGISTRY_URL =
   'https://raw.githubusercontent.com/xhzloba/vodomerka/main/plugins/registry.json';
@@ -209,17 +210,8 @@ async function writeInstalled(theme: InstalledThemePlugin): Promise<void> {
   await fs.writeFile(themeFilePath(theme.id), JSON.stringify(theme, null, 2), 'utf8');
 }
 
-async function fetchJson(url: string): Promise<unknown> {
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-
-  return response.json();
+async function fetchJson(url: string, onProgress?: DownloadProgressCallback): Promise<unknown> {
+  return fetchJsonWithProgress(url, onProgress);
 }
 
 async function readBundledFile(relativePath: string): Promise<unknown | null> {
@@ -352,10 +344,11 @@ export async function fetchThemeCatalog(): Promise<PluginResult<ThemeCatalog>> {
 
 async function loadPackageFromCatalogEntry(
   entry: ThemeCatalogEntry,
+  onProgress?: DownloadProgressCallback,
 ): Promise<ThemePluginPackage | null> {
   if (isAllowedPackageUrl(entry.url)) {
     try {
-      const pkg = parseThemePackage(await fetchJson(entry.url));
+      const pkg = parseThemePackage(await fetchJson(entry.url, onProgress));
       if (pkg && pkg.id === entry.id) {
         return pkg;
       }
@@ -365,7 +358,9 @@ async function loadPackageFromCatalogEntry(
   }
 
   if (entry.localPath) {
+    onProgress?.(0.45);
     const local = parseThemePackage(await readBundledFile(entry.localPath));
+    onProgress?.(1);
     if (local && local.id === entry.id) {
       return local;
     }
@@ -374,36 +369,49 @@ async function loadPackageFromCatalogEntry(
   return null;
 }
 
+function reportProgress(onProgress: DownloadProgressCallback | undefined, value: number): void {
+  onProgress?.(Math.min(1, Math.max(0, value)));
+}
+
 export async function installTheme(
   urlOrLocalId: string,
+  onProgress?: DownloadProgressCallback,
 ): Promise<PluginResult<InstalledThemePlugin>> {
   const target = urlOrLocalId.trim();
   if (!target) {
     return { ok: false, error: 'Пустой идентификатор темы' };
   }
 
+  reportProgress(onProgress, 0.02);
+
   let pkg: ThemePluginPackage | null = null;
   let sourceUrl: string | undefined;
 
   if (isAllowedPackageUrl(target)) {
     try {
-      pkg = parseThemePackage(await fetchJson(target));
+      pkg = parseThemePackage(
+        await fetchJson(target, (progress) => reportProgress(onProgress, 0.05 + progress * 0.85)),
+      );
       sourceUrl = target;
     } catch {
       return { ok: false, error: 'Не удалось скачать тему' };
     }
   } else if (THEME_ID_PATTERN.test(target)) {
+    reportProgress(onProgress, 0.06);
     const catalog = await fetchThemeCatalog();
     if (!catalog.ok) {
       return catalog;
     }
 
+    reportProgress(onProgress, 0.12);
     const entry = catalog.data.themes.find((theme) => theme.id === target);
     if (!entry) {
       return { ok: false, error: 'Тема не найдена в каталоге' };
     }
 
-    pkg = await loadPackageFromCatalogEntry(entry);
+    pkg = await loadPackageFromCatalogEntry(entry, (progress) =>
+      reportProgress(onProgress, 0.12 + progress * 0.8),
+    );
     sourceUrl = entry.url;
   } else {
     return { ok: false, error: 'Недопустимый источник темы' };
@@ -413,8 +421,10 @@ export async function installTheme(
     return { ok: false, error: 'Пакет темы повреждён или несовместим' };
   }
 
+  reportProgress(onProgress, 0.95);
   const installed = toInstalled(pkg, sourceUrl);
   await writeInstalled(installed);
+  reportProgress(onProgress, 1);
   return { ok: true, data: installed };
 }
 

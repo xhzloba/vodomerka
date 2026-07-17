@@ -127,6 +127,7 @@ export const IPC_CHANNELS = {
     installSidebarAnimation: 'plugins:installSidebarAnimation',
     uninstallSidebarAnimation: 'plugins:uninstallSidebarAnimation',
     fetchCatalog: 'plugins:fetchCatalog',
+    installProgress: 'plugins:installProgress',
   },
   favorites: {
     list: 'favorites:list',
@@ -173,6 +174,14 @@ export const IPC_CHANNELS = {
 
 export type Unsubscribe = () => void;
 
+export type PluginInstallKind = 'theme' | 'sidebar';
+
+export interface PluginInstallProgressEvent {
+  id: string;
+  kind: PluginInstallKind;
+  progress: number;
+}
+
 export type BackupResult =
   | { ok: true; settings?: AppSettings }
   | { ok: false; cancelled?: true; error?: string };
@@ -210,6 +219,7 @@ export interface ElectronApi {
     ) => Promise<PluginResult<InstalledSidebarAnimationPlugin>>;
     uninstallSidebarAnimation: (id: string) => Promise<PluginResult<{ removed: boolean }>>;
     fetchCatalog: () => Promise<PluginResult<ThemeCatalog>>;
+    onInstallProgress: (callback: (event: PluginInstallProgressEvent) => void) => Unsubscribe;
   };
   favorites: {
     list: () => Promise<StoredMediaItem[]>;

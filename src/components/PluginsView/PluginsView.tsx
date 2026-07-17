@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type {
   InstalledSidebarAnimationPlugin,
   InstalledThemePlugin,
@@ -23,6 +23,7 @@ import { useToast } from '@/shared/ui/Toast/ToastContext';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { PageLoading } from '@/shared/ui/PageState';
 import { Tabs } from '@/shared/ui/Tabs';
+import { ChevronDownIcon } from '@/shared/ui/icons/icons';
 import './PluginsView.css';
 
 const PLUGIN_TABS = [
@@ -32,6 +33,13 @@ const PLUGIN_TABS = [
 
 type PluginTabId = (typeof PLUGIN_TABS)[number]['id'];
 
+const INSTALL_BORDER_RADIUS = 12;
+const INSTALL_STROKE = 2;
+
+function clamp01(value: number): number {
+  return Math.min(1, Math.max(0, value));
+}
+
 function ThemePreview({ bg, accent }: { bg: string; accent: string }) {
   return (
     <span className="plugins-card__preview" aria-hidden="true">
@@ -39,6 +47,130 @@ function ThemePreview({ bg, accent }: { bg: string; accent: string }) {
       <span className="plugins-card__preview-accent" style={{ background: accent }} />
     </span>
   );
+}
+
+function InstallBorderProgress({ progress }: { progress: number }) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const value = clamp01(progress);
+
+  useLayoutEffect(() => {
+    const host = svgRef.current?.parentElement;
+    if (!host) {
+      return;
+    }
+
+    const update = () => {
+      const rect = host.getBoundingClientRect();
+      setSize({ width: rect.width, height: rect.height });
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, []);
+
+  const inset = INSTALL_STROKE / 2;
+  const width = Math.max(0, size.width - INSTALL_STROKE);
+  const height = Math.max(0, size.height - INSTALL_STROKE);
+  const radius = Math.max(0, INSTALL_BORDER_RADIUS - inset);
+  const dashOffset = 100 * (1 - value);
+
+  return (
+    <svg ref={svgRef} className="plugins-card__install-border" aria-hidden="true">
+      {width > 0 && height > 0 ? (
+        <>
+          <rect
+            className="plugins-card__install-track"
+            x={inset}
+            y={inset}
+            width={width}
+            height={height}
+            rx={radius}
+            ry={radius}
+            pathLength={100}
+          />
+          <rect
+            className="plugins-card__install-bar"
+            x={inset}
+            y={inset}
+            width={width}
+            height={height}
+            rx={radius}
+            ry={radius}
+            pathLength={100}
+            strokeDasharray={100}
+            strokeDashoffset={dashOffset}
+          />
+        </>
+      ) : null}
+    </svg>
+  );
+}
+
+function CollapsibleInstalledSection({
+  id,
+  title,
+  hint,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  hint: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  const panelId = `${id}-panel`;
+
+  return (
+    <section className="plugins-section" aria-labelledby={id}>
+      <button
+        type="button"
+        className={`plugins-section__toggle${open ? ' plugins-section__toggle--open' : ''}`}
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={onToggle}
+      >
+        <span className="plugins-section__toggle-text">
+          <span id={id} className="plugins-section__title">
+            {title}
+          </span>
+          <span className="plugins-section__hint">{hint}</span>
+        </span>
+        <ChevronDownIcon size={20} className="plugins-section__chevron" />
+      </button>
+
+      <div
+        id={panelId}
+        className={`plugins-collapse${open ? ' plugins-collapse--open' : ''}`}
+        role="region"
+        aria-labelledby={id}
+        aria-hidden={!open}
+        ref={(node) => {
+          if (!node) {
+            return;
+          }
+          if (!open) {
+            node.setAttribute('inert', '');
+          } else {
+            node.removeAttribute('inert');
+          }
+        }}
+      >
+        <div className="plugins-collapse__inner">{children}</div>
+      </div>
+    </section>
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
 }
 
 export function PluginsView() {
@@ -54,6 +186,23 @@ export function PluginsView() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [themesInstalledOpen, setThemesInstalledOpen] = useState(true);
+  const [sidebarInstalledOpen, setSidebarInstalledOpen] = useState(true);
+  const [installProgress, setInstallProgress] = useState(0);
+  const busyIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    busyIdRef.current = busyId;
+  }, [busyId]);
+
+  useEffect(() => {
+    return window.electronAPI?.plugins?.onInstallProgress?.((event) => {
+      const expected = event.kind === 'sidebar' ? `sidebar:${event.id}` : event.id;
+      if (busyIdRef.current === expected) {
+        setInstallProgress(clamp01(event.progress));
+      }
+    });
+  }, []);
 
   const refresh = useCallback(async (options?: { soft?: boolean }) => {
     const soft = options?.soft ?? false;
@@ -103,6 +252,7 @@ export function PluginsView() {
 
   const handleInstallTheme = async (entry: ThemeCatalogEntry) => {
     setBusyId(entry.id);
+    setInstallProgress(0);
     try {
       const result = await installThemePlugin(entry.id);
       if (!result.ok) {
@@ -110,10 +260,13 @@ export function PluginsView() {
         return;
       }
 
+      setInstallProgress(1);
+      await sleep(180);
       setInstalledThemes(await listInstalledThemePlugins());
       showToast(`${entry.name} установлен`, { kind: 'success', title: 'Плагины' });
     } finally {
       setBusyId(null);
+      setInstallProgress(0);
     }
   };
 
@@ -151,6 +304,7 @@ export function PluginsView() {
 
   const handleInstallSidebar = async (entry: SidebarAnimationCatalogEntry) => {
     setBusyId(`sidebar:${entry.id}`);
+    setInstallProgress(0);
     try {
       const result = await installSidebarAnimationPlugin(entry.id);
       if (!result.ok) {
@@ -158,10 +312,13 @@ export function PluginsView() {
         return;
       }
 
+      setInstallProgress(1);
+      await sleep(180);
       setInstalledSidebar(await listInstalledSidebarAnimations());
       showToast(`${entry.name} установлен`, { kind: 'success', title: 'Плагины' });
     } finally {
       setBusyId(null);
+      setInstallProgress(0);
     }
   };
 
@@ -210,9 +367,6 @@ export function PluginsView() {
       <header className="plugins-view__header">
         <div className="plugins-view__heading">
           <h1 className="plugins-view__title">Плагины</h1>
-          <p className="plugins-view__subtitle">
-            Темы и анимации меню с GitHub. По умолчанию — Обсидиан и Водяной магнит.
-          </p>
 
           <div className="plugins-view__tabs">
             <Tabs
@@ -238,20 +392,17 @@ export function PluginsView() {
       <div ref={scrollRef} className="plugins-view__content scroll-overlay">
         {activeTab === 'themes' ? (
           <>
-            <section className="plugins-section" aria-labelledby="plugins-installed-themes-title">
-              <div className="plugins-section__head">
-                <div>
-                  <h2 id="plugins-installed-themes-title" className="plugins-section__title">
-                    Установленные темы
-                  </h2>
-                  <p className="plugins-section__hint">
-                    {installedThemes.length === 0
-                      ? 'Пока пусто — поставь тему из каталога ниже'
-                      : `${installedThemes.length} ${installedThemes.length === 1 ? 'тема' : 'тем'}`}
-                  </p>
-                </div>
-              </div>
-
+            <CollapsibleInstalledSection
+              id="plugins-installed-themes-title"
+              title="Установленные темы"
+              hint={
+                installedThemes.length === 0
+                  ? 'Пока пусто — поставь тему из каталога ниже'
+                  : `${installedThemes.length} ${installedThemes.length === 1 ? 'тема' : 'тем'}`
+              }
+              open={themesInstalledOpen}
+              onToggle={() => setThemesInstalledOpen((value) => !value)}
+            >
               {installedThemes.length === 0 ? (
                 <div className="plugins-empty">
                   <p className="plugins-empty__title">Нет установленных тем</p>
@@ -307,7 +458,7 @@ export function PluginsView() {
                   })}
                 </div>
               )}
-            </section>
+            </CollapsibleInstalledSection>
 
             <section className="plugins-section" aria-labelledby="plugins-theme-catalog-title">
               <div className="plugins-section__head">
@@ -334,7 +485,11 @@ export function PluginsView() {
                     const busy = busyId === entry.id;
 
                     return (
-                      <article key={entry.id} className="plugins-card">
+                      <article
+                        key={entry.id}
+                        className={`plugins-card${busy ? ' plugins-card--installing' : ''}`}
+                      >
+                        {busy ? <InstallBorderProgress progress={installProgress} /> : null}
                         <ThemePreview bg={entry.preview.bg} accent={entry.preview.accent} />
                         <div className="plugins-card__body">
                           <div className="plugins-card__top">
@@ -364,20 +519,17 @@ export function PluginsView() {
           </>
         ) : (
           <>
-            <section className="plugins-section" aria-labelledby="plugins-installed-sidebar-title">
-              <div className="plugins-section__head">
-                <div>
-                  <h2 id="plugins-installed-sidebar-title" className="plugins-section__title">
-                    Установленные анимации
-                  </h2>
-                  <p className="plugins-section__hint">
-                    {installedSidebar.length === 0
-                      ? 'По умолчанию доступен Водяной магнит'
-                      : `${installedSidebar.length} доп. ${installedSidebar.length === 1 ? 'анимация' : 'анимаций'}`}
-                  </p>
-                </div>
-              </div>
-
+            <CollapsibleInstalledSection
+              id="plugins-installed-sidebar-title"
+              title="Установленные анимации"
+              hint={
+                installedSidebar.length === 0
+                  ? 'По умолчанию доступен Водяной магнит'
+                  : `${installedSidebar.length} доп. ${installedSidebar.length === 1 ? 'анимация' : 'анимаций'}`
+              }
+              open={sidebarInstalledOpen}
+              onToggle={() => setSidebarInstalledOpen((value) => !value)}
+            >
               {installedSidebar.length === 0 ? (
                 <div className="plugins-empty">
                   <p className="plugins-empty__title">Нет установленных анимаций</p>
@@ -433,7 +585,7 @@ export function PluginsView() {
                   })}
                 </div>
               )}
-            </section>
+            </CollapsibleInstalledSection>
 
             <section className="plugins-section" aria-labelledby="plugins-sidebar-catalog-title">
               <div className="plugins-section__head">
@@ -460,7 +612,11 @@ export function PluginsView() {
                     const busy = busyId === `sidebar:${entry.id}`;
 
                     return (
-                      <article key={entry.id} className="plugins-card">
+                      <article
+                        key={entry.id}
+                        className={`plugins-card${busy ? ' plugins-card--installing' : ''}`}
+                      >
+                        {busy ? <InstallBorderProgress progress={installProgress} /> : null}
                         <ThemePreview bg={entry.preview.bg} accent={entry.preview.accent} />
                         <div className="plugins-card__body">
                           <div className="plugins-card__top">

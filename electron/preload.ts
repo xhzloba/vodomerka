@@ -7,6 +7,7 @@ import {
   type InstalledSidebarAnimationPlugin,
   type InstalledThemePlugin,
   type MediaOverridesMap,
+  type PluginInstallProgressEvent,
   type PluginResult,
   type StoredMediaItem,
   type ThemeCatalog,
@@ -55,6 +56,15 @@ const electronApi: ElectronApi = {
       ipcRenderer.invoke(IPC_CHANNELS.plugins.uninstallSidebarAnimation, id),
     fetchCatalog: (): Promise<PluginResult<ThemeCatalog>> =>
       ipcRenderer.invoke(IPC_CHANNELS.plugins.fetchCatalog),
+    onInstallProgress: (callback: (event: PluginInstallProgressEvent) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: PluginInstallProgressEvent) => {
+        callback(payload);
+      };
+      ipcRenderer.on(IPC_CHANNELS.plugins.installProgress, listener);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.plugins.installProgress, listener);
+      };
+    },
   },
   favorites: {
     list: (): Promise<StoredMediaItem[]> => ipcRenderer.invoke(IPC_CHANNELS.favorites.list),

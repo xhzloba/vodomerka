@@ -12,6 +12,7 @@ import {
   type SidebarAnimationPluginPackage,
   type ThemeCatalog,
 } from '../../contracts/ipc';
+import { fetchJsonWithProgress, type DownloadProgressCallback } from './download';
 import { fetchThemeCatalog } from './themes';
 
 const ALLOWED_HOSTS = new Set(['raw.githubusercontent.com', 'cdn.jsdelivr.net']);
@@ -203,17 +204,8 @@ async function writeInstalled(plugin: InstalledSidebarAnimationPlugin): Promise<
   await fs.writeFile(pluginFilePath(plugin.id), JSON.stringify(plugin, null, 2), 'utf8');
 }
 
-async function fetchJson(url: string): Promise<unknown> {
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-
-  return response.json();
+async function fetchJson(url: string, onProgress?: DownloadProgressCallback): Promise<unknown> {
+  return fetchJsonWithProgress(url, onProgress);
 }
 
 async function readBundledFile(relativePath: string): Promise<unknown | null> {
@@ -230,12 +222,17 @@ function getSidebarEntries(catalog: ThemeCatalog): SidebarAnimationCatalogEntry[
   return catalog.sidebarAnimations ?? [];
 }
 
+function reportProgress(onProgress: DownloadProgressCallback | undefined, value: number): void {
+  onProgress?.(Math.min(1, Math.max(0, value)));
+}
+
 async function loadPackageFromCatalogEntry(
   entry: SidebarAnimationCatalogEntry,
+  onProgress?: DownloadProgressCallback,
 ): Promise<SidebarAnimationPluginPackage | null> {
   if (isAllowedPackageUrl(entry.url)) {
     try {
-      const pkg = parseSidebarAnimationPackage(await fetchJson(entry.url));
+      const pkg = parseSidebarAnimationPackage(await fetchJson(entry.url, onProgress));
       if (pkg && pkg.id === entry.id) {
         return pkg;
       }
@@ -245,7 +242,9 @@ async function loadPackageFromCatalogEntry(
   }
 
   if (entry.localPath) {
+    onProgress?.(0.45);
     const local = parseSidebarAnimationPackage(await readBundledFile(entry.localPath));
+    onProgress?.(1);
     if (local && local.id === entry.id) {
       return local;
     }
@@ -256,34 +255,43 @@ async function loadPackageFromCatalogEntry(
 
 export async function installSidebarAnimation(
   urlOrLocalId: string,
+  onProgress?: DownloadProgressCallback,
 ): Promise<PluginResult<InstalledSidebarAnimationPlugin>> {
   const target = urlOrLocalId.trim();
   if (!target) {
     return { ok: false, error: 'Пустой идентификатор анимации' };
   }
 
+  reportProgress(onProgress, 0.02);
+
   let pkg: SidebarAnimationPluginPackage | null = null;
   let sourceUrl: string | undefined;
 
   if (isAllowedPackageUrl(target)) {
     try {
-      pkg = parseSidebarAnimationPackage(await fetchJson(target));
+      pkg = parseSidebarAnimationPackage(
+        await fetchJson(target, (progress) => reportProgress(onProgress, 0.05 + progress * 0.85)),
+      );
       sourceUrl = target;
     } catch {
       return { ok: false, error: 'Не удалось скачать анимацию меню' };
     }
   } else if (PLUGIN_ID_PATTERN.test(target)) {
+    reportProgress(onProgress, 0.06);
     const catalog = await fetchThemeCatalog();
     if (!catalog.ok) {
       return catalog;
     }
 
+    reportProgress(onProgress, 0.12);
     const entry = getSidebarEntries(catalog.data).find((item) => item.id === target);
     if (!entry) {
       return { ok: false, error: 'Анимация не найдена в каталоге' };
     }
 
-    pkg = await loadPackageFromCatalogEntry(entry);
+    pkg = await loadPackageFromCatalogEntry(entry, (progress) =>
+      reportProgress(onProgress, 0.12 + progress * 0.8),
+    );
     sourceUrl = entry.url;
   } else {
     return { ok: false, error: 'Недопустимый источник анимации' };
@@ -293,8 +301,10 @@ export async function installSidebarAnimation(
     return { ok: false, error: 'Пакет анимации повреждён или несовместим' };
   }
 
+  reportProgress(onProgress, 0.95);
   const installed = toInstalled(pkg, sourceUrl);
   await writeInstalled(installed);
+  reportProgress(onProgress, 1);
   return { ok: true, data: installed };
 }
 

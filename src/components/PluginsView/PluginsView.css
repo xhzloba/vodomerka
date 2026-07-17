@@ -25,14 +25,6 @@
   color: var(--app-text);
 }
 
-.plugins-view__subtitle {
-  margin-top: 8px;
-  max-width: 42ch;
-  font-size: 0.9375rem;
-  line-height: 1.45;
-  color: var(--app-text-muted);
-}
-
 .plugins-view__tabs {
   margin-top: 16px;
 }
@@ -56,7 +48,81 @@
   border-bottom: 1px solid var(--app-border);
 }
 
+.plugins-section__toggle {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  margin: 0;
+  padding: 0 0 12px;
+  border: none;
+  border-bottom: 1px solid var(--app-border);
+  background: transparent;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.plugins-section__toggle:hover {
+  opacity: 0.88;
+}
+
+.plugins-section__toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--app-text) 35%, transparent);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.plugins-section__toggle-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.plugins-section__chevron {
+  flex-shrink: 0;
+  margin-bottom: 2px;
+  color: var(--app-text-muted);
+  transition: transform var(--transition-smooth), color var(--transition-fast);
+}
+
+.plugins-section__toggle:hover .plugins-section__chevron {
+  color: var(--app-text);
+}
+
+.plugins-section__toggle--open .plugins-section__chevron {
+  transform: rotate(180deg);
+}
+
+.plugins-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--transition-smooth);
+}
+
+.plugins-collapse--open {
+  grid-template-rows: 1fr;
+}
+
+.plugins-collapse__inner {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  transition:
+    opacity var(--transition-smooth),
+    padding-top var(--transition-smooth);
+}
+
+.plugins-collapse--open .plugins-collapse__inner {
+  opacity: 1;
+  padding-top: 16px;
+}
+
 .plugins-section__title {
+  display: block;
   font-size: 1.125rem;
   font-weight: 650;
   letter-spacing: -0.02em;
@@ -64,6 +130,7 @@
 }
 
 .plugins-section__hint {
+  display: block;
   margin-top: 4px;
   font-size: 0.8125rem;
   line-height: 1.4;
@@ -101,6 +168,7 @@
 }
 
 .plugins-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -120,8 +188,45 @@
 }
 
 .plugins-card--active {
-  border-color: color-mix(in srgb, var(--app-text) 28%, var(--app-border));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-text) 12%, transparent);
+  border-color: var(--app-accent-border);
+  background: var(--app-accent-soft);
+  box-shadow: 0 0 0 1px var(--app-accent-border);
+}
+
+.plugins-card--installing {
+  border-color: color-mix(in srgb, var(--app-accent-border) 55%, transparent);
+}
+
+.plugins-card--installing:hover {
+  border-color: color-mix(in srgb, var(--app-accent-border) 70%, transparent);
+}
+
+.plugins-card__install-border {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.plugins-card__install-track,
+.plugins-card__install-bar {
+  fill: none;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.plugins-card__install-track {
+  stroke: color-mix(in srgb, var(--app-accent) 22%, transparent);
+}
+
+.plugins-card__install-bar {
+  stroke: var(--app-accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke-dashoffset 120ms linear;
 }
 
 .plugins-card__preview {
