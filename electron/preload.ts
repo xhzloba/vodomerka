@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import {
   IPC_CHANNELS,
   type AppSettings,
+  type BackupResult,
   type ElectronApi,
   type MediaOverridesMap,
   type StoredMediaItem,
@@ -24,6 +25,10 @@ const electronApi: ElectronApi = {
     set: (patch: Partial<AppSettings>): Promise<AppSettings> =>
       ipcRenderer.invoke(IPC_CHANNELS.settings.set, patch),
     reset: (): Promise<AppSettings> => ipcRenderer.invoke(IPC_CHANNELS.settings.reset),
+  },
+  backup: {
+    export: (): Promise<BackupResult> => ipcRenderer.invoke(IPC_CHANNELS.backup.export),
+    import: (): Promise<BackupResult> => ipcRenderer.invoke(IPC_CHANNELS.backup.import),
   },
   favorites: {
     list: (): Promise<StoredMediaItem[]> => ipcRenderer.invoke(IPC_CHANNELS.favorites.list),

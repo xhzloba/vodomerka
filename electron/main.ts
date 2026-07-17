@@ -9,6 +9,7 @@ import { registerWatchedIpc } from './ipc/watched';
 import { registerImagesIpc } from './ipc/images';
 import { registerOverridesIpc } from './ipc/overrides';
 import { registerSettingsIpc } from './ipc/settings';
+import { registerBackupIpc } from './ipc/backup';
 import { registerDetailIpc } from './ipc/detail';
 import { configureAppBranding, APP_NAME } from './branding';
 import { registerAppMenu } from './menu';
@@ -104,6 +105,7 @@ function createWindow() {
 app.whenReady().then(() => {
   configureAppBranding();
   registerSettingsIpc(() => mainWindow);
+  registerBackupIpc();
   registerFavoritesIpc();
   registerRecentlyViewedIpc();
   registerWatchedIpc();

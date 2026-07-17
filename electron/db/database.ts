@@ -4,7 +4,7 @@ import { app } from 'electron';
 
 let db: Database.Database | null = null;
 
-function getDbPath() {
+export function getDbPath() {
   return path.join(app.getPath('userData'), 'tv-leonid.db');
 }
 

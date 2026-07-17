@@ -80,6 +80,10 @@ export const IPC_CHANNELS = {
     set: 'settings:set',
     reset: 'settings:reset',
   },
+  backup: {
+    export: 'backup:export',
+    import: 'backup:import',
+  },
   favorites: {
     list: 'favorites:list',
     add: 'favorites:add',
@@ -125,6 +129,10 @@ export const IPC_CHANNELS = {
 
 export type Unsubscribe = () => void;
 
+export type BackupResult =
+  | { ok: true; settings?: AppSettings }
+  | { ok: false; cancelled?: true; error?: string };
+
 export interface ElectronApi {
   platform: string;
   api: {
@@ -141,6 +149,10 @@ export interface ElectronApi {
     get: () => Promise<AppSettings>;
     set: (patch: Partial<AppSettings>) => Promise<AppSettings>;
     reset: () => Promise<AppSettings>;
+  };
+  backup: {
+    export: () => Promise<BackupResult>;
+    import: () => Promise<BackupResult>;
   };
   favorites: {
     list: () => Promise<StoredMediaItem[]>;

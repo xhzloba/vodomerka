@@ -18,6 +18,7 @@ interface AppSettingsContextValue {
   setupWelcomeEpoch: number;
   updateSettings: (patch: Partial<AppSettings>) => Promise<void>;
   resetToDefaults: () => Promise<void>;
+  reloadSettings: () => Promise<AppSettings>;
 }
 
 const AppSettingsContext = createContext<AppSettingsContextValue | null>(null);
@@ -76,6 +77,14 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setSetupWelcomeEpoch((value) => value + 1);
   }, []);
 
+  const reloadSettings = useCallback(async () => {
+    const next = await loadAppSettings();
+    applyAppTheme(next.theme);
+    applyPosterSizeCssVars(next.posterSize);
+    setSettings(next);
+    return next;
+  }, []);
+
   const value = useMemo(
     () => ({
       settings,
@@ -83,8 +92,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       setupWelcomeEpoch,
       updateSettings,
       resetToDefaults,
+      reloadSettings,
     }),
-    [isLoading, resetToDefaults, settings, setupWelcomeEpoch, updateSettings],
+    [isLoading, reloadSettings, resetToDefaults, settings, setupWelcomeEpoch, updateSettings],
   );
 
   return <AppSettingsContext.Provider value={value}>{children}</AppSettingsContext.Provider>;

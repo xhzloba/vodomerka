@@ -27,14 +27,18 @@ type SettingsTabId = (typeof SETTINGS_TABS)[number]['id'];
 
 export function SettingsView() {
   const scrollRef = useOverlayScroll<HTMLDivElement>();
-  const { settings, isLoading, updateSettings, resetToDefaults } = useAppSettings();
+  const { settings, isLoading, updateSettings, resetToDefaults, reloadSettings } = useAppSettings();
   const { reloadFavorites } = useFavorites();
   const { reloadRecentlyViewed } = useRecentlyViewed();
   const { reloadWatched } = useWatched();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<SettingsTabId>('appearance');
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [importConfirmOpen, setImportConfirmOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const canBackup = Boolean(window.electronAPI?.backup);
 
   const handleResetAll = async () => {
     setIsResetting(true);
@@ -50,13 +54,72 @@ export function SettingsView() {
         playDeleteSound();
       }
 
+      showToast('Все данные сброшены', { kind: 'success', title: 'Готово' });
       setResetConfirmOpen(false);
-      showToast('Все данные сброшены до значений по умолчанию', {
-        kind: 'success',
-        title: 'Готово',
-      });
+    } catch {
+      showToast('Не удалось сбросить данные', { kind: 'error', title: 'Ошибка' });
     } finally {
       setIsResetting(false);
+    }
+  };
+
+  const handleExportDatabase = async () => {
+    if (!window.electronAPI?.backup || isExporting) {
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const result = await window.electronAPI.backup.export();
+      if (!result.ok && result.cancelled) {
+        return;
+      }
+      if (!result.ok) {
+        showToast(result.error ?? 'Не удалось экспортировать базу', {
+          kind: 'error',
+          title: 'Ошибка',
+        });
+        return;
+      }
+
+      showToast('База данных сохранена в файл', { kind: 'success', title: 'Экспорт' });
+    } catch {
+      showToast('Не удалось экспортировать базу', { kind: 'error', title: 'Ошибка' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportDatabase = async () => {
+    if (!window.electronAPI?.backup || isImporting) {
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const result = await window.electronAPI.backup.import();
+      if (!result.ok && result.cancelled) {
+        setImportConfirmOpen(false);
+        return;
+      }
+      if (!result.ok) {
+        showToast(result.error ?? 'Не удалось импортировать базу', {
+          kind: 'error',
+          title: 'Ошибка',
+        });
+        return;
+      }
+
+      await reloadSettings();
+      await reloadFavorites();
+      await reloadRecentlyViewed();
+      await reloadWatched();
+      showToast('База данных восстановлена из файла', { kind: 'success', title: 'Импорт' });
+      setImportConfirmOpen(false);
+    } catch {
+      showToast('Не удалось импортировать базу', { kind: 'error', title: 'Ошибка' });
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -270,32 +333,80 @@ export function SettingsView() {
 
         {activeTab === 'data' ? (
           <div className="settings-panels-grid">
+            {canBackup ? (
+              <section className="settings-panel" aria-labelledby="settings-backup-title">
+                <div className="settings-panel__intro">
+                  <h2 id="settings-backup-title" className="settings-panel__title">
+                    Резервная копия
+                  </h2>
+                  <p className="settings-panel__description">
+                    Экспорт и импорт файла базы данных: настройки, избранное, просмотренное и история.
+                  </p>
+                </div>
+
+                <div className="settings-data-actions">
+                  <button
+                    type="button"
+                    className="settings-action-btn"
+                    disabled={isExporting || isImporting}
+                    onClick={() => void handleExportDatabase()}
+                  >
+                    {isExporting ? 'Экспорт…' : 'Экспорт базы'}
+                  </button>
+                  <button
+                    type="button"
+                    className="settings-action-btn"
+                    disabled={isExporting || isImporting}
+                    onClick={() => setImportConfirmOpen(true)}
+                  >
+                    Импорт базы
+                  </button>
+                </div>
+              </section>
+            ) : null}
+
             <section
               className="settings-panel settings-panel--danger"
               aria-labelledby="settings-data-title"
             >
-            <div className="settings-panel__intro">
-              <h2 id="settings-data-title" className="settings-panel__title">
-                Данные приложения
-              </h2>
-              <p className="settings-panel__description">
-                Полный сброс: настройки, избранное, просмотренное, история просмотров и скрытые секции вернутся
-                к состоянию по умолчанию. База данных будет очищена.
-              </p>
-            </div>
+              <div className="settings-panel__intro">
+                <h2 id="settings-data-title" className="settings-panel__title">
+                  Данные приложения
+                </h2>
+                <p className="settings-panel__description">
+                  Полный сброс: настройки, избранное, просмотренное, история просмотров и скрытые секции
+                  вернутся к состоянию по умолчанию. База данных будет очищена.
+                </p>
+              </div>
 
-            <button
-              type="button"
-              className="settings-reset-btn"
-              onClick={() => setResetConfirmOpen(true)}
-            >
-              <TrashIcon size={16} strokeWidth={1.75} />
-              Сбросить все данные
-            </button>
-          </section>
+              <button
+                type="button"
+                className="settings-reset-btn"
+                onClick={() => setResetConfirmOpen(true)}
+              >
+                <TrashIcon size={16} strokeWidth={1.75} />
+                Сбросить все данные
+              </button>
+            </section>
           </div>
         ) : null}
       </div>
+
+      <ConfirmDialog
+        open={importConfirmOpen}
+        title="Импортировать базу?"
+        description="Текущие настройки, избранное, просмотренное и история будут заменены данными из выбранного файла. Это действие нельзя отменить."
+        confirmLabel="Импортировать"
+        cancelLabel="Отмена"
+        confirmVariant="neutral"
+        isConfirming={isImporting}
+        onCancel={() => {
+          if (!isImporting) {
+            setImportConfirmOpen(false);
+          }
+        }}
+        onConfirm={() => void handleImportDatabase()}
+      />
 
       <ConfirmDialog
         open={resetConfirmOpen}
