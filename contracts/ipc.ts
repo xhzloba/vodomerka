@@ -4,7 +4,7 @@ export type CatalogRowGapPreset = 'compact' | 'normal' | 'relaxed' | 'spacious';
 
 export type HomeSectionMode = 'auto' | 'on' | 'off';
 
-export type SidebarMenuAnimation = 'liquid' | 'snake' | 'magnetic' | 'magnetic-water';
+export type SidebarMenuAnimation = 'liquid' | 'snake' | 'magnetic' | 'magnetic-water' | 'edge-pulse';
 
 export interface HiddenHomeSection {
   id: string;

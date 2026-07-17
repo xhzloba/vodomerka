@@ -77,7 +77,13 @@ export function normalizeCatalogRowGap(value: unknown): CatalogRowGapPreset {
 }
 
 export function normalizeSidebarMenuAnimation(value: unknown): SidebarMenuAnimation {
-  if (value === 'liquid' || value === 'snake' || value === 'magnetic' || value === 'magnetic-water') {
+  if (
+    value === 'liquid' ||
+    value === 'snake' ||
+    value === 'magnetic' ||
+    value === 'magnetic-water' ||
+    value === 'edge-pulse'
+  ) {
     return value;
   }
 
@@ -202,5 +208,10 @@ export const SIDEBAR_MENU_ANIMATION_OPTIONS: Array<{
     id: 'magnetic-water',
     label: 'Водяной магнит',
     hint: 'Жидкая подложка с пузырьками, плавно переезжает между пунктами',
+  },
+  {
+    id: 'edge-pulse',
+    label: 'Пульс',
+    hint: 'Яркая полоска на краю окна плавно переезжает к активному пункту',
   },
 ];

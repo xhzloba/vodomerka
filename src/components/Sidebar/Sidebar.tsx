@@ -51,6 +51,7 @@ export function Sidebar({
   itemSettingsActions,
 }: SidebarProps) {
   const navRef = useRef<HTMLElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
   const { favorites } = useFavorites();
   const favoritesCount = favorites.length;
   const searchShortcutLabel = getSearchShortcutLabel();
@@ -63,9 +64,19 @@ export function Sidebar({
     height: 0,
     ready: false,
   });
+  const [edgePulse, setEdgePulse] = useState<{
+    y: number;
+    height: number;
+    ready: boolean;
+  }>({
+    y: 0,
+    height: 0,
+    ready: false,
+  });
 
   const magneticEnabled =
     (menuAnimation === 'magnetic' || menuAnimation === 'magnetic-water') && !collapsed;
+  const edgePulseEnabled = menuAnimation === 'edge-pulse';
 
   const syncMagneticIndicator = useCallback(() => {
     if (!magneticEnabled) {
@@ -91,12 +102,48 @@ export function Sidebar({
     });
   }, [collapsed, magneticEnabled]);
 
+  const syncEdgePulse = useCallback(() => {
+    if (!edgePulseEnabled) {
+      setEdgePulse((state) => (state.ready ? { ...state, ready: false } : state));
+      return;
+    }
+
+    const sidebar = sidebarRef.current;
+    const surface = navRef.current?.querySelector<HTMLElement>(
+      '.sidebar__item--active .sidebar__item-surface',
+    );
+
+    if (!sidebar || !surface) {
+      setEdgePulse((state) => (state.ready ? { ...state, ready: false } : state));
+      return;
+    }
+
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const surfaceRect = surface.getBoundingClientRect();
+    const height = Math.max(surfaceRect.height * 0.92, 36);
+
+    setEdgePulse({
+      y: surfaceRect.top - sidebarRect.top + (surfaceRect.height - height) / 2,
+      height,
+      ready: true,
+    });
+  }, [edgePulseEnabled]);
+
   useLayoutEffect(() => {
     syncMagneticIndicator();
-  }, [activeNav, collapsed, favoritesCount, magneticEnabled, syncMagneticIndicator]);
+    syncEdgePulse();
+  }, [
+    activeNav,
+    collapsed,
+    favoritesCount,
+    magneticEnabled,
+    edgePulseEnabled,
+    syncMagneticIndicator,
+    syncEdgePulse,
+  ]);
 
   useEffect(() => {
-    if (!magneticEnabled) {
+    if (!magneticEnabled && !edgePulseEnabled) {
       return;
     }
 
@@ -105,15 +152,20 @@ export function Sidebar({
       return;
     }
 
-    const resizeObserver = new ResizeObserver(syncMagneticIndicator);
+    const syncAll = () => {
+      syncMagneticIndicator();
+      syncEdgePulse();
+    };
+
+    const resizeObserver = new ResizeObserver(syncAll);
     resizeObserver.observe(nav);
-    window.addEventListener('resize', syncMagneticIndicator);
+    window.addEventListener('resize', syncAll);
 
     return () => {
       resizeObserver.disconnect();
-      window.removeEventListener('resize', syncMagneticIndicator);
+      window.removeEventListener('resize', syncAll);
     };
-  }, [collapsed, magneticEnabled, syncMagneticIndicator]);
+  }, [collapsed, magneticEnabled, edgePulseEnabled, syncMagneticIndicator, syncEdgePulse]);
 
   const handleNavPointerDown = useCallback(
     (event: PointerEvent<HTMLButtonElement>, nav: NavItem) => {
@@ -140,12 +192,25 @@ export function Sidebar({
       } as CSSProperties)
     : undefined;
 
+  const edgePulseStyle = edgePulse.ready
+    ? ({
+        transform: `translateY(${edgePulse.y}px)`,
+        height: `${edgePulse.height}px`,
+      } as CSSProperties)
+    : undefined;
+
   return (
     <aside
+      ref={sidebarRef}
       className={`sidebar sidebar--menu-${menuAnimation}${collapsed ? ' sidebar--collapsed' : ''}${
         macSidebarChrome ? ' sidebar--mac-chrome' : ''
       }`}
     >
+      {edgePulseEnabled && edgePulse.ready ? (
+        <span className="sidebar__window-edge-pulse" aria-hidden="true" style={edgePulseStyle}>
+          <span className="sidebar__window-edge-pulse-core" />
+        </span>
+      ) : null}
       <div className="sidebar__panel">
         {macSidebarChrome ? <div className="sidebar__chrome" aria-hidden="true" /> : null}
         <nav ref={navRef} className="sidebar__nav">
