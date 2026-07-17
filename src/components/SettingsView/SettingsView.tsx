@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { HomeSettingsPanels } from '@/features/home/ui/HomeSettingsPanels';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
+import { useApiServerHealth } from '@/shared/settings/useApiServerHealth';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { useRecentlyViewed } from '@/shared/domain/RecentlyViewedContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
@@ -9,7 +10,11 @@ import { playDeleteSound } from '@/shared/audio/uiSounds';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog/ConfirmDialog';
 import { TrashIcon } from '@/shared/ui/icons';
 import { APP_THEME_OPTIONS } from '@/shared/settings/themes';
-import { POSTER_SIZE_OPTIONS, SIDEBAR_MENU_ANIMATION_OPTIONS } from '@/shared/settings/types';
+import {
+  POSTER_SIZE_OPTIONS,
+  API_SERVER_OPTIONS,
+  SIDEBAR_MENU_ANIMATION_OPTIONS,
+} from '@/shared/settings/types';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { PageLoading } from '@/shared/ui/PageState';
 import { Tabs } from '@/shared/ui/Tabs';
@@ -19,11 +24,28 @@ const SETTINGS_TABS = [
   { id: 'appearance', label: 'Оформление' },
   { id: 'home', label: 'Главная' },
   { id: 'interface', label: 'Интерфейс' },
+  { id: 'network', label: 'Сеть' },
   { id: 'sounds', label: 'Звуки' },
   { id: 'data', label: 'Данные' },
 ] as const;
 
 type SettingsTabId = (typeof SETTINGS_TABS)[number]['id'];
+
+function apiServerHealthHint(
+  status: 'idle' | 'checking' | 'ok' | 'fail',
+  fallback: string,
+): string {
+  if (status === 'checking') {
+    return 'Проверка…';
+  }
+  if (status === 'ok') {
+    return 'Доступен';
+  }
+  if (status === 'fail') {
+    return 'Не отвечает';
+  }
+  return fallback;
+}
 
 export function SettingsView() {
   const scrollRef = useOverlayScroll<HTMLDivElement>();
@@ -33,6 +55,7 @@ export function SettingsView() {
   const { reloadWatched } = useWatched();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<SettingsTabId>('appearance');
+  const { health, isChecking, check: checkApiServers } = useApiServerHealth();
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [importConfirmOpen, setImportConfirmOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -290,6 +313,76 @@ export function SettingsView() {
                   onClick={() => void updateSettings({ autoTipsEnabled: !settings.autoTipsEnabled })}
                 >
                   <span className="settings-toggle__thumb" />
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
+
+        {activeTab === 'network' ? (
+          <div className="settings-panels-grid">
+            <section className="settings-panel" aria-labelledby="settings-api-server-title">
+              <div className="settings-panel__intro">
+                <h2 id="settings-api-server-title" className="settings-panel__title">
+                  API-сервер
+                </h2>
+                <p className="settings-panel__description">
+                  Источник каталога и метаданных. После смены сервера данные подгрузятся заново.
+                </p>
+              </div>
+
+              <div className="settings-mode-picker" role="radiogroup" aria-label="API-сервер">
+                {API_SERVER_OPTIONS.map((option) => {
+                  const status = health[option.id];
+                  const isActive = settings.apiServer === option.id;
+
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={isActive}
+                      className={`settings-mode-picker__option${
+                        isActive ? ' settings-mode-picker__option--active' : ''
+                      }`}
+                      onClick={() => {
+                        if (isActive) {
+                          return;
+                        }
+
+                        void updateSettings({ apiServer: option.id }).then(() => {
+                          showToast(`Выбран ${option.label}`, {
+                            kind: 'success',
+                            title: 'Сеть',
+                          });
+                        });
+                      }}
+                    >
+                      <span className="settings-mode-picker__label">{option.label}</span>
+                      <span
+                        className={`settings-mode-picker__hint${
+                          status === 'ok'
+                            ? ' settings-mode-picker__hint--ok'
+                            : status === 'fail'
+                              ? ' settings-mode-picker__hint--fail'
+                              : ''
+                        }`}
+                      >
+                        {apiServerHealthHint(status, option.hint)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="settings-data-actions">
+                <button
+                  type="button"
+                  className="settings-action-btn"
+                  disabled={isChecking}
+                  onClick={() => void checkApiServers()}
+                >
+                  {isChecking ? 'Проверка…' : 'Проверить доступность'}
                 </button>
               </div>
             </section>

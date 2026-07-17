@@ -29,10 +29,15 @@ export interface HomePageData {
   categories: VokinoCategory[];
 }
 
-const HOME_UPDATES_PLAYLIST_URL = resolveVokinoUrl('/list?sort=updatings&display=grid');
-const HOME_MULTFILM_PLAYLIST_URL = resolveVokinoUrl('/list?sort=popular&type=multfilm');
-const HOME_TOP250_PLAYLIST_URL = getTop250PlaylistUrl();
 const HOME_UPDATES_FETCH_LIMIT = HOME_ROW_LIMIT * 4;
+
+function getHomeUpdatesPlaylistUrl(): string {
+  return resolveVokinoUrl('/list?sort=updatings&display=grid');
+}
+
+function getHomeMultfilmPlaylistUrl(): string {
+  return resolveVokinoUrl('/list?sort=popular&type=multfilm');
+}
 
 function isExcludedHomeRow(row: ContentRow): boolean {
   if (isBuiltinHomeSectionId(row.id)) {
@@ -250,7 +255,8 @@ class VokinoRepository {
   }
 
   private async loadHomeMultfilmSection(): Promise<ContentRow | null> {
-    const items = await this.getPlaylistItems(HOME_MULTFILM_PLAYLIST_URL, HOME_ROW_LIMIT);
+    const playlistUrl = getHomeMultfilmPlaylistUrl();
+    const items = await this.getPlaylistItems(playlistUrl, HOME_ROW_LIMIT);
 
     if (items.length === 0) {
       return null;
@@ -259,13 +265,14 @@ class VokinoRepository {
     return {
       id: HOME_MULTFILM_SECTION_ID,
       title: HOME_MULTFILM_SECTION_TITLE,
-      playlistUrl: HOME_MULTFILM_PLAYLIST_URL,
+      playlistUrl,
       items,
     };
   }
 
   private async loadHomeTop250Section(): Promise<ContentRow | null> {
-    const items = await this.getPlaylistItems(HOME_TOP250_PLAYLIST_URL, HOME_ROW_LIMIT);
+    const playlistUrl = getTop250PlaylistUrl();
+    const items = await this.getPlaylistItems(playlistUrl, HOME_ROW_LIMIT);
 
     if (items.length === 0) {
       return null;
@@ -274,13 +281,14 @@ class VokinoRepository {
     return {
       id: HOME_TOP250_SECTION_ID,
       title: HOME_TOP250_SECTION_TITLE,
-      playlistUrl: HOME_TOP250_PLAYLIST_URL,
+      playlistUrl,
       items,
     };
   }
 
   private async loadHomeUpdatesSections(): Promise<ContentRow[]> {
-    const items = await this.getPlaylistItems(HOME_UPDATES_PLAYLIST_URL, HOME_UPDATES_FETCH_LIMIT);
+    const playlistUrl = getHomeUpdatesPlaylistUrl();
+    const items = await this.getPlaylistItems(playlistUrl, HOME_UPDATES_FETCH_LIMIT);
     const serials = items.filter(isSerialMedia).slice(0, HOME_ROW_LIMIT);
     const movies = items.filter(isMovieMedia).slice(0, HOME_ROW_LIMIT);
     const rows: ContentRow[] = [];
@@ -289,7 +297,7 @@ class VokinoRepository {
       rows.push({
         id: HOME_SERIAL_UPDATES_SECTION_ID,
         title: HOME_SERIAL_UPDATES_SECTION_TITLE,
-        playlistUrl: HOME_UPDATES_PLAYLIST_URL,
+        playlistUrl,
         items: serials,
       });
     }
@@ -298,7 +306,7 @@ class VokinoRepository {
       rows.push({
         id: HOME_MOVIE_UPDATES_SECTION_ID,
         title: HOME_MOVIE_UPDATES_SECTION_TITLE,
-        playlistUrl: HOME_UPDATES_PLAYLIST_URL,
+        playlistUrl,
         items: movies,
       });
     }

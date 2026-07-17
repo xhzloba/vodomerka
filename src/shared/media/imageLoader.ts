@@ -66,8 +66,9 @@ export function resolveDirectImageUrl(url: string): string {
     }
 
     if (isVokinoUploadImage(normalized)) {
-      const { pathname } = new URL(normalized);
-      return `/vokino-uploads${pathname.replace(/^\/uploads/, '')}`;
+      const parsed = new URL(normalized);
+      const prefix = parsed.hostname === 'api.vokino.tv' ? '/vokino-uploads-tv' : '/vokino-uploads';
+      return `${prefix}${parsed.pathname.replace(/^\/uploads/, '')}`;
     }
   }
 

@@ -37,6 +37,12 @@ export default defineConfig({
         secure: true,
         rewrite: (requestPath) => requestPath.replace(/^\/vokino-api/, '/v2'),
       },
+      '/vokino-api-tv': {
+        target: 'https://api.vokino.tv',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (requestPath) => requestPath.replace(/^\/vokino-api-tv/, '/v2'),
+      },
       '/vokino-image': {
         target: 'https://proxy.vokino.pro',
         changeOrigin: true,
@@ -48,6 +54,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
         rewrite: (requestPath) => requestPath.replace(/^\/vokino-uploads/, '/uploads'),
+      },
+      '/vokino-uploads-tv': {
+        target: 'https://api.vokino.tv',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (requestPath) => requestPath.replace(/^\/vokino-uploads-tv/, '/uploads'),
       },
     },
   },

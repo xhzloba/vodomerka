@@ -407,6 +407,14 @@
   color: var(--app-text-muted);
 }
 
+.settings-mode-picker__hint--ok {
+  color: rgb(110, 198, 140);
+}
+
+.settings-mode-picker__hint--fail {
+  color: rgb(230, 120, 120);
+}
+
 .settings-panel--danger {
   border-color: rgba(255, 120, 120, 0.18);
 }
@@ -415,6 +423,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  margin-top: 14px;
 }
 
 .settings-action-btn {

@@ -8,6 +8,8 @@ export type HomeSectionMode = 'auto' | 'on' | 'off';
 
 export type SidebarMenuAnimation = 'liquid' | 'snake' | 'magnetic' | 'magnetic-water' | 'edge-pulse';
 
+export type ApiServerId = '1' | '2';
+
 export interface HiddenHomeSection {
   id: string;
   title: string;
@@ -34,6 +36,7 @@ export interface AppSettings {
   uiSoundsEnabled: boolean;
   dismissedTipIds: string[];
   tipShownAt: Record<string, number>;
+  apiServer: ApiServerId;
 }
 
 export interface StoredMediaItem {

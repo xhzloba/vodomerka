@@ -4,6 +4,7 @@ import {
   DEFAULT_APP_SETTINGS,
   normalizeCatalogRowGap,
   normalizeDismissedTipIds,
+  normalizeApiServer,
   normalizeHeroSourceSectionIds,
   normalizeHiddenHomeSections,
   normalizeHomeSectionRestoreOrder,
@@ -122,6 +123,7 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     uiSoundsEnabled: value.uiSoundsEnabled ?? DEFAULT_APP_SETTINGS.uiSoundsEnabled,
     dismissedTipIds: normalizeDismissedTipIds(value.dismissedTipIds),
     tipShownAt: normalizeTipShownAt(value.tipShownAt),
+    apiServer: normalizeApiServer(value.apiServer),
   };
 }
 

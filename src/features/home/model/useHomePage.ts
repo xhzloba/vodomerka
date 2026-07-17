@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { HomePageData } from '@/shared/api/vokino/repository';
 import { sanitizeHomePageData, vokinoRepository } from '@/shared/api/vokino/repository';
 import { ensureMediaOverridesLoaded } from '@/shared/domain/overridesStore';
+import { VOKINO_API_SERVER_CHANGED_EVENT } from '@/shared/config/api';
 
 type AsyncStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -105,6 +106,18 @@ export function useHomePage() {
 
   useEffect(() => {
     void load();
+  }, [load]);
+
+  useEffect(() => {
+    const onApiServerChanged = () => {
+      homePageCache = null;
+      void load({ force: true });
+    };
+
+    window.addEventListener(VOKINO_API_SERVER_CHANGED_EVENT, onApiServerChanged);
+    return () => {
+      window.removeEventListener(VOKINO_API_SERVER_CHANGED_EVENT, onApiServerChanged);
+    };
   }, [load]);
 
   useEffect(() => {

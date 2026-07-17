@@ -29,6 +29,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   uiSoundsEnabled: true,
   dismissedTipIds: [],
   tipShownAt: {},
+  apiServer: '1',
 };
 
 const DEFAULT_HIDDEN_BUILTIN_HOME_SECTIONS = DEFAULT_SETTINGS.hiddenHomeSections;
@@ -62,6 +63,7 @@ const SETTING_KEYS = {
   uiSoundsEnabled: 'ui_sounds_enabled',
   dismissedTipIds: 'dismissed_tip_ids',
   tipShownAt: 'tip_shown_at',
+  apiServer: 'api_server',
 } as const;
 
 const LEGACY_CARD_KEYS = ['card_show_title', 'card_show_year', 'card_show_rating'] as const;
@@ -181,6 +183,10 @@ function getDefaultSettingEntries(): Array<{ key: string; value: string }> {
       key: SETTING_KEYS.tipShownAt,
       value: JSON.stringify(DEFAULT_SETTINGS.tipShownAt),
     },
+    {
+      key: SETTING_KEYS.apiServer,
+      value: DEFAULT_SETTINGS.apiServer,
+    },
   ];
 }
 
@@ -204,6 +210,14 @@ function readCardShowInfo(database: Database.Database): boolean {
   }
 
   return DEFAULT_SETTINGS.cardShowInfo;
+}
+
+function normalizeApiServer(value: string | undefined): AppSettings['apiServer'] {
+  if (value === '2') {
+    return '2';
+  }
+
+  return DEFAULT_SETTINGS.apiServer;
 }
 
 function normalizeTheme(value: string | undefined): AppTheme {
@@ -434,6 +448,7 @@ function parseSettings(database: Database.Database): AppSettings {
   const uiSoundsEnabledRaw = readSetting(database, SETTING_KEYS.uiSoundsEnabled);
   const dismissedTipIdsRaw = readSetting(database, SETTING_KEYS.dismissedTipIds);
   const tipShownAtRaw = readSetting(database, SETTING_KEYS.tipShownAt);
+  const apiServerRaw = readSetting(database, SETTING_KEYS.apiServer);
 
   const heroSlideIntervalSec = clampInterval(Number.parseInt(intervalRaw ?? '', 10));
 
@@ -458,6 +473,7 @@ function parseSettings(database: Database.Database): AppSettings {
     uiSoundsEnabled: uiSoundsEnabledRaw !== '0',
     dismissedTipIds: parseDismissedTipIds(dismissedTipIdsRaw),
     tipShownAt: parseTipShownAt(tipShownAtRaw),
+    apiServer: normalizeApiServer(apiServerRaw),
   });
 }
 
@@ -630,6 +646,13 @@ export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
     upsert.run({
       key: SETTING_KEYS.tipShownAt,
       value: JSON.stringify(patch.tipShownAt),
+    });
+  }
+
+  if (patch.apiServer !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.apiServer,
+      value: normalizeApiServer(patch.apiServer),
     });
   }
 

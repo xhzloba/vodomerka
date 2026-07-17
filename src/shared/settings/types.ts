@@ -1,4 +1,5 @@
 import type {
+  ApiServerId,
   AppSettings,
   CatalogRowGapPreset,
   HiddenHomeSection,
@@ -8,6 +9,7 @@ import type {
 } from '../../../contracts/ipc';
 
 export type {
+  ApiServerId,
   AppSettings,
   AppTheme,
   CatalogRowGapPreset,
@@ -70,6 +72,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   uiSoundsEnabled: true,
   dismissedTipIds: [],
   tipShownAt: {},
+  apiServer: '1',
 };
 
 export const HERO_SLIDE_INTERVAL_MIN_SEC = 3;
@@ -178,6 +181,14 @@ export function normalizeHomeRecentlyViewedSection(value: unknown): HomeFavorite
   return DEFAULT_APP_SETTINGS.homeRecentlyViewedSection;
 }
 
+export function normalizeApiServer(value: unknown): ApiServerId {
+  if (value === '2') {
+    return '2';
+  }
+
+  return DEFAULT_APP_SETTINGS.apiServer;
+}
+
 export function normalizeDismissedTipIds(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return DEFAULT_APP_SETTINGS.dismissedTipIds;
@@ -213,6 +224,23 @@ export const HOME_FAVORITES_SECTION_MODE_OPTIONS: Array<{
 ];
 
 export const HOME_RECENTLY_VIEWED_SECTION_MODE_OPTIONS = HOME_FAVORITES_SECTION_MODE_OPTIONS;
+
+export const API_SERVER_OPTIONS: Array<{
+  id: ApiServerId;
+  label: string;
+  hint: string;
+}> = [
+  {
+    id: '1',
+    label: 'Сервер 1',
+    hint: 'Основной',
+  },
+  {
+    id: '2',
+    label: 'Сервер 2',
+    hint: 'Запасной',
+  },
+];
 
 export const SIDEBAR_MENU_ANIMATION_OPTIONS: Array<{
   id: SidebarMenuAnimation;
