@@ -286,18 +286,8 @@ function normalizePosterSize(value: string | undefined): AppSettings['posterSize
 function normalizeSidebarMenuAnimation(
   value: string | undefined,
 ): AppSettings['sidebarMenuAnimation'] {
-  if (
-    value === 'liquid' ||
-    value === 'snake' ||
-    value === 'magnetic' ||
-    value === 'magnetic-water' ||
-    value === 'edge-pulse'
-  ) {
+  if (typeof value === 'string' && /^[a-z][a-z0-9-]{1,47}$/.test(value)) {
     return value;
-  }
-
-  if (value === 'orbit' || value === 'comet' || value === 'pearl') {
-    return 'magnetic-water';
   }
 
   return DEFAULT_SETTINGS.sidebarMenuAnimation;

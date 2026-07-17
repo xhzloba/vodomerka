@@ -1,0 +1,13 @@
+{
+  "id": "snake",
+  "name": "Змейка",
+  "description": "Вращающаяся рамка как на карточках",
+  "version": "1.0.0",
+  "engine": 1,
+  "kind": "sidebar-animation",
+  "behavior": "snake",
+  "preview": {
+    "bg": "#111114",
+    "accent": "#d2dae8"
+  }
+}

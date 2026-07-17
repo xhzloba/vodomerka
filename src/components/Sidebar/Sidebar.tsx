@@ -47,7 +47,7 @@ const navItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
 export function Sidebar({
   activeNav,
   collapsed,
-  menuAnimation = 'liquid',
+  menuAnimation = 'magnetic-water',
   macSidebarChrome = false,
   onNavChange,
   itemSettingsActions,

@@ -110,18 +110,12 @@ export function applyPosterSizeCssVars(posterSize: PosterSizePreset): void {
 }
 
 export function normalizeSidebarMenuAnimation(value: unknown): SidebarMenuAnimation {
-  if (
-    value === 'liquid' ||
-    value === 'snake' ||
-    value === 'magnetic' ||
-    value === 'magnetic-water' ||
-    value === 'edge-pulse'
-  ) {
-    return value;
-  }
+  if (typeof value === 'string' && /^[a-z][a-z0-9-]{1,47}$/.test(value)) {
+    if (value === 'orbit' || value === 'comet' || value === 'pearl') {
+      return DEFAULT_APP_SETTINGS.sidebarMenuAnimation;
+    }
 
-  if (value === 'orbit' || value === 'comet' || value === 'pearl') {
-    return 'magnetic-water';
+    return value;
   }
 
   return DEFAULT_APP_SETTINGS.sidebarMenuAnimation;
@@ -248,28 +242,8 @@ export const SIDEBAR_MENU_ANIMATION_OPTIONS: Array<{
   hint: string;
 }> = [
   {
-    id: 'liquid',
-    label: 'Жидкое свечение',
-    hint: 'Плавное свечение и пузырьки на активном пункте',
-  },
-  {
-    id: 'snake',
-    label: 'Змейка',
-    hint: 'Вращающаяся рамка как на карточках',
-  },
-  {
-    id: 'magnetic',
-    label: 'Магнит',
-    hint: 'Плавающая подложка плавно переезжает между пунктами',
-  },
-  {
     id: 'magnetic-water',
     label: 'Водяной магнит',
     hint: 'Жидкая подложка с пузырьками, плавно переезжает между пунктами',
-  },
-  {
-    id: 'edge-pulse',
-    label: 'Пульс',
-    hint: 'Яркая полоска на краю окна плавно переезжает к активному пункту',
   },
 ];

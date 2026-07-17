@@ -33,6 +33,10 @@
   color: var(--app-text-muted);
 }
 
+.plugins-view__tabs {
+  margin-top: 16px;
+}
+
 .plugins-view__content {
   flex: 1;
   min-height: 0;

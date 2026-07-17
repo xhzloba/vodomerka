@@ -4,6 +4,7 @@ import {
   type AppSettings,
   type BackupResult,
   type ElectronApi,
+  type InstalledSidebarAnimationPlugin,
   type InstalledThemePlugin,
   type MediaOverridesMap,
   type PluginResult,
@@ -42,6 +43,16 @@ const electronApi: ElectronApi = {
       ipcRenderer.invoke(IPC_CHANNELS.plugins.installTheme, urlOrLocalId),
     uninstallTheme: (id: string): Promise<PluginResult<{ removed: boolean }>> =>
       ipcRenderer.invoke(IPC_CHANNELS.plugins.uninstallTheme, id),
+    listSidebarAnimations: (): Promise<InstalledSidebarAnimationPlugin[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.plugins.listSidebarAnimations),
+    getSidebarAnimation: (id: string): Promise<InstalledSidebarAnimationPlugin | null> =>
+      ipcRenderer.invoke(IPC_CHANNELS.plugins.getSidebarAnimation, id),
+    installSidebarAnimation: (
+      urlOrLocalId: string,
+    ): Promise<PluginResult<InstalledSidebarAnimationPlugin>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.plugins.installSidebarAnimation, urlOrLocalId),
+    uninstallSidebarAnimation: (id: string): Promise<PluginResult<{ removed: boolean }>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.plugins.uninstallSidebarAnimation, id),
     fetchCatalog: (): Promise<PluginResult<ThemeCatalog>> =>
       ipcRenderer.invoke(IPC_CHANNELS.plugins.fetchCatalog),
   },

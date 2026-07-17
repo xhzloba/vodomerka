@@ -3,7 +3,8 @@ import { HomeSettingsPanels } from '@/features/home/ui/HomeSettingsPanels';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { useApiServerHealth } from '@/shared/settings/useApiServerHealth';
 import { listInstalledThemePlugins } from '@/shared/plugins/themePlugins';
-import type { InstalledThemePlugin } from '../../../contracts/ipc';
+import { listInstalledSidebarAnimations } from '@/shared/plugins/sidebarPlugins';
+import type { InstalledSidebarAnimationPlugin, InstalledThemePlugin } from '../../../contracts/ipc';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { useRecentlyViewed } from '@/shared/domain/RecentlyViewedContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
@@ -59,6 +60,9 @@ export function SettingsView() {
   const [activeTab, setActiveTab] = useState<SettingsTabId>('appearance');
   const { health, isChecking, check: checkApiServers } = useApiServerHealth();
   const [installedThemes, setInstalledThemes] = useState<InstalledThemePlugin[]>([]);
+  const [installedSidebarAnimations, setInstalledSidebarAnimations] = useState<
+    InstalledSidebarAnimationPlugin[]
+  >([]);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [importConfirmOpen, setImportConfirmOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -67,21 +71,32 @@ export function SettingsView() {
   const canBackup = Boolean(window.electronAPI?.backup);
 
   useEffect(() => {
-    if (activeTab !== 'appearance') {
+    if (activeTab !== 'appearance' && activeTab !== 'interface') {
       return;
     }
 
     let cancelled = false;
-    void listInstalledThemePlugins().then((themes) => {
-      if (!cancelled) {
-        setInstalledThemes(themes);
-      }
-    });
+
+    if (activeTab === 'appearance') {
+      void listInstalledThemePlugins().then((themes) => {
+        if (!cancelled) {
+          setInstalledThemes(themes);
+        }
+      });
+    }
+
+    if (activeTab === 'interface') {
+      void listInstalledSidebarAnimations().then((animations) => {
+        if (!cancelled) {
+          setInstalledSidebarAnimations(animations);
+        }
+      });
+    }
 
     return () => {
       cancelled = true;
     };
-  }, [activeTab, settings.theme]);
+  }, [activeTab, settings.theme, settings.sidebarMenuAnimation]);
 
   const handleResetAll = async () => {
     setIsResetting(true);
@@ -296,12 +311,19 @@ export function SettingsView() {
                   Боковое меню
                 </h2>
                 <p className="settings-panel__description">
-                  Анимация подсветки активного пункта навигации слева.
+                  По умолчанию — Водяной магнит. Остальные анимации ставятся в «Плагины».
                 </p>
               </div>
 
               <div className="settings-mode-picker" role="radiogroup" aria-label="Анимация бокового меню">
-                {SIDEBAR_MENU_ANIMATION_OPTIONS.map((option) => (
+                {[
+                  ...SIDEBAR_MENU_ANIMATION_OPTIONS,
+                  ...installedSidebarAnimations.map((item) => ({
+                    id: item.id,
+                    label: item.name,
+                    hint: item.description,
+                  })),
+                ].map((option) => (
                   <button
                     key={option.id}
                     type="button"

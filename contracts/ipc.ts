@@ -1,15 +1,23 @@
 import type {
   AppTheme,
+  InstalledSidebarAnimationPlugin,
   InstalledThemePlugin,
   PluginResult,
+  SidebarMenuAnimation,
   ThemeCatalog,
 } from './themes';
 
 export type {
   AppTheme,
   BuiltinThemeId,
+  BuiltinSidebarAnimationId,
+  InstalledSidebarAnimationPlugin,
   InstalledThemePlugin,
   PluginResult,
+  SidebarAnimationBehavior,
+  SidebarAnimationCatalogEntry,
+  SidebarAnimationPluginPackage,
+  SidebarMenuAnimation,
   ThemeCatalog,
   ThemeCatalogEntry,
   ThemePluginPackage,
@@ -17,7 +25,9 @@ export type {
 } from './themes';
 
 export {
+  BUILTIN_SIDEBAR_ANIMATION_IDS,
   BUILTIN_THEME_IDS,
+  DEFAULT_SIDEBAR_ANIMATION_ID,
   DEFAULT_THEME_ID,
   THEME_PLUGIN_ENGINE,
 } from './themes';
@@ -27,8 +37,6 @@ export type CatalogRowGapPreset = 'compact' | 'normal' | 'relaxed' | 'spacious';
 export type PosterSizePreset = 'small' | 'medium' | 'large';
 
 export type HomeSectionMode = 'auto' | 'on' | 'off';
-
-export type SidebarMenuAnimation = 'liquid' | 'snake' | 'magnetic' | 'magnetic-water' | 'edge-pulse';
 
 export type ApiServerId = '1' | '2';
 
@@ -114,6 +122,10 @@ export const IPC_CHANNELS = {
     getTheme: 'plugins:getTheme',
     installTheme: 'plugins:installTheme',
     uninstallTheme: 'plugins:uninstallTheme',
+    listSidebarAnimations: 'plugins:listSidebarAnimations',
+    getSidebarAnimation: 'plugins:getSidebarAnimation',
+    installSidebarAnimation: 'plugins:installSidebarAnimation',
+    uninstallSidebarAnimation: 'plugins:uninstallSidebarAnimation',
     fetchCatalog: 'plugins:fetchCatalog',
   },
   favorites: {
@@ -191,6 +203,12 @@ export interface ElectronApi {
     getTheme: (id: string) => Promise<InstalledThemePlugin | null>;
     installTheme: (urlOrLocalId: string) => Promise<PluginResult<InstalledThemePlugin>>;
     uninstallTheme: (id: string) => Promise<PluginResult<{ removed: boolean }>>;
+    listSidebarAnimations: () => Promise<InstalledSidebarAnimationPlugin[]>;
+    getSidebarAnimation: (id: string) => Promise<InstalledSidebarAnimationPlugin | null>;
+    installSidebarAnimation: (
+      urlOrLocalId: string,
+    ) => Promise<PluginResult<InstalledSidebarAnimationPlugin>>;
+    uninstallSidebarAnimation: (id: string) => Promise<PluginResult<{ removed: boolean }>>;
     fetchCatalog: () => Promise<PluginResult<ThemeCatalog>>;
   };
   favorites: {

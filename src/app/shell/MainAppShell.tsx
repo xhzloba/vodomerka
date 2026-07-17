@@ -23,6 +23,7 @@ import { openMediaDetailWindow } from '@/shared/platform/mediaDetailWindow';
 import { isMacOS } from '@/shared/platform/runtime';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { playWelcomeSound } from '@/shared/audio/uiSounds';
+import { resolveSidebarMenuBehavior } from '@/shared/plugins/sidebarPlugins';
 import { PageLoading } from '@/shared/ui/PageState';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
@@ -32,6 +33,7 @@ const SETUP_WELCOME_SHOW_DELAY_MS = 5_000;
 export function MainAppShell() {
   const { settings, isLoading, setupWelcomeEpoch, updateSettings } = useAppSettings();
   const { showToast } = useToast();
+  const [sidebarMenuBehavior, setSidebarMenuBehavior] = useState(settings.sidebarMenuAnimation);
   const {
     activeNav,
     searchQuery,
@@ -230,6 +232,20 @@ export function MainAppShell() {
   }, [toggleSearchOverlay, toggleSidebar]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    void resolveSidebarMenuBehavior(settings.sidebarMenuAnimation).then((behavior) => {
+      if (!cancelled) {
+        setSidebarMenuBehavior(behavior);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [settings.sidebarMenuAnimation]);
+
+  useEffect(() => {
     if (!macSidebarChrome) {
       return;
     }
@@ -293,7 +309,7 @@ export function MainAppShell() {
         <Sidebar
           activeNav={activeNav}
           collapsed={sidebarCollapsed}
-          menuAnimation={settings.sidebarMenuAnimation}
+          menuAnimation={sidebarMenuBehavior}
           macSidebarChrome={macSidebarChrome}
           onNavChange={navigate}
           itemSettingsActions={{

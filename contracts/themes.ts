@@ -38,10 +38,62 @@ export interface ThemeCatalogEntry {
   windowBackground: string;
 }
 
+export type SidebarAnimationBehavior =
+  | 'liquid'
+  | 'snake'
+  | 'magnetic'
+  | 'magnetic-water'
+  | 'edge-pulse';
+
+export const DEFAULT_SIDEBAR_ANIMATION_ID = 'magnetic-water';
+
+export const BUILTIN_SIDEBAR_ANIMATION_IDS = ['magnetic-water'] as const;
+
+export type BuiltinSidebarAnimationId = (typeof BUILTIN_SIDEBAR_ANIMATION_IDS)[number];
+
+/** Selected sidebar animation id: builtin or installed plugin. */
+export type SidebarMenuAnimation = string;
+
+export interface SidebarAnimationPluginPackage {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  engine: number;
+  kind: 'sidebar-animation';
+  behavior: SidebarAnimationBehavior;
+  preview: ThemePreviewSwatch;
+}
+
+export interface SidebarAnimationCatalogEntry {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  url: string;
+  localPath?: string;
+  preview: ThemePreviewSwatch;
+  behavior: SidebarAnimationBehavior;
+}
+
+export interface InstalledSidebarAnimationPlugin {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  engine: number;
+  kind: 'sidebar-animation';
+  behavior: SidebarAnimationBehavior;
+  preview: ThemePreviewSwatch;
+  installedAt: number;
+  sourceUrl?: string;
+}
+
 export interface ThemeCatalog {
   engine: number;
   updatedAt?: string;
   themes: ThemeCatalogEntry[];
+  sidebarAnimations?: SidebarAnimationCatalogEntry[];
 }
 
 export interface InstalledThemePlugin {

@@ -1,0 +1,13 @@
+{
+  "id": "liquid",
+  "name": "Жидкое свечение",
+  "description": "Плавное свечение и пузырьки на активном пункте",
+  "version": "1.0.0",
+  "engine": 1,
+  "kind": "sidebar-animation",
+  "behavior": "liquid",
+  "preview": {
+    "bg": "#111114",
+    "accent": "#c8ced8"
+  }
+}

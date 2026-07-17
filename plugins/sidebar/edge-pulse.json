@@ -1,0 +1,13 @@
+{
+  "id": "edge-pulse",
+  "name": "Пульс",
+  "description": "Яркая полоска на краю окна плавно переезжает к активному пункту",
+  "version": "1.0.0",
+  "engine": 1,
+  "kind": "sidebar-animation",
+  "behavior": "edge-pulse",
+  "preview": {
+    "bg": "#111114",
+    "accent": "#ededef"
+  }
+}

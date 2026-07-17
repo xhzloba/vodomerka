@@ -1,0 +1,13 @@
+{
+  "id": "magnetic",
+  "name": "Магнит",
+  "description": "Плавающая подложка плавно переезжает между пунктами",
+  "version": "1.0.0",
+  "engine": 1,
+  "kind": "sidebar-animation",
+  "behavior": "magnetic",
+  "preview": {
+    "bg": "#111114",
+    "accent": "#8fa0b8"
+  }
+}

@@ -80,5 +80,59 @@
       },
       "windowBackground": "#0a0d12"
     }
+  ],
+  "sidebarAnimations": [
+    {
+      "id": "liquid",
+      "name": "Жидкое свечение",
+      "description": "Плавное свечение и пузырьки на активном пункте",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/xhzloba/vodomerka/main/plugins/sidebar/liquid.json",
+      "localPath": "sidebar/liquid.json",
+      "preview": {
+        "bg": "#111114",
+        "accent": "#c8ced8"
+      },
+      "behavior": "liquid"
+    },
+    {
+      "id": "snake",
+      "name": "Змейка",
+      "description": "Вращающаяся рамка как на карточках",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/xhzloba/vodomerka/main/plugins/sidebar/snake.json",
+      "localPath": "sidebar/snake.json",
+      "preview": {
+        "bg": "#111114",
+        "accent": "#d2dae8"
+      },
+      "behavior": "snake"
+    },
+    {
+      "id": "magnetic",
+      "name": "Магнит",
+      "description": "Плавающая подложка плавно переезжает между пунктами",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/xhzloba/vodomerka/main/plugins/sidebar/magnetic.json",
+      "localPath": "sidebar/magnetic.json",
+      "preview": {
+        "bg": "#111114",
+        "accent": "#8fa0b8"
+      },
+      "behavior": "magnetic"
+    },
+    {
+      "id": "edge-pulse",
+      "name": "Пульс",
+      "description": "Яркая полоска на краю окна плавно переезжает к активному пункту",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/xhzloba/vodomerka/main/plugins/sidebar/edge-pulse.json",
+      "localPath": "sidebar/edge-pulse.json",
+      "preview": {
+        "bg": "#111114",
+        "accent": "#ededef"
+      },
+      "behavior": "edge-pulse"
+    }
   ]
 }

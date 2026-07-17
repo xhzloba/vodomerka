@@ -3,10 +3,12 @@ import { app } from 'electron';
 import { promises as fs } from 'fs';
 import path from 'path';
 import {
+  BUILTIN_SIDEBAR_ANIMATION_IDS,
   BUILTIN_THEME_IDS,
   THEME_PLUGIN_ENGINE,
   type InstalledThemePlugin,
   type PluginResult,
+  type SidebarAnimationCatalogEntry,
   type ThemeCatalog,
   type ThemeCatalogEntry,
   type ThemePluginPackage,
@@ -241,6 +243,7 @@ function parseCatalog(value: unknown): ThemeCatalog | null {
   }
 
   const themes: ThemeCatalogEntry[] = [];
+  const sidebarAnimations: SidebarAnimationCatalogEntry[] = [];
 
   for (const item of record.themes) {
     if (!item || typeof item !== 'object') {
@@ -274,10 +277,56 @@ function parseCatalog(value: unknown): ThemeCatalog | null {
     });
   }
 
+  if (Array.isArray(record.sidebarAnimations)) {
+    for (const item of record.sidebarAnimations) {
+      if (!item || typeof item !== 'object') {
+        continue;
+      }
+
+      const entry = item as Record<string, unknown>;
+      const preview = normalizePreview(entry.preview);
+      if (
+        typeof entry.id !== 'string' ||
+        typeof entry.name !== 'string' ||
+        typeof entry.description !== 'string' ||
+        typeof entry.version !== 'string' ||
+        typeof entry.url !== 'string' ||
+        typeof entry.behavior !== 'string' ||
+        !preview ||
+        !THEME_ID_PATTERN.test(entry.id) ||
+        (BUILTIN_SIDEBAR_ANIMATION_IDS as readonly string[]).includes(entry.id)
+      ) {
+        continue;
+      }
+
+      const behavior = entry.behavior as SidebarAnimationCatalogEntry['behavior'];
+      if (
+        behavior !== 'liquid' &&
+        behavior !== 'snake' &&
+        behavior !== 'magnetic' &&
+        behavior !== 'edge-pulse'
+      ) {
+        continue;
+      }
+
+      sidebarAnimations.push({
+        id: entry.id,
+        name: entry.name,
+        description: entry.description,
+        version: entry.version,
+        url: entry.url,
+        localPath: typeof entry.localPath === 'string' ? entry.localPath : undefined,
+        preview,
+        behavior,
+      });
+    }
+  }
+
   return {
     engine: record.engine,
     updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : undefined,
     themes,
+    sidebarAnimations,
   };
 }
 
