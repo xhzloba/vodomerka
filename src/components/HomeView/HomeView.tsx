@@ -19,6 +19,7 @@ import {
   shouldShowHomeFavoritesSection,
   shouldShowHomeRecentlyViewedSection,
 } from '@/shared/domain/homeSections';
+import { playSubmenuSound } from '@/shared/audio/uiSounds';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import { FavoritesIcon, HistoryIcon } from '@/shared/ui/icons';
 import { useAppTopProgress } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
@@ -85,6 +86,7 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
   );
 
   const requestHideSection = (section: { id: string; title: string }) => {
+    playSubmenuSound();
     setHideConfirmSection(section);
   };
 
