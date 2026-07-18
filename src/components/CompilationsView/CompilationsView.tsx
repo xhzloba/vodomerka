@@ -245,9 +245,9 @@ export function CompilationsView({
               aria-haspopup="dialog"
               aria-expanded={isFiltersMenuOpen}
               aria-label={hasActiveFilters ? `Фильтры, активно: ${activeCount}` : 'Фильтры'}
+              title="Фильтры"
             >
-              <FilterIcon size={18} />
-              <span className="browse-view__filters-trigger-label">Фильтры</span>
+              <FilterIcon size={22} strokeWidth={1.85} />
               {hasActiveFilters ? (
                 <span className="browse-view__filters-badge" aria-hidden="true">
                   {activeCount}

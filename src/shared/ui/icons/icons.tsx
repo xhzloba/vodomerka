@@ -1,4 +1,4 @@
-import { Check, Clock, Heart, House, Eye, Trash2, History, Puzzle, SlidersHorizontal } from 'lucide-react';
+import { Check, Clock, Heart, House, Eye, Trash2, History, Puzzle, SlidersHorizontal, Layers } from 'lucide-react';
 import type { IconProps } from './Icon';
 import { StrokeIcon } from './Icon';
 
@@ -151,6 +151,18 @@ export function HistoryIcon({ size = 24, className, strokeWidth = 1.75, ...props
 export function FilterIcon({ size = 24, className, strokeWidth = 1.75, ...props }: IconProps) {
   return (
     <SlidersHorizontal
+      size={size}
+      strokeWidth={strokeWidth}
+      className={lucideIconClass(className)}
+      aria-hidden={props['aria-label'] ? undefined : true}
+      {...props}
+    />
+  );
+}
+
+export function LayersIcon({ size = 24, className, strokeWidth = 1.75, ...props }: IconProps) {
+  return (
+    <Layers
       size={size}
       strokeWidth={strokeWidth}
       className={lucideIconClass(className)}

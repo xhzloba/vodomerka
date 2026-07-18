@@ -32,7 +32,7 @@ import { playSubmenuSound } from '@/shared/audio/uiSounds';
 import type { BrowseNavigationTarget } from '@/app/navigation/browseTarget';
 import { PageError, PageLoading } from '@/shared/ui/PageState';
 import { useAppTopProgress } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
-import { ChevronDownIcon, FilterIcon } from '@/shared/ui/icons';
+import { FilterIcon, LayersIcon } from '@/shared/ui/icons';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { Tabs } from '@/shared/ui/Tabs';
 import { BrowseSettingsPanels } from '@/features/browse/ui/BrowseSettingsPanels';
@@ -467,9 +467,9 @@ export function BrowseView({
               aria-label={
                 activeCount > 0 ? `Фильтры, активно: ${activeCount}` : 'Фильтры'
               }
+              title="Фильтры"
             >
-              <FilterIcon size={18} />
-              <span className="browse-view__filters-trigger-label">Фильтры</span>
+              <FilterIcon size={22} strokeWidth={1.85} />
               {activeCount > 0 ? (
                 <span className="browse-view__filters-badge" aria-hidden="true">
                   {activeCount}
@@ -497,10 +497,12 @@ export function BrowseView({
                   </span>
                 </span>
               ) : null}
-              <span className="browse-view__category-trigger-text">
-                {selectedCategory?.title ?? 'Категория'}
+              <LayersIcon size={22} strokeWidth={1.85} />
+              <span className="browse-view__category-trigger-label" aria-hidden="true">
+                <span className="browse-view__category-trigger-label-text">
+                  {selectedCategory?.title ?? 'Категория'}
+                </span>
               </span>
-              <ChevronDownIcon size={18} strokeWidth={1.75} />
             </button>
           </div>
         ) : isCategoriesLoading ? (
