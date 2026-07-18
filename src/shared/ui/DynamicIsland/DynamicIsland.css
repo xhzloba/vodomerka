@@ -207,7 +207,6 @@
   outline-offset: 3px;
 }
 
-.dynamic-island__idle,
 .dynamic-island__toast,
 .dynamic-island__loading {
   grid-area: island;
@@ -216,34 +215,6 @@
     opacity var(--island-content-out),
     transform var(--island-content-out),
     visibility var(--island-content-out);
-}
-
-.dynamic-island__idle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 1;
-  visibility: visible;
-  transform: scale(1);
-  transition-delay: 100ms;
-}
-
-.dynamic-island:not(.dynamic-island--idle) .dynamic-island__idle {
-  opacity: 0;
-  visibility: hidden;
-  transform: scale(0.9);
-  pointer-events: none;
-  transition-delay: 0ms;
-}
-
-.dynamic-island__dot {
-  display: block;
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--app-accent) 82%, white 10%);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--app-accent) 40%, transparent);
-  animation: dynamic-island-breathe 2.8s ease-in-out infinite;
 }
 
 .dynamic-island__toast {
@@ -492,28 +463,13 @@
   }
 }
 
-@keyframes dynamic-island-breathe {
-  0%,
-  100% {
-    opacity: 0.7;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .dynamic-island__shell,
-  .dynamic-island__idle,
   .dynamic-island__toast,
   .dynamic-island__loading {
     transition: none;
   }
 
-  .dynamic-island__dot,
   .dynamic-island__spinner,
   .dynamic-island--snake .dynamic-island__snake-beam {
     animation: none;

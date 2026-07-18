@@ -87,8 +87,8 @@ export function DynamicIsland() {
 
     if (heldToast) {
       setToastContentOn(false);
-      setTipExpanded(false);
       const shrinkId = window.setTimeout(() => {
+        setTipExpanded(false);
         setShellMode((current) => (current === 'toast' ? 'idle' : current));
       }, CONTENT_OUT_MS);
       const clearId = window.setTimeout(() => {
@@ -243,10 +243,6 @@ export function DynamicIsland() {
           role={tipInteractive ? 'button' : undefined}
           tabIndex={tipInteractive ? 0 : undefined}
         >
-          <div className="dynamic-island__idle" aria-hidden={shellMode !== 'idle'}>
-            <span className="dynamic-island__dot" />
-          </div>
-
           <div className="dynamic-island__toast" aria-hidden={!toastContentOn}>
             {heldToast ? (
               <>
