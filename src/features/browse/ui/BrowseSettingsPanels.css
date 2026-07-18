@@ -1,0 +1,43 @@
+.browse-settings-panels {
+  display: grid;
+  gap: 14px;
+}
+
+.browse-settings-panels--menu {
+  gap: 12px;
+  padding-right: 8px;
+}
+
+.browse-settings-panels--menu .settings-panel {
+  padding: 14px;
+}
+
+.browse-settings-panels--menu .settings-panel__title {
+  font-size: 1rem;
+}
+
+.browse-settings-panels--menu .settings-panel__description,
+.browse-settings-panels--menu .settings-row__hint {
+  font-size: 0.75rem;
+}
+
+.browse-settings-panels__gap-picker {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.browse-settings-panels__gap-picker .settings-mode-picker__option {
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+}
+
+.browse-settings-panels__gap-picker .settings-mode-picker__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.browse-settings-panels--menu .browse-settings-panels__gap-picker {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}

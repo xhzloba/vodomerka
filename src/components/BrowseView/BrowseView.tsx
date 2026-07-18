@@ -26,8 +26,6 @@ import { ensureMediaOverridesLoaded, hydrateMediaItems } from '@/shared/domain/o
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import {
   CATALOG_GAP_VALUES,
-  CATALOG_ROW_GAP_OPTIONS,
-  type CatalogRowGapPreset,
 } from '@/shared/settings/types';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { playSubmenuSound } from '@/shared/audio/uiSounds';
@@ -37,7 +35,9 @@ import { useAppTopProgress } from '@/shared/ui/AppTopProgress/AppTopProgressCont
 import { ChevronDownIcon, FilterIcon } from '@/shared/ui/icons';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { Tabs } from '@/shared/ui/Tabs';
+import { BrowseSettingsPanels } from '@/features/browse/ui/BrowseSettingsPanels';
 import { MediaGrid } from './MediaGrid';
+import '@/components/SettingsView/SettingsView.css';
 import './BrowseView.css';
 import './MediaGrid.css';
 
@@ -355,9 +355,16 @@ export function BrowseView({
     void loadContent(category, { filters });
   };
 
-  const handleCatalogGapSelect = (preset: CatalogRowGapPreset) => {
-    void updateSettings({ catalogRowGap: preset });
-  };
+  const catalogSettingsMenu = (
+    <SlideMenu
+      open={settingsMenuOpen}
+      title="Настройки каталога"
+      size="wide"
+      onClose={() => onSettingsMenuOpenChange(false)}
+    >
+      <BrowseSettingsPanels variant="menu" />
+    </SlideMenu>
+  );
 
   const openCategoryMenu = () => {
     playSubmenuSound();
@@ -427,30 +434,7 @@ export function BrowseView({
           <PageError title="Ошибка каталога" text={error} />
         </div>
 
-        <SlideMenu
-          open={settingsMenuOpen}
-          title="Настройки каталога"
-          onClose={() => onSettingsMenuOpenChange(false)}
-        >
-          <p className="slide-menu__section-label">Отступы сетки</p>
-          <ul className="slide-menu__list">
-            {CATALOG_ROW_GAP_OPTIONS.map((option) => {
-              const isActive = settings.catalogRowGap === option.id;
-
-              return (
-                <li key={option.id}>
-                  <button
-                    type="button"
-                    className={`slide-menu__option${isActive ? ' slide-menu__option--active' : ''}`}
-                    onClick={() => handleCatalogGapSelect(option.id)}
-                  >
-                    {option.label}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </SlideMenu>
+        {catalogSettingsMenu}
       </div>
     );
   }
@@ -563,30 +547,7 @@ export function BrowseView({
         />
       </SlideMenu>
 
-      <SlideMenu
-        open={settingsMenuOpen}
-        title="Настройки каталога"
-        onClose={() => onSettingsMenuOpenChange(false)}
-      >
-        <p className="slide-menu__section-label">Отступы сетки</p>
-        <ul className="slide-menu__list">
-          {CATALOG_ROW_GAP_OPTIONS.map((option) => {
-            const isActive = settings.catalogRowGap === option.id;
-
-            return (
-              <li key={option.id}>
-                <button
-                  type="button"
-                  className={`slide-menu__option${isActive ? ' slide-menu__option--active' : ''}`}
-                  onClick={() => handleCatalogGapSelect(option.id)}
-                >
-                  {option.label}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </SlideMenu>
+      {catalogSettingsMenu}
 
       <div ref={scrollRef} className="browse-view__scroll scroll-overlay">
         {scrollShadow}
