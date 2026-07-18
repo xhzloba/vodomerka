@@ -256,9 +256,6 @@ export function DynamicIsland() {
                     <span className="dynamic-island__title">{heldToast.title}</span>
                   ) : null}
                   <span className="dynamic-island__message">{heldToast.message}</span>
-                  {isTip && !tipExpanded ? (
-                    <span className="dynamic-island__hint">Нажмите, чтобы раскрыть</span>
-                  ) : null}
                 </div>
                 {heldToast.dismissible && toast ? (
                   <button

@@ -7,8 +7,8 @@
   --island-idle-h: 34px;
   --island-compact-w: 318px;
   --island-compact-h: 48px;
-  --island-roomy-w: 328px;
-  --island-roomy-h: 58px;
+  --island-roomy-w: 340px;
+  --island-roomy-h: 64px;
   --island-tip-expanded-w: 420px;
   --island-tip-expanded-h: 142px;
   --island-loading-w: 198px;
@@ -169,7 +169,7 @@
   width: min(var(--island-roomy-w), calc(100vw - 28px));
   height: var(--island-roomy-h);
   border-radius: 22px;
-  padding: 0 12px 0 10px;
+  padding: 0 14px 0 12px;
 }
 
 .dynamic-island--tip-expanded .dynamic-island__shell {
@@ -220,7 +220,7 @@
 .dynamic-island__toast {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
   opacity: 0;
   visibility: hidden;
@@ -292,7 +292,7 @@
 .dynamic-island__copy {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 4px;
   min-width: 0;
   flex: 1;
 }
@@ -331,7 +331,7 @@
   -webkit-box-orient: vertical;
   font-size: 0.8125rem;
   font-weight: 500;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .dynamic-island--tip-expanded .dynamic-island__toast {
@@ -355,14 +355,6 @@
   letter-spacing: 0.05em;
   font-size: 0.625rem;
   margin-bottom: 2px;
-}
-
-.dynamic-island__hint {
-  margin-top: 3px;
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: color-mix(in srgb, var(--app-text-muted) 88%, var(--app-accent));
 }
 
 .dynamic-island--roomy .dynamic-island__title {
