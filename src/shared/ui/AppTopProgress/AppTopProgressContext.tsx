@@ -9,20 +9,20 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { TopIndeterminateProgress } from '@/shared/ui/TopIndeterminateProgress/TopIndeterminateProgress';
+
+export interface IslandProgress {
+  label: string;
+  mode: 'active' | 'completing';
+}
 
 interface ProgressEntry {
   id: string;
   label: string;
 }
 
-interface RenderedProgress {
-  label: string;
-  mode: 'active' | 'completing';
-}
-
 interface AppTopProgressContextValue {
   setProgress: (id: string, active: boolean, label?: string) => void;
+  progress: IslandProgress | null;
 }
 
 const COMPLETE_ANIMATION_MS = 420;
@@ -32,7 +32,7 @@ const AppTopProgressContext = createContext<AppTopProgressContextValue | null>(n
 
 export function AppTopProgressProvider({ children }: { children: ReactNode }) {
   const [entries, setEntries] = useState<ProgressEntry[]>([]);
-  const [rendered, setRendered] = useState<RenderedProgress | null>(null);
+  const [rendered, setRendered] = useState<IslandProgress | null>(null);
   const completeTimerRef = useRef<number | null>(null);
   const deactivateTimerRef = useRef<number | null>(null);
 
@@ -67,8 +67,9 @@ export function AppTopProgressProvider({ children }: { children: ReactNode }) {
 
     if (deactivateTimerRef.current !== null) {
       window.clearTimeout(deactivateTimerRef.current);
-      deactivateTimerRef.current = null;
     }
+
+    deactivateTimerRef.current = null;
 
     if (activeEntry) {
       setRendered((current) => {
@@ -119,18 +120,16 @@ export function AppTopProgressProvider({ children }: { children: ReactNode }) {
     };
   }, [rendered]);
 
-  const value = useMemo(() => ({ setProgress }), [setProgress]);
+  const value = useMemo(
+    () => ({
+      setProgress,
+      progress: rendered,
+    }),
+    [setProgress, rendered],
+  );
 
   return (
-    <AppTopProgressContext.Provider value={value}>
-      {rendered ? (
-        <TopIndeterminateProgress
-          label={rendered.label}
-          completing={rendered.mode === 'completing'}
-        />
-      ) : null}
-      {children}
-    </AppTopProgressContext.Provider>
+    <AppTopProgressContext.Provider value={value}>{children}</AppTopProgressContext.Provider>
   );
 }
 
@@ -147,4 +146,14 @@ export function useAppTopProgress(id: string, active: boolean, label = 'Загр
       context.setProgress(id, false, label);
     };
   }, [active, context, id, label]);
+}
+
+export function useAppTopProgressIslandState() {
+  const context = useContext(AppTopProgressContext);
+
+  if (!context) {
+    throw new Error('useAppTopProgressIslandState must be used within AppTopProgressProvider');
+  }
+
+  return context.progress;
 }

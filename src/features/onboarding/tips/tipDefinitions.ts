@@ -11,7 +11,7 @@ export interface AppTipContext {
 
 export interface AppTipDefinition {
   id: string;
-  title: string;
+  title?: string;
   buildMessage: (context: AppTipContext) => string;
   /** Задержка перед первым показом после запуска */
   initialDelayMs: number;
@@ -24,7 +24,6 @@ export interface AppTipDefinition {
 export const APP_TIPS: AppTipDefinition[] = [
   {
     id: TIP_IDS.sidebarCollapseShortcut,
-    title: 'Подсказка',
     buildMessage: ({ sidebarShortcutLabel }) =>
       `Свернуть боковое меню можно сочетанием ${sidebarShortcutLabel} — так на экране останется больше места для контента.`,
     initialDelayMs: 15_000,
@@ -34,7 +33,6 @@ export const APP_TIPS: AppTipDefinition[] = [
   },
   {
     id: TIP_IDS.searchShortcut,
-    title: 'Подсказка',
     buildMessage: ({ searchShortcutLabel }) =>
       `Быстрый поиск доступен по ${searchShortcutLabel} — откроется поверх текущего экрана, не покидая раздел.`,
     initialDelayMs: 28_000,

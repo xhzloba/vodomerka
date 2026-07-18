@@ -21,6 +21,7 @@ import {
 } from '@/shared/plugins/sidebarPlugins';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
+import { useAppTopProgress } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
 import { PageLoading } from '@/shared/ui/PageState';
 import { Tabs } from '@/shared/ui/Tabs';
 import { ChevronDownIcon } from '@/shared/ui/icons/icons';
@@ -190,6 +191,8 @@ export function PluginsView() {
   const [sidebarInstalledOpen, setSidebarInstalledOpen] = useState(true);
   const [installProgress, setInstallProgress] = useState(0);
   const busyIdRef = useRef<string | null>(null);
+
+  useAppTopProgress('plugins', isLoading || isRefreshing);
 
   useEffect(() => {
     busyIdRef.current = busyId;

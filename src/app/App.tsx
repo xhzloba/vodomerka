@@ -2,6 +2,7 @@ import { AppProviders } from '@/app/providers/AppProviders';
 import { DetailWindowShell } from '@/app/shell/DetailWindowShell';
 import { MainAppShell } from '@/app/shell/MainAppShell';
 import { AppTopProgressProvider } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
+import { DynamicIsland } from '@/shared/ui/DynamicIsland/DynamicIsland';
 import { getDetailWindowMediaId } from '@/shared/platform/mediaDetailWindow';
 import '@/App.css';
 
@@ -11,9 +12,12 @@ function AppShell() {
 }
 
 export function App() {
+  const isDetailWindow = getDetailWindowMediaId() !== null;
+
   return (
     <AppProviders>
       <AppTopProgressProvider>
+        {isDetailWindow ? null : <DynamicIsland />}
         <AppShell />
       </AppTopProgressProvider>
     </AppProviders>

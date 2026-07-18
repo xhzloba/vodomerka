@@ -1,0 +1,531 @@
+.dynamic-island {
+  --island-morph: 700ms cubic-bezier(0.32, 0.72, 0, 1);
+  --island-morph-out: 640ms cubic-bezier(0.32, 0.72, 0, 1);
+  --island-content-in: 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  --island-content-out: 180ms cubic-bezier(0.4, 0, 1, 1);
+  --island-idle-w: 112px;
+  --island-idle-h: 34px;
+  --island-compact-w: 318px;
+  --island-compact-h: 48px;
+  --island-roomy-w: 328px;
+  --island-roomy-h: 58px;
+  --island-tip-expanded-w: 420px;
+  --island-tip-expanded-h: 142px;
+  --island-loading-w: 198px;
+  --island-loading-h: 40px;
+
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  z-index: 1200;
+  display: flex;
+  justify-content: center;
+  width: max-content;
+  max-width: min(340px, calc(100vw - 28px));
+  pointer-events: none;
+  transform: translateX(-50%);
+  -webkit-app-region: no-drag;
+}
+
+.dynamic-island__snake {
+  position: relative;
+  padding: 1.5px;
+  border-radius: 999px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.dynamic-island--roomy .dynamic-island__snake {
+  border-radius: 22px;
+}
+
+.dynamic-island--tip-expanded .dynamic-island__snake {
+  border-radius: 26px;
+}
+
+.dynamic-island__snake-ring {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+.dynamic-island--snake .dynamic-island__snake-ring {
+  opacity: 1;
+}
+
+.dynamic-island__snake-beam {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  margin: 0;
+  transform: translate3d(-50%, -50%, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+  pointer-events: none;
+}
+
+.dynamic-island--snake .dynamic-island__snake-beam {
+  animation: dynamic-island-snake-spin 3.6s linear infinite;
+}
+
+.dynamic-island__snake-beam--trail {
+  --snake-trail-half: 30deg;
+  --snake-arc-mid: 310deg;
+
+  width: min(420%, 720px);
+  height: min(420%, 720px);
+  opacity: 0.88;
+  filter: blur(3px);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent calc(var(--snake-arc-mid) - var(--snake-trail-half) - 2deg),
+    var(--media-snake-1) calc(var(--snake-arc-mid) - var(--snake-trail-half)),
+    var(--media-snake-2) calc(var(--snake-arc-mid) - var(--snake-trail-half) * 0.45),
+    color-mix(in srgb, var(--media-snake-3) 55%, transparent) var(--snake-arc-mid),
+    var(--media-snake-2) calc(var(--snake-arc-mid) + var(--snake-trail-half) * 0.55),
+    var(--media-snake-4) calc(var(--snake-arc-mid) + var(--snake-trail-half)),
+    transparent calc(var(--snake-arc-mid) + var(--snake-trail-half) + 2deg),
+    transparent 360deg
+  );
+}
+
+.dynamic-island__snake-beam--core {
+  --snake-arc-half: 28deg;
+  --snake-arc-mid: 310deg;
+
+  width: min(400%, 680px);
+  height: min(400%, 680px);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent calc(var(--snake-arc-mid) - var(--snake-arc-half)),
+    var(--media-snake-1) calc(var(--snake-arc-mid) - var(--snake-arc-half) + 2deg),
+    var(--media-snake-2) calc(var(--snake-arc-mid) - var(--snake-arc-half) * 0.38),
+    var(--media-snake-3) calc(var(--snake-arc-mid) - var(--snake-arc-half) * 0.1),
+    var(--media-snake-3) var(--snake-arc-mid),
+    var(--media-snake-4) calc(var(--snake-arc-mid) + var(--snake-arc-half) * 0.42),
+    var(--media-snake-4) calc(var(--snake-arc-mid) + var(--snake-arc-half)),
+    var(--media-snake-1) calc(var(--snake-arc-mid) + var(--snake-arc-half) + 2deg),
+    transparent calc(var(--snake-arc-mid) + var(--snake-arc-half) + 3deg),
+    transparent 360deg
+  );
+}
+
+.dynamic-island__shell {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-areas: 'island';
+  align-items: center;
+  justify-items: center;
+  width: var(--island-idle-w);
+  height: var(--island-idle-h);
+  max-width: min(340px, calc(100vw - 28px));
+  padding: 0;
+  overflow: hidden;
+  border: none;
+  border-radius: 999px;
+  background: #0b0b0f;
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition:
+    width var(--island-morph-out),
+    height var(--island-morph-out),
+    border-radius var(--island-morph-out),
+    padding var(--island-morph-out),
+    background var(--island-morph-out),
+    box-shadow var(--island-morph-out);
+}
+
+.dynamic-island--toast .dynamic-island__shell {
+  background: #0a0a0e;
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition:
+    width var(--island-morph),
+    height var(--island-morph),
+    border-radius var(--island-morph),
+    padding var(--island-morph),
+    background var(--island-morph),
+    box-shadow var(--island-morph);
+}
+
+.dynamic-island--compact .dynamic-island__shell {
+  width: min(var(--island-compact-w), calc(100vw - 28px));
+  height: var(--island-compact-h);
+  border-radius: 999px;
+  padding: 0 12px 0 8px;
+}
+
+.dynamic-island--roomy .dynamic-island__shell {
+  width: min(var(--island-roomy-w), calc(100vw - 28px));
+  height: var(--island-roomy-h);
+  border-radius: 22px;
+  padding: 0 12px 0 10px;
+}
+
+.dynamic-island--tip-expanded .dynamic-island__shell {
+  width: min(var(--island-tip-expanded-w), calc(100vw - 28px));
+  height: var(--island-tip-expanded-h);
+  border-radius: 26px;
+  padding: 14px 14px 14px 12px;
+  align-items: flex-start;
+}
+
+.dynamic-island--loading .dynamic-island__shell {
+  width: var(--island-loading-w);
+  height: var(--island-loading-h);
+  border-radius: 999px;
+  padding: 0 16px 0 14px;
+  transition:
+    width var(--island-morph),
+    height var(--island-morph),
+    border-radius var(--island-morph),
+    padding var(--island-morph),
+    background var(--island-morph),
+    box-shadow var(--island-morph);
+}
+
+.dynamic-island--interactive {
+  pointer-events: auto;
+}
+
+.dynamic-island--interactive .dynamic-island__shell {
+  cursor: pointer;
+}
+
+.dynamic-island--interactive .dynamic-island__shell:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--app-accent) 55%, transparent);
+  outline-offset: 3px;
+}
+
+.dynamic-island__idle,
+.dynamic-island__toast,
+.dynamic-island__loading {
+  grid-area: island;
+  width: 100%;
+  transition:
+    opacity var(--island-content-out),
+    transform var(--island-content-out),
+    visibility var(--island-content-out);
+}
+
+.dynamic-island__idle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  transition-delay: 100ms;
+}
+
+.dynamic-island:not(.dynamic-island--idle) .dynamic-island__idle {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.9);
+  pointer-events: none;
+  transition-delay: 0ms;
+}
+
+.dynamic-island__dot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-accent) 82%, white 10%);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--app-accent) 40%, transparent);
+  animation: dynamic-island-breathe 2.8s ease-in-out infinite;
+}
+
+.dynamic-island__toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px) scale(0.96);
+  pointer-events: none;
+  transition:
+    opacity var(--island-content-out),
+    transform var(--island-content-out),
+    visibility var(--island-content-out);
+}
+
+.dynamic-island--toast-content-on .dynamic-island__toast {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  transition:
+    opacity var(--island-content-in),
+    transform var(--island-content-in),
+    visibility var(--island-content-in);
+}
+
+.dynamic-island__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: var(--app-text);
+}
+
+.dynamic-island--toast-favorite .dynamic-island__icon {
+  color: #ff7a9a;
+  background: rgba(255, 122, 154, 0.14);
+}
+
+.dynamic-island--toast-error .dynamic-island__icon {
+  color: #f0a0a0;
+  background: rgba(240, 160, 160, 0.12);
+}
+
+.dynamic-island--toast-success .dynamic-island__icon {
+  color: #8fd4b0;
+  background: rgba(143, 212, 176, 0.12);
+}
+
+.dynamic-island--toast-tip .dynamic-island__icon {
+  width: 32px;
+  height: 32px;
+  color: var(--app-accent);
+  background: var(--app-accent-soft);
+}
+
+.dynamic-island--toast-play .dynamic-island__icon,
+.dynamic-island--toast-restore .dynamic-island__icon {
+  color: #9fd0ff;
+  background: rgba(159, 208, 255, 0.12);
+}
+
+.dynamic-island--toast-hide .dynamic-island__icon {
+  color: var(--app-text-muted);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dynamic-island__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.dynamic-island__title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--app-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dynamic-island--compact .dynamic-island__title {
+  text-transform: none;
+  letter-spacing: -0.01em;
+  font-size: 0.7rem;
+}
+
+.dynamic-island__message {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--app-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dynamic-island--roomy .dynamic-island__message {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.dynamic-island--tip-expanded .dynamic-island__toast {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.dynamic-island--tip-expanded .dynamic-island__message {
+  white-space: normal;
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+  text-overflow: unset;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.dynamic-island--tip-expanded .dynamic-island__title {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.625rem;
+  margin-bottom: 2px;
+}
+
+.dynamic-island__hint {
+  margin-top: 3px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--app-text-muted) 88%, var(--app-accent));
+}
+
+.dynamic-island--roomy .dynamic-island__title {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.625rem;
+}
+
+.dynamic-island__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--app-text-muted);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.dynamic-island__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--app-text);
+}
+
+.dynamic-island__loading {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  min-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-4px);
+  pointer-events: none;
+  white-space: nowrap;
+  transition:
+    opacity var(--island-content-out),
+    transform var(--island-content-out),
+    visibility var(--island-content-out);
+}
+
+.dynamic-island--loading-content-on .dynamic-island__loading {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+  transition:
+    opacity var(--island-content-in),
+    transform var(--island-content-in),
+    visibility var(--island-content-in);
+}
+
+.dynamic-island__spinner {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: color-mix(in srgb, var(--app-accent) 82%, white 8%);
+  animation: dynamic-island-spinner 0.8s linear infinite;
+}
+
+.dynamic-island__loading-divider {
+  width: 1px;
+  height: 14px;
+  flex-shrink: 0;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dynamic-island__loading-label {
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1;
+  color: rgba(170, 174, 184, 0.78);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes dynamic-island-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dynamic-island-snake-spin {
+  to {
+    transform: translate3d(-50%, -50%, 0) rotate(360deg);
+  }
+}
+
+@keyframes dynamic-island-breathe {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dynamic-island__shell,
+  .dynamic-island__idle,
+  .dynamic-island__toast,
+  .dynamic-island__loading {
+    transition: none;
+  }
+
+  .dynamic-island__dot,
+  .dynamic-island__spinner,
+  .dynamic-island--snake .dynamic-island__snake-beam {
+    animation: none;
+  }
+
+  .dynamic-island__spinner {
+    border-color: color-mix(in srgb, var(--app-accent) 55%, transparent);
+    opacity: 0.85;
+  }
+
+  .dynamic-island--snake .dynamic-island__snake-ring {
+    opacity: 0.75;
+    background: color-mix(in srgb, var(--media-snake-3) 35%, transparent);
+  }
+}

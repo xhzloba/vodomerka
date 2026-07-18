@@ -85,7 +85,7 @@ export function useAutoTips(options: { paused: boolean }) {
 
       showToast(tip.buildMessage(context), {
         kind: 'tip',
-        title: tip.title,
+        ...(tip.title ? { title: tip.title } : {}),
         duration: tip.duration,
         dismissible: true,
         onDismiss: () => {

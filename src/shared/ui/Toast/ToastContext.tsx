@@ -6,10 +6,8 @@ import {
   useRef,
   useState,
   type ReactNode,
-  type CSSProperties,
 } from 'react';
-import { createPortal } from 'react-dom';
-import { CircleAlert, CircleCheck, Lightbulb, X } from 'lucide-react';
+import { CircleAlert, CircleCheck, Lightbulb } from 'lucide-react';
 import {
   CopyIcon,
   EyeIcon,
@@ -17,7 +15,6 @@ import {
   FavoritesIcon,
   PlayIcon,
 } from '@/shared/ui/icons';
-import './Toast.css';
 
 /** @deprecated Use ToastKind instead */
 export type ToastIcon = 'hide' | 'restore' | 'favorite';
@@ -33,7 +30,7 @@ export type ToastKind =
   | 'copy'
   | 'tip';
 
-interface ToastState {
+export interface ToastState {
   id: number;
   kind: ToastKind;
   title?: string;
@@ -42,7 +39,7 @@ interface ToastState {
   dismissible: boolean;
 }
 
-interface ToastOptions {
+export interface ToastOptions {
   kind?: ToastKind;
   /** @deprecated Use kind instead */
   icon?: ToastIcon;
@@ -54,6 +51,10 @@ interface ToastOptions {
 
 interface ToastContextValue {
   showToast: (message: string, options?: ToastOptions) => void;
+  toast: ToastState | null;
+  dismissToast: () => void;
+  pauseToastAutoDismiss: () => void;
+  resumeToastAutoDismiss: () => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -77,7 +78,7 @@ function resolveKind(options?: ToastOptions): ToastKind {
   }
 }
 
-function ToastIconView({ kind }: { kind: ToastKind }) {
+export function ToastIconView({ kind }: { kind: ToastKind }) {
   switch (kind) {
     case 'play':
       return <PlayIcon size={17} />;
@@ -100,106 +101,108 @@ function ToastIconView({ kind }: { kind: ToastKind }) {
   }
 }
 
-function ToastView({
-  toast,
-  onDismiss,
-}: {
-  toast: ToastState;
-  onDismiss: () => void;
-}) {
-  const hasIcon = toast.kind !== 'default';
-
-  return (
-    <div
-      key={toast.id}
-      className={`app-toast app-toast--${toast.kind}${hasIcon ? '' : ' app-toast--no-icon'}${
-        toast.dismissible ? ' app-toast--dismissible' : ''
-      }`}
-      role="status"
-      aria-live="polite"
-      style={{ '--toast-duration': `${toast.duration}ms` } as CSSProperties}
-    >
-      <div className="app-toast__panel">
-        {hasIcon ? (
-          <span className="app-toast__icon" aria-hidden="true">
-            <ToastIconView kind={toast.kind} />
-          </span>
-        ) : null}
-
-        <div className="app-toast__content">
-          {toast.title ? <span className="app-toast__title">{toast.title}</span> : null}
-          <span className="app-toast__message">{toast.message}</span>
-        </div>
-
-        {toast.dismissible ? (
-          <button
-            type="button"
-            className="app-toast__close"
-            aria-label="Закрыть"
-            onClick={onDismiss}
-          >
-            <X size={15} strokeWidth={2} />
-          </button>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastState | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onDismissRef = useRef<(() => void) | null>(null);
   const idRef = useRef(0);
+  const startedAtRef = useRef(0);
+  const remainingRef = useRef(0);
+  const pausedRef = useRef(false);
 
-  const dismissToast = useCallback(() => {
+  const clearAutoDismiss = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-
-    onDismissRef.current?.();
-    onDismissRef.current = null;
-    setToast(null);
   }, []);
 
-  const showToast = useCallback((message: string, options?: ToastOptions) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+  const scheduleAutoDismiss = useCallback((ms: number) => {
+    clearAutoDismiss();
+    if (ms <= 0) {
+      return;
     }
 
-    const duration = options?.duration ?? DEFAULT_DURATION;
-
-    idRef.current += 1;
-    onDismissRef.current = options?.onDismiss ?? null;
-    setToast({
-      id: idRef.current,
-      kind: resolveKind(options),
-      title: options?.title,
-      message,
-      duration,
-      dismissible: options?.dismissible ?? false,
-    });
-
+    startedAtRef.current = Date.now();
+    remainingRef.current = ms;
+    pausedRef.current = false;
     timeoutRef.current = setTimeout(() => {
       onDismissRef.current = null;
       setToast(null);
       timeoutRef.current = null;
-    }, duration);
-  }, []);
+    }, ms);
+  }, [clearAutoDismiss]);
+
+  const dismissToast = useCallback(() => {
+    clearAutoDismiss();
+    pausedRef.current = false;
+    remainingRef.current = 0;
+    onDismissRef.current?.();
+    onDismissRef.current = null;
+    setToast(null);
+  }, [clearAutoDismiss]);
+
+  const pauseToastAutoDismiss = useCallback(() => {
+    if (!timeoutRef.current || pausedRef.current) {
+      return;
+    }
+
+    const elapsed = Date.now() - startedAtRef.current;
+    remainingRef.current = Math.max(0, remainingRef.current - elapsed);
+    clearAutoDismiss();
+    pausedRef.current = true;
+  }, [clearAutoDismiss]);
+
+  const resumeToastAutoDismiss = useCallback(() => {
+    if (!pausedRef.current) {
+      return;
+    }
+
+    pausedRef.current = false;
+    const remaining = Math.max(1600, remainingRef.current);
+    scheduleAutoDismiss(remaining);
+  }, [scheduleAutoDismiss]);
+
+  const showToast = useCallback(
+    (message: string, options?: ToastOptions) => {
+      clearAutoDismiss();
+      pausedRef.current = false;
+
+      const duration = options?.duration ?? DEFAULT_DURATION;
+
+      idRef.current += 1;
+      onDismissRef.current = options?.onDismiss ?? null;
+      setToast({
+        id: idRef.current,
+        kind: resolveKind(options),
+        title: options?.title,
+        message,
+        duration,
+        dismissible: options?.dismissible ?? false,
+      });
+
+      scheduleAutoDismiss(duration);
+    },
+    [clearAutoDismiss, scheduleAutoDismiss],
+  );
 
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      clearAutoDismiss();
     };
-  }, []);
+  }, [clearAutoDismiss]);
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider
+      value={{
+        showToast,
+        toast,
+        dismissToast,
+        pauseToastAutoDismiss,
+        resumeToastAutoDismiss,
+      }}
+    >
       {children}
-      {toast ? createPortal(<ToastView toast={toast} onDismiss={dismissToast} />, document.body) : null}
     </ToastContext.Provider>
   );
 }
@@ -212,4 +215,20 @@ export function useToast() {
   }
 
   return context;
+}
+
+/** Internal: Island reads full toast state */
+export function useToastIslandState() {
+  const context = useContext(ToastContext);
+
+  if (!context) {
+    throw new Error('useToastIslandState must be used within ToastProvider');
+  }
+
+  return {
+    toast: context.toast,
+    dismissToast: context.dismissToast,
+    pauseToastAutoDismiss: context.pauseToastAutoDismiss,
+    resumeToastAutoDismiss: context.resumeToastAutoDismiss,
+  };
 }
