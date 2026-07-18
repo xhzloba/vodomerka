@@ -232,22 +232,6 @@
     padding var(--transition-smooth);
 }
 
-.browse-view__category-trigger::before {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  z-index: 0;
-  border-radius: calc(var(--radius-sm) + 3px);
-  border: 2px solid color-mix(in srgb, var(--app-accent-border) 62%, transparent);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--media-snake-3) 24%, transparent),
-    0 0 10px color-mix(in srgb, var(--app-accent) 14%, transparent),
-    0 0 22px color-mix(in srgb, var(--media-snake-3) 16%, transparent);
-  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--app-accent) 12%, transparent));
-  opacity: 0;
-  pointer-events: none;
-}
-
 .browse-view__category-trigger svg {
   position: relative;
   z-index: 2;
@@ -290,14 +274,8 @@
 .browse-view__category-trigger:focus-visible,
 .browse-view__category-trigger--open {
   --browse-category-label-gap: 8px;
-  border-color: color-mix(in srgb, var(--app-accent-border) 45%, transparent);
+  border-color: color-mix(in srgb, var(--app-accent) 78%, var(--app-accent-border));
   padding-inline: 12px 14px;
-}
-
-.browse-view__category-trigger:hover::before,
-.browse-view__category-trigger:focus-visible::before,
-.browse-view__category-trigger--open::before {
-  opacity: 1;
 }
 
 .browse-view__category-trigger:hover .browse-view__category-trigger-label,
@@ -322,10 +300,6 @@
 
 .browse-view__category-trigger--open {
   background: color-mix(in srgb, var(--app-accent) 10%, transparent);
-}
-
-.browse-view__category-trigger--hint::before {
-  opacity: 0;
 }
 
 @media (hover: none) {
