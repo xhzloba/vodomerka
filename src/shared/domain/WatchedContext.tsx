@@ -22,7 +22,7 @@ interface WatchedContextValue {
   watchedIds: Set<string>;
   isLoading: boolean;
   isWatched: (mediaId: string) => boolean;
-  addWatched: (item: MediaItem) => Promise<void>;
+  addWatched: (item: MediaItem, options?: { silent?: boolean }) => Promise<void>;
   removeWatched: (mediaId: string) => Promise<void>;
   clearAllWatched: () => Promise<void>;
   reloadWatched: () => Promise<void>;
@@ -74,16 +74,18 @@ export function WatchedProvider({ children }: { children: ReactNode }) {
 
   const isWatched = useCallback((mediaId: string) => watchedIds.has(mediaId), [watchedIds]);
 
-  const addWatched = useCallback(async (item: MediaItem) => {
+  const addWatched = useCallback(async (item: MediaItem, options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      playLikeSound();
+    }
     const next = await addWatchedItem(item);
     setWatched(next);
-    playLikeSound();
   }, []);
 
   const removeWatched = useCallback(async (mediaId: string) => {
+    playLikeSound();
     const next = await removeWatchedItem(mediaId);
     setWatched(next);
-    playLikeSound();
   }, []);
 
   const clearAllWatched = useCallback(async () => {

@@ -7,6 +7,7 @@ import { useWatched } from '@/shared/domain/WatchedContext';
 import { useMediaImage } from '@/shared/hooks/useMediaImage';
 import { MediaCoverPlaceholder, MediaPosterGlyph } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
 import { useOverriddenMediaItem } from '@/shared/hooks/useOverriddenMediaItem';
+import { copyText } from '@/shared/lib/copyText';
 import { HeroRating } from '@/shared/ui/HeroRating/HeroRating';
 import { MediaDescriptionDialog } from '@/shared/ui/MediaDescriptionDialog/MediaDescriptionDialog';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
@@ -128,20 +129,11 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
   const handleCopyId = useCallback(
     async (event: MouseEvent) => {
       event.stopPropagation();
-      try {
-        await navigator.clipboard.writeText(detailItem.id);
-      } catch {
-        const textarea = document.createElement('textarea');
-        textarea.value = detailItem.id;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      }
-
-      showToast('ID скопирован в буфер обмена', { kind: 'copy', title: 'Скопировано' });
+      const ok = await copyText(detailItem.id);
+      showToast(ok ? detailItem.id : 'Не удалось скопировать ID', {
+        kind: 'copy',
+        title: ok ? 'ID скопирован' : 'Ошибка',
+      });
     },
     [detailItem.id, showToast],
   );

@@ -13,6 +13,8 @@
   --island-tip-expanded-h: 142px;
   --island-loading-w: 198px;
   --island-loading-h: 40px;
+  --island-drop-w: 236px;
+  --island-drop-h: 58px;
 
   position: fixed;
   top: 14px;
@@ -21,7 +23,7 @@
   display: flex;
   justify-content: center;
   width: max-content;
-  max-width: min(340px, calc(100vw - 28px));
+  max-width: min(420px, calc(100vw - 28px));
   pointer-events: none;
   transform: translateX(-50%);
   -webkit-app-region: no-drag;
@@ -194,6 +196,31 @@
     box-shadow var(--island-morph);
 }
 
+.dynamic-island--drop .dynamic-island__shell {
+  width: min(var(--island-drop-w), calc(100vw - 28px));
+  height: var(--island-drop-h);
+  border-radius: 999px;
+  padding: 0 6px;
+  background: #000;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.55),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  transition:
+    width var(--island-morph),
+    height var(--island-morph),
+    border-radius var(--island-morph),
+    padding var(--island-morph),
+    background var(--island-morph),
+    box-shadow var(--island-morph);
+}
+
+.dynamic-island--drop.dynamic-island--drop-hover-favorite .dynamic-island__shell,
+.dynamic-island--drop.dynamic-island--drop-hover-watched .dynamic-island__shell {
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.58),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.16);
+}
+
 .dynamic-island--interactive {
   pointer-events: auto;
 }
@@ -208,7 +235,8 @@
 }
 
 .dynamic-island__toast,
-.dynamic-island__loading {
+.dynamic-island__loading,
+.dynamic-island__drop {
   grid-area: island;
   width: 100%;
   transition:
@@ -413,6 +441,132 @@
     visibility var(--island-content-in);
 }
 
+.dynamic-island__drop {
+  grid-area: island;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.94);
+  pointer-events: none;
+  transition:
+    opacity var(--island-content-out),
+    transform var(--island-content-out),
+    visibility var(--island-content-out);
+}
+
+.dynamic-island--drop-content-on .dynamic-island__drop {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  pointer-events: auto;
+  transition:
+    opacity var(--island-content-in),
+    transform var(--island-content-in),
+    visibility var(--island-content-in);
+}
+
+.dynamic-island__drop-divider {
+  width: 1px;
+  height: 22px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.14);
+  opacity: 0.9;
+}
+
+.dynamic-island__drop-zone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+  min-height: 46px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  cursor: copy;
+  isolation: isolate;
+  transition:
+    color 180ms ease,
+    opacity 180ms ease,
+    transform 180ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.dynamic-island__drop-zone::before {
+  content: '';
+  position: absolute;
+  inset: 4px 6px;
+  z-index: -1;
+  border-radius: 999px;
+  background: radial-gradient(
+    120% 120% at 50% 40%,
+    rgba(255, 255, 255, 0.16),
+    rgba(255, 255, 255, 0.04) 55%,
+    transparent 72%
+  );
+  opacity: 0;
+  transform: scale(0.86);
+  transition:
+    opacity 180ms ease,
+    transform 180ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.dynamic-island__drop-zone__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: inherit;
+  transition: transform 180ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.dynamic-island__drop-zone__label {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.42);
+  white-space: nowrap;
+  transition: color 180ms ease;
+}
+
+.dynamic-island--drop-hover-favorite .dynamic-island__drop-zone--watched,
+.dynamic-island--drop-hover-watched .dynamic-island__drop-zone--favorite {
+  opacity: 0.38;
+}
+
+.dynamic-island__drop-zone--active {
+  color: #fff;
+  transform: scale(1.04);
+}
+
+.dynamic-island__drop-zone--active::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.dynamic-island__drop-zone--active .dynamic-island__drop-zone__icon {
+  transform: scale(1.08);
+}
+
+.dynamic-island__drop-zone--active .dynamic-island__drop-zone__label {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.dynamic-island__drop-zone .app-icon--heart-filled {
+  color: inherit;
+  fill: currentColor;
+}
+
 .dynamic-island__spinner {
   width: 15px;
   height: 15px;
@@ -458,7 +612,9 @@
 @media (prefers-reduced-motion: reduce) {
   .dynamic-island__shell,
   .dynamic-island__toast,
-  .dynamic-island__loading {
+  .dynamic-island__loading,
+  .dynamic-island__drop,
+  .dynamic-island__drop-zone {
     transition: none;
   }
 

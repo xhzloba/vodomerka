@@ -15,8 +15,17 @@
 
   flex-shrink: 0;
   width: var(--media-card-width, 180px);
-  cursor: pointer;
+  cursor: grab;
   scroll-snap-align: start;
+  -webkit-user-drag: element;
+}
+
+.media-card:active {
+  cursor: grabbing;
+}
+
+.media-card--dragging {
+  opacity: 0.55;
 }
 
 .media-card:hover,

@@ -22,7 +22,7 @@ interface FavoritesContextValue {
   favoriteIds: Set<string>;
   isLoading: boolean;
   isFavorite: (mediaId: string) => boolean;
-  addFavorite: (item: MediaItem) => Promise<void>;
+  addFavorite: (item: MediaItem, options?: { silent?: boolean }) => Promise<void>;
   removeFavorite: (mediaId: string) => Promise<void>;
   clearAllFavorites: () => Promise<void>;
   reloadFavorites: () => Promise<void>;
@@ -77,16 +77,18 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     [favoriteIds],
   );
 
-  const addFavorite = useCallback(async (item: MediaItem) => {
+  const addFavorite = useCallback(async (item: MediaItem, options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      playLikeSound();
+    }
     const next = await addFavoriteItem(item);
     setFavorites(next);
-    playLikeSound();
   }, []);
 
   const removeFavorite = useCallback(async (mediaId: string) => {
+    playLikeSound();
     const next = await removeFavoriteItem(mediaId);
     setFavorites(next);
-    playLikeSound();
   }, []);
 
   const clearAllFavorites = useCallback(async () => {

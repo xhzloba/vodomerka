@@ -1,7 +1,9 @@
-import { useCallback, useRef, useState, type MouseEvent } from 'react';
+import { useCallback, useRef, useState, type DragEvent, type MouseEvent, type PointerEvent } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
+import { useMediaDrag, writeMediaDragData, hideNativeDragImage } from '@/shared/domain/MediaDragContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
+import { unlockUiSounds } from '@/shared/audio/uiSounds';
 import { useMediaImage } from '@/shared/hooks/useMediaImage';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { ContextMenu } from '@/shared/ui/ContextMenu/ContextMenu';
@@ -11,6 +13,7 @@ import {
 } from '@/shared/ui/mediaContextMenu';
 import { MediaCoverPlaceholder } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
 import { MediaDescriptionDialog } from '@/shared/ui/MediaDescriptionDialog/MediaDescriptionDialog';
+import { copyText } from '@/shared/lib/copyText';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import { EyeOffIcon, FavoritesIcon, PlayOverlayIcon } from '@/shared/ui/icons';
 import './MediaCard.css';
@@ -26,12 +29,15 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
   const { settings } = useAppSettings();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { isWatched, toggleWatched } = useWatched();
+  const { beginMediaDrag, endMediaDrag } = useMediaDrag();
   const { showToast } = useToast();
   const cardRef = useRef<HTMLElement>(null);
+  const suppressClickRef = useRef(false);
   const inFavorites = isFavorite(item.id);
   const watched = isWatched(item.id);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(null);
@@ -43,6 +49,14 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
     setContextMenu({ x: event.clientX, y: event.clientY });
   }, []);
 
+  const copyMediaId = useCallback(async () => {
+    const ok = await copyText(item.id);
+    showToast(ok ? item.id : 'Не удалось скопировать ID', {
+      kind: 'copy',
+      title: ok ? 'ID скопирован' : 'Ошибка',
+    });
+  }, [item.id, showToast]);
+
   const handleContextMenuItem = useCallback(
     (menuItemId: string) => {
       switch (menuItemId) {
@@ -53,6 +67,9 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
           if (item.description || item.genres.length > 0) {
             setDescriptionOpen(true);
           }
+          break;
+        case 'copy-id':
+          void copyMediaId();
           break;
         case 'favorite':
           void toggleFavorite(item).then((added) => {
@@ -80,8 +97,55 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
           break;
       }
     },
-    [item, onSelect, showToast, toggleFavorite, toggleWatched],
+    [copyMediaId, item, onSelect, showToast, toggleFavorite, toggleWatched],
   );
+
+  const handlePointerDown = useCallback((_event: PointerEvent<HTMLElement>) => {
+    // Жест мыши раньше dragstart — иначе Electron глотает HTMLAudio после DnD
+    unlockUiSounds();
+  }, []);
+
+  const handleDragStart = useCallback(
+    (event: DragEvent<HTMLElement>) => {
+      suppressClickRef.current = true;
+      setIsDragging(true);
+      closeContextMenu();
+      unlockUiSounds();
+      writeMediaDragData(event.dataTransfer, item);
+      hideNativeDragImage(event.dataTransfer);
+
+      const poster = cardRef.current?.querySelector('.media-card__poster') as HTMLImageElement | null;
+      const wrap = cardRef.current?.querySelector('.media-card__poster-wrap') as HTMLElement | null;
+      const rect = (poster ?? wrap ?? cardRef.current)?.getBoundingClientRect();
+
+      beginMediaDrag(
+        item,
+        {
+          posterUrl: poster?.currentSrc || poster?.src || item.poster || undefined,
+          width: Math.round(rect?.width || 120),
+          height: Math.round(rect?.height || 180),
+        },
+        { x: event.clientX, y: event.clientY },
+        rect
+          ? {
+              x: rect.left,
+              y: rect.top,
+              width: rect.width,
+              height: rect.height,
+            }
+          : undefined,
+      );
+    },
+    [beginMediaDrag, closeContextMenu, item],
+  );
+
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+    endMediaDrag('return');
+    window.setTimeout(() => {
+      suppressClickRef.current = false;
+    }, 0);
+  }, [endMediaDrag]);
 
   const primaryUrl = variant === 'wide' ? item.backdrop || item.poster : item.poster;
   const fallbackUrl = variant === 'wide' ? item.poster : item.backdrop;
@@ -106,8 +170,15 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
     <>
       <article
         ref={cardRef}
-        className={`media-card ${variant === 'wide' ? 'media-card--wide' : ''} ${isFocused ? 'media-card--focused' : ''}${isEmptyCard && !isLoading ? ' media-card--empty' : ''}`}
+        className={`media-card ${variant === 'wide' ? 'media-card--wide' : ''} ${isFocused ? 'media-card--focused' : ''}${isEmptyCard && !isLoading ? ' media-card--empty' : ''}${isDragging ? ' media-card--dragging' : ''}`}
+        draggable
+        onPointerDown={handlePointerDown}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
         onClick={() => {
+          if (suppressClickRef.current) {
+            return;
+          }
           closeContextMenu();
           onSelect(item);
         }}

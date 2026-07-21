@@ -8,6 +8,11 @@
   -webkit-app-region: drag;
 }
 
+body.is-media-dragging,
+body.is-media-dragging * {
+  cursor: grabbing !important;
+}
+
 .app-shell--mac-sidebar-chrome .titlebar {
   left: var(--app-sidebar-width);
   right: 0;

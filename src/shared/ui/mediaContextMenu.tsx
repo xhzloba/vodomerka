@@ -3,6 +3,7 @@ import { getMediaTypeLabel } from '@/shared/domain/media';
 import type { ContextMenuItem } from '@/shared/ui/ContextMenu/ContextMenu';
 import {
   BookOpenIcon,
+  CopyIcon,
   EyeIcon,
   FavoritesIcon,
   InfoIcon,
@@ -58,6 +59,12 @@ export function getMediaContextMenuItems(
       label: 'Описание',
       icon: <BookOpenIcon size={15} />,
       disabled: !item.description && item.genres.length === 0,
+    },
+    {
+      id: 'copy-id',
+      label: 'Скопировать ID',
+      icon: <CopyIcon size={15} />,
+      separatorBefore: true,
     },
     {
       id: 'favorite',

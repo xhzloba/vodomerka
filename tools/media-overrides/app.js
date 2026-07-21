@@ -1,8 +1,18 @@
 const STORAGE_KEY = 'tv-leonid-overrides-ui';
 const FETCH_TIMEOUT_MS = 45_000;
 const GITHUB_API_BASE = `${window.location.origin}/github-api`;
+const OBJECT_ID_RE = /[a-f0-9]{24}/i;
 
 let hasGithubProxy = false;
+
+/** Достаёт 24-hex ObjectId из буфера/вставки (кавычки, пробелы, мусор). */
+function normalizeMediaId(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  if (/^[a-f0-9]{24}$/i.test(raw)) return raw.toLowerCase();
+  const match = raw.match(OBJECT_ID_RE);
+  return match ? match[0].toLowerCase() : '';
+}
 
 const state = {
   overrides: {},
@@ -274,14 +284,25 @@ function renderPreview(container, url) {
   container.innerHTML = `<img src="${url}" alt="" referrerpolicy="no-referrer" />`;
 }
 
-function summarizeEntry(entry) {
-  return ['logo', 'poster', 'backdrop', 'about']
-    .filter((key) => Boolean(entry[key]))
-    .join(', ');
+function pendingKindsFor(mediaId) {
+  const pending = state.pendingUploads[mediaId];
+  if (!pending) return [];
+  return ['logo', 'poster', 'backdrop'].filter((kind) => Boolean(pending[kind]));
+}
+
+function summarizeEntry(mediaId, entry) {
+  const ready = ['logo', 'poster', 'backdrop', 'about'].filter((key) => Boolean(entry?.[key]));
+  const pending = pendingKindsFor(mediaId).map((kind) => `${kind}↑`);
+  const parts = [...ready, ...pending.filter((part) => !ready.includes(part.replace('↑', '')))];
+  return parts.join(', ');
+}
+
+function allEntryIds() {
+  return [...new Set([...Object.keys(state.overrides), ...Object.keys(state.pendingUploads)])].sort();
 }
 
 function renderEntries() {
-  const ids = Object.keys(state.overrides).sort();
+  const ids = allEntryIds();
 
   if (ids.length === 0) {
     els.entriesList.innerHTML = '<p class="hint">Пока нет записей</p>';
@@ -290,17 +311,19 @@ function renderEntries() {
   }
 
   els.entriesList.innerHTML = ids
-    .map(
-      (id) => `
+    .map((id) => {
+      const entry = state.overrides[id] || {};
+      const meta = summarizeEntry(id, entry) || 'пусто';
+      return `
         <article class="entry">
           <div>
             <div class="entry__id">${id}</div>
-            <div class="entry__meta">${summarizeEntry(state.overrides[id]) || 'пусто'}</div>
+            <div class="entry__meta">${meta}</div>
           </div>
           <button class="btn btn--ghost" type="button" data-edit="${id}">Редактировать</button>
         </article>
-      `,
-    )
+      `;
+    })
     .join('');
 
   els.entriesList.querySelectorAll('[data-edit]').forEach((button) => {
@@ -317,12 +340,43 @@ function resetPendingFiles() {
   els.backdropFile.value = '';
 }
 
+function restorePendingFilesFor(mediaId) {
+  const pending = state.pendingUploads[mediaId];
+  if (!pending) return;
+
+  for (const kind of ['logo', 'poster', 'backdrop']) {
+    const file = pending[kind];
+    if (!file) continue;
+    state.pendingFiles[kind] = file;
+    const preview = els[`${kind}Preview`];
+    const urlInput = els[`${kind}Url`];
+    urlInput.value = '';
+    renderPreview(preview, URL.createObjectURL(file));
+  }
+}
+
+async function prefillMediaIdFromClipboard() {
+  if (els.mediaIdInput.disabled || els.mediaIdInput.value.trim()) {
+    return;
+  }
+
+  try {
+    const text = await navigator.clipboard.readText();
+    const mediaId = normalizeMediaId(text);
+    if (mediaId) {
+      els.mediaIdInput.value = mediaId;
+    }
+  } catch {
+    // нет доступа к буферу — ок, пользователь вставит сам
+  }
+}
+
 function openEditor(id = null) {
   state.editingId = id;
   resetPendingFiles();
 
-  if (id && state.overrides[id]) {
-    const entry = state.overrides[id];
+  if (id && (state.overrides[id] || state.pendingUploads[id])) {
+    const entry = state.overrides[id] || {};
     els.editorTitle.textContent = `Редактирование ${id}`;
     els.mediaIdInput.value = id;
     els.mediaIdInput.disabled = true;
@@ -333,6 +387,7 @@ function openEditor(id = null) {
     renderPreview(els.logoPreview, entry.logo);
     renderPreview(els.posterPreview, entry.poster);
     renderPreview(els.backdropPreview, entry.backdrop);
+    restorePendingFilesFor(id);
     els.deleteEntryBtn.hidden = false;
   } else {
     els.editorTitle.textContent = 'Новая запись';
@@ -346,6 +401,7 @@ function openEditor(id = null) {
     renderPreview(els.posterPreview, '');
     renderPreview(els.backdropPreview, '');
     els.deleteEntryBtn.hidden = true;
+    void prefillMediaIdFromClipboard();
   }
 
   els.editorPanel.hidden = false;
@@ -397,34 +453,54 @@ function bindAssetInput(fileInput, urlInput, preview, kind) {
   });
 }
 
+function resolveEditorMediaId() {
+  const mediaId = normalizeMediaId(state.editingId || els.mediaIdInput.value);
+  if (mediaId && !els.mediaIdInput.disabled) {
+    els.mediaIdInput.value = mediaId;
+  }
+  return mediaId;
+}
+
 function flushEditorToPendingUploads() {
   if (els.editorPanel.hidden) {
     return;
   }
 
-  const mediaId = (state.editingId || els.mediaIdInput.value).trim();
-  if (!/^[a-f0-9]{24}$/i.test(mediaId)) {
+  const mediaId = resolveEditorMediaId();
+  if (!mediaId) {
     return;
   }
 
-  const entry = {};
+  const entry = { ...(state.overrides[mediaId] || {}) };
   const about = els.aboutInput.value.trim();
   const logoUrl = els.logoUrl.value.trim();
   const posterUrl = els.posterUrl.value.trim();
   const backdropUrl = els.backdropUrl.value.trim();
 
   if (about) entry.about = about;
+  else delete entry.about;
+
+  // URL-поля: пишем только если заданы; файлы подставят URL после publish
   if (logoUrl) entry.logo = logoUrl;
+  else if (!state.pendingFiles.logo && !state.pendingUploads[mediaId]?.logo) delete entry.logo;
+
   if (posterUrl) entry.poster = posterUrl;
+  else if (!state.pendingFiles.poster && !state.pendingUploads[mediaId]?.poster) delete entry.poster;
+
   if (backdropUrl) entry.backdrop = backdropUrl;
+  else if (!state.pendingFiles.backdrop && !state.pendingUploads[mediaId]?.backdrop) {
+    delete entry.backdrop;
+  }
 
   const hasPendingFiles = Object.values(state.pendingFiles).some(Boolean);
-  if (Object.keys(entry).length > 0 || hasPendingFiles) {
-    state.overrides[mediaId] = {
-      ...(state.overrides[mediaId] || {}),
-      ...entry,
-    };
+  const hasContent = Object.keys(entry).length > 0 || hasPendingFiles || Boolean(state.pendingUploads[mediaId]);
+
+  if (!hasContent) {
+    return;
   }
+
+  // placeholder-ключ, чтобы запись была в списке до publish
+  state.overrides[mediaId] = entry;
 
   if (hasPendingFiles) {
     state.pendingUploads[mediaId] = {
@@ -437,16 +513,39 @@ function flushEditorToPendingUploads() {
 }
 
 function applyEntryLocally() {
-  const mediaId = (state.editingId || els.mediaIdInput.value).trim();
-  if (!/^[a-f0-9]{24}$/i.test(mediaId)) {
-    showToast('Media ID должен быть 24-символьным hex ObjectId');
+  const mediaId = resolveEditorMediaId();
+  if (!mediaId) {
+    const raw = String(state.editingId || els.mediaIdInput.value || '').trim();
+    showToast(
+      raw
+        ? `Невалидный Media ID: «${raw.slice(0, 40)}». Нужен 24-символьный hex ObjectId`
+        : 'Вставь Media ID (24-символьный hex ObjectId)',
+    );
+    els.mediaIdInput.focus();
+    return;
+  }
+
+  const about = els.aboutInput.value.trim();
+  const logoUrl = els.logoUrl.value.trim();
+  const posterUrl = els.posterUrl.value.trim();
+  const backdropUrl = els.backdropUrl.value.trim();
+  const hasPendingFiles = Object.values(state.pendingFiles).some(Boolean);
+  const hasContent = Boolean(about || logoUrl || posterUrl || backdropUrl || hasPendingFiles);
+
+  if (!hasContent) {
+    showToast('Добавь about / logo / poster / backdrop');
     return;
   }
 
   flushEditorToPendingUploads();
   renderEntries();
   closeEditor();
-  showToast('Сохранено локально. Нажми «Опубликовать в GitHub» для загрузки файлов.');
+
+  if (hasPendingFiles) {
+    showToast('Файлы в очереди. Жми «Опубликовать в GitHub» — иначе в JSON останется пусто.');
+  } else {
+    showToast('Сохранено локально. Нажми «Опубликовать в GitHub».');
+  }
 }
 
 async function uploadBinaryFile(path, file, message, token) {
@@ -606,6 +705,21 @@ els.addBtn.addEventListener('click', () => openEditor());
 els.closeEditorBtn.addEventListener('click', closeEditor);
 els.applyEntryBtn.addEventListener('click', applyEntryLocally);
 els.deleteEntryBtn.addEventListener('click', deleteEntry);
+
+els.mediaIdInput.addEventListener('paste', (event) => {
+  const text = event.clipboardData?.getData('text') ?? '';
+  const mediaId = normalizeMediaId(text);
+  if (!mediaId) return;
+  event.preventDefault();
+  els.mediaIdInput.value = mediaId;
+});
+
+els.mediaIdInput.addEventListener('blur', () => {
+  const mediaId = normalizeMediaId(els.mediaIdInput.value);
+  if (mediaId) {
+    els.mediaIdInput.value = mediaId;
+  }
+});
 
 document.getElementById('cancelBusyBtn')?.addEventListener('click', () => {
   setBusy(false);
