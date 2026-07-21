@@ -2,7 +2,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 1300;
+  z-index: 10050;
   overflow: hidden;
   border-radius: 12px;
   box-shadow:
@@ -18,11 +18,11 @@
 }
 
 .media-drag-preview--absorb {
-  z-index: 1310;
+  z-index: 10060;
 }
 
 .media-drag-preview--return {
-  z-index: 1290;
+  z-index: 10040;
 }
 
 .media-drag-preview__image {

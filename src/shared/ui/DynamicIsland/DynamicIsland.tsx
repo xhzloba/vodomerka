@@ -85,6 +85,8 @@ export function DynamicIsland() {
 
   const isProgressActive = progress?.mode === 'active';
   const isDropMode = Boolean(draggingItem);
+  /** Snake while dragging to island or while top progress runs (not under toast). */
+  const snakeHold = isDropMode || (isProgressActive && !toast);
 
   const clearHoverAddTimer = useCallback(() => {
     if (hoverAddTimer.current != null) {
@@ -92,6 +94,29 @@ export function DynamicIsland() {
       hoverAddTimer.current = null;
     }
   }, []);
+
+  useEffect(() => {
+    if (snakeHold) {
+      if (!snakeStartedAtRef.current) {
+        snakeStartedAtRef.current = performance.now();
+      }
+      setSnakeOn(true);
+      return;
+    }
+
+    if (!snakeStartedAtRef.current) {
+      setSnakeOn(false);
+      return;
+    }
+
+    const finishDelay = remainingSnakeCycleMs(snakeStartedAtRef.current);
+    const finishId = window.setTimeout(() => {
+      setSnakeOn(false);
+      snakeStartedAtRef.current = null;
+    }, finishDelay);
+
+    return () => window.clearTimeout(finishId);
+  }, [snakeHold]);
 
   useEffect(() => {
     clearTimers(dropTimers);
@@ -103,7 +128,6 @@ export function DynamicIsland() {
       setDropContentOn(false);
       setToastContentOn(false);
       setLoadingContentOn(false);
-      setSnakeOn(false);
       const showId = window.setTimeout(() => {
         setDropContentOn(true);
       }, CONTENT_IN_DELAY_MS);
@@ -163,9 +187,7 @@ export function DynamicIsland() {
     if (isDropMode || toast) {
       clearTimers(loadingTimers);
       loadingActiveRef.current = false;
-      snakeStartedAtRef.current = null;
       setLoadingContentOn(false);
-      setSnakeOn(false);
       return;
     }
 
@@ -174,9 +196,7 @@ export function DynamicIsland() {
 
       if (!loadingActiveRef.current) {
         loadingActiveRef.current = true;
-        snakeStartedAtRef.current = performance.now();
         setShellMode('loading');
-        setSnakeOn(true);
         setLoadingContentOn(false);
         const showId = window.setTimeout(() => {
           setLoadingContentOn(true);
@@ -184,7 +204,6 @@ export function DynamicIsland() {
         loadingTimers.current.push(showId);
       } else {
         setShellMode('loading');
-        setSnakeOn(true);
         setLoadingContentOn(true);
       }
 
@@ -197,16 +216,11 @@ export function DynamicIsland() {
 
     setLoadingContentOn(false);
 
-    const finishDelay = remainingSnakeCycleMs(snakeStartedAtRef.current ?? performance.now());
     const shrinkId = window.setTimeout(() => {
+      loadingActiveRef.current = false;
       setShellMode((current) => (current === 'loading' ? 'idle' : current));
     }, CONTENT_OUT_MS);
-    const finishId = window.setTimeout(() => {
-      loadingActiveRef.current = false;
-      snakeStartedAtRef.current = null;
-      setSnakeOn(false);
-    }, Math.max(finishDelay, CONTENT_OUT_MS));
-    loadingTimers.current.push(shrinkId, finishId);
+    loadingTimers.current.push(shrinkId);
 
     return () => clearTimers(loadingTimers);
   }, [isProgressActive, toast, isDropMode]);
