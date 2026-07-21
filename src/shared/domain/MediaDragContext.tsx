@@ -15,8 +15,6 @@ import type { MediaItem } from '@/shared/domain/media';
 import './MediaDragPreview.css';
 import { unlockUiSounds } from '@/shared/audio/uiSounds';
 
-export const MEDIA_DRAG_MIME = 'application/x-tv-leonid-media';
-
 export type MediaDragDropTarget = 'favorite' | 'watched' | null;
 export type MediaDragEndMode = 'absorb' | 'return';
 
@@ -33,6 +31,8 @@ interface MediaDragHomeRect {
   height: number;
 }
 
+type DropAction = (item: MediaItem, target: Exclude<MediaDragDropTarget, null>) => void;
+
 interface MediaDragContextValue {
   draggingItem: MediaItem | null;
   dropTarget: MediaDragDropTarget;
@@ -44,6 +44,9 @@ interface MediaDragContextValue {
   ) => void;
   endMediaDrag: (mode?: MediaDragEndMode) => void;
   setDropTarget: (target: MediaDragDropTarget) => void;
+  setDropAction: (action: DropAction | null) => void;
+  updatePointer: (x: number, y: number) => void;
+  releasePointer: (x: number, y: number) => void;
 }
 
 const MediaDragContext = createContext<MediaDragContextValue | null>(null);
@@ -53,7 +56,7 @@ const SCALE_NEAR = 0.28;
 const DIST_FAR = 460;
 const DIST_NEAR = 36;
 const EXIT_ABSORB_MS = 220;
-const EXIT_RETURN_MS = 170;
+const EXIT_RETURN_MS = 240;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -74,7 +77,7 @@ function scaleForDistance(x: number, y: number) {
 }
 
 function applyPreviewTransform(
-  node: HTMLDivElement,
+  node: HTMLElement,
   x: number,
   y: number,
   width: number,
@@ -82,6 +85,16 @@ function applyPreviewTransform(
   scale: number,
 ) {
   node.style.transform = `translate3d(${x - width / 2}px, ${y - height / 2}px, 0) scale(${scale})`;
+}
+
+function hitDropTarget(x: number, y: number): Exclude<MediaDragDropTarget, null> | null {
+  const el = document.elementFromPoint(x, y);
+  const zone = el?.closest<HTMLElement>('[data-media-drop]');
+  const value = zone?.dataset.mediaDrop;
+  if (value === 'favorite' || value === 'watched') {
+    return value;
+  }
+  return null;
 }
 
 function MediaDragPreview({
@@ -98,7 +111,6 @@ function MediaDragPreview({
   const width = Math.max(48, preview.width);
   const height = Math.max(72, preview.height);
 
-  // transform/opacity только императивно — иначе React style сбрасывает exit-анимацию
   useLayoutEffect(() => {
     const node = nodeRef.current;
     if (!node) {
@@ -106,12 +118,10 @@ function MediaDragPreview({
     }
     node.style.width = `${width}px`;
     node.style.height = `${height}px`;
-    if (!node.dataset.exiting) {
-      applyPreviewTransform(node, origin.x, origin.y, width, height, scaleForDistance(origin.x, origin.y));
-      node.style.opacity = '1';
-      node.style.filter = '';
-      node.style.transition = 'none';
-    }
+    node.style.transition = 'none';
+    node.style.opacity = '1';
+    node.style.filter = '';
+    applyPreviewTransform(node, origin.x, origin.y, width, height, scaleForDistance(origin.x, origin.y));
   }, [height, nodeRef, origin.x, origin.y, width]);
 
   return createPortal(
@@ -143,8 +153,13 @@ export function MediaDragProvider({ children }: { children: ReactNode }) {
   const sizeRef = useRef({ width: 120, height: 180 });
   const homeRef = useRef<MediaDragHomeRect | null>(null);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const draggingItemRef = useRef<MediaItem | null>(null);
   const exitingRef = useRef(false);
   const exitTimerRef = useRef<number | null>(null);
+  const exitCloneRef = useRef<HTMLElement | null>(null);
+  const dropActionRef = useRef<DropAction | null>(null);
+  const posterUrlRef = useRef<string | undefined>(undefined);
+  const titleRef = useRef('');
 
   const clearExitTimer = useCallback(() => {
     if (exitTimerRef.current != null) {
@@ -153,14 +168,21 @@ export function MediaDragProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const removeExitClone = useCallback(() => {
+    const clone = exitCloneRef.current;
+    if (clone) {
+      clone.remove();
+      exitCloneRef.current = null;
+    }
+  }, []);
+
   const hardClear = useCallback(() => {
     clearExitTimer();
+    removeExitClone();
     exitingRef.current = false;
-    const node = previewRef.current;
-    if (node) {
-      delete node.dataset.exiting;
-      node.classList.remove('media-drag-preview--absorb', 'media-drag-preview--return');
-    }
+    draggingItemRef.current = null;
+    posterUrlRef.current = undefined;
+    titleRef.current = '';
     setDraggingItem(null);
     setPreviewItem(null);
     setPreview(null);
@@ -169,7 +191,7 @@ export function MediaDragProvider({ children }: { children: ReactNode }) {
     homeRef.current = null;
     lastPointerRef.current = null;
     document.body.classList.remove('is-media-dragging');
-  }, [clearExitTimer]);
+  }, [clearExitTimer, removeExitClone]);
 
   const beginMediaDrag = useCallback(
     (
@@ -186,21 +208,23 @@ export function MediaDragProvider({ children }: { children: ReactNode }) {
           height: 180,
           posterUrl: item.poster || undefined,
         };
-      sizeRef.current = {
-        width: Math.max(48, resolvedPreview.width),
-        height: Math.max(72, resolvedPreview.height),
-      };
+      const width = Math.max(48, resolvedPreview.width);
+      const height = Math.max(72, resolvedPreview.height);
+      sizeRef.current = { width, height };
       homeRef.current =
         home ??
         (nextOrigin
           ? {
-              x: nextOrigin.x - sizeRef.current.width / 2,
-              y: nextOrigin.y - sizeRef.current.height / 2,
-              width: sizeRef.current.width,
-              height: sizeRef.current.height,
+              x: nextOrigin.x - width / 2,
+              y: nextOrigin.y - height / 2,
+              width,
+              height,
             }
           : null);
       lastPointerRef.current = nextOrigin ?? null;
+      draggingItemRef.current = item;
+      posterUrlRef.current = resolvedPreview.posterUrl;
+      titleRef.current = item.title;
 
       setDraggingItem(item);
       setPreviewItem(item);
@@ -219,134 +243,154 @@ export function MediaDragProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const node = previewRef.current;
-      const { width, height } = sizeRef.current;
-      const pointer = lastPointerRef.current ?? origin;
+      const pointer = lastPointerRef.current;
       const home = homeRef.current;
+      const { width, height } = sizeRef.current;
 
-      if (!previewItem) {
+      if (!pointer) {
         hardClear();
         return;
       }
 
       exitingRef.current = true;
+      draggingItemRef.current = null;
+
+      // Сразу снимаем React-превью — анимируем независимый клон
       setDraggingItem(null);
+      setPreviewItem(null);
+      setPreview(null);
+      setOrigin(null);
       setDropTarget(null);
       document.body.classList.remove('is-media-dragging');
 
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (reducedMotion || !node || !pointer) {
+      if (reducedMotion) {
         hardClear();
         return;
       }
 
-      node.dataset.exiting = '1';
+      const startX = pointer.x;
+      const startY = pointer.y;
 
-      if (mode === 'absorb') {
-        // один кадр фиксации текущей позиции, затем в island
-        node.style.transition = 'none';
-        applyPreviewTransform(node, pointer.x, pointer.y, width, height, scaleForDistance(pointer.x, pointer.y));
-        node.style.opacity = '1';
-        node.style.filter = '';
-        void node.offsetWidth;
+      const clone = document.createElement('div');
+      clone.className = 'media-drag-preview';
+      clone.setAttribute('aria-hidden', 'true');
+      clone.style.width = `${width}px`;
+      clone.style.height = `${height}px`;
+      clone.style.transition = 'none';
+      clone.style.opacity = '1';
+      applyPreviewTransform(clone, startX, startY, width, height, scaleForDistance(startX, startY));
 
-        const island = islandAnchor();
-        node.classList.add('media-drag-preview--absorb');
-        node.style.transition =
-          'transform 200ms cubic-bezier(0.32, 0.72, 0, 1), opacity 140ms ease, filter 140ms ease, border-radius 200ms ease';
-        applyPreviewTransform(node, island.x, island.y, width, height, 0.06);
-        node.style.opacity = '0';
-        node.style.filter = 'blur(8px)';
-        node.style.borderRadius = '999px';
+      if (posterUrlRef.current) {
+        const img = document.createElement('img');
+        img.className = 'media-drag-preview__image';
+        img.src = posterUrlRef.current;
+        img.alt = '';
+        img.draggable = false;
+        img.referrerPolicy = 'no-referrer';
+        clone.appendChild(img);
       } else {
-        // сразу летим домой без лишнего reflow-кадра — быстрее на отпускании
-        const targetX = (home?.x ?? pointer.x - width / 2) + width / 2;
-        const targetY = (home?.y ?? pointer.y - height / 2) + height / 2;
-        node.classList.add('media-drag-preview--return');
-        node.style.transition =
-          'transform 160ms cubic-bezier(0.22, 1, 0.36, 1), opacity 110ms ease, box-shadow 140ms ease';
-        applyPreviewTransform(node, targetX, targetY, width, height, 1);
-        node.style.opacity = '0';
-        node.style.filter = '';
-        node.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.25)';
+        const fallback = document.createElement('span');
+        fallback.className = 'media-drag-preview__fallback';
+        fallback.textContent = titleRef.current.slice(0, 1) || '?';
+        clone.appendChild(fallback);
       }
 
-      const exitMs = mode === 'absorb' ? EXIT_ABSORB_MS : EXIT_RETURN_MS;
-      let finished = false;
+      document.body.appendChild(clone);
+      exitCloneRef.current = clone;
+      void clone.offsetWidth;
+
       const finish = () => {
-        if (finished) {
-          return;
-        }
-        finished = true;
-        node.removeEventListener('transitionend', onTransitionEnd);
-        hardClear();
+        clearExitTimer();
+        removeExitClone();
+        exitingRef.current = false;
+        posterUrlRef.current = undefined;
+        titleRef.current = '';
+        homeRef.current = null;
+        lastPointerRef.current = null;
       };
 
-      const onTransitionEnd = (event: TransitionEvent) => {
-        if (event.target !== node) {
+      const run = () => {
+        if (!exitCloneRef.current) {
           return;
         }
-        if (event.propertyName !== 'transform' && event.propertyName !== 'opacity') {
-          return;
+
+        if (mode === 'absorb') {
+          const island = islandAnchor();
+          clone.classList.add('media-drag-preview--absorb');
+          clone.style.transition =
+            'transform 200ms cubic-bezier(0.32, 0.72, 0, 1), opacity 140ms ease, filter 140ms ease, border-radius 200ms ease';
+          applyPreviewTransform(clone, island.x, island.y, width, height, 0.06);
+          clone.style.opacity = '0';
+          clone.style.filter = 'blur(8px)';
+          clone.style.borderRadius = '999px';
+        } else {
+          const targetX = (home?.x ?? startX - width / 2) + width / 2;
+          const targetY = (home?.y ?? startY - height / 2) + height / 2;
+          clone.classList.add('media-drag-preview--return');
+          clone.style.transition =
+            'transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease, box-shadow 180ms ease';
+          applyPreviewTransform(clone, targetX, targetY, width, height, 1);
+          clone.style.opacity = '0';
+          clone.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.2)';
         }
-        finish();
+
+        clearExitTimer();
+        exitTimerRef.current = window.setTimeout(
+          finish,
+          mode === 'absorb' ? EXIT_ABSORB_MS : EXIT_RETURN_MS,
+        );
       };
 
-      clearExitTimer();
-      exitTimerRef.current = window.setTimeout(finish, exitMs);
-      node.addEventListener('transitionend', onTransitionEnd);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(run);
+      });
     },
-    [clearExitTimer, hardClear, origin, previewItem],
+    [clearExitTimer, hardClear, removeExitClone],
   );
 
-  useEffect(() => {
-    if (!draggingItem) {
+  const updatePointer = useCallback((x: number, y: number) => {
+    if (exitingRef.current || !draggingItemRef.current) {
       return;
     }
 
-    const movePreview = (clientX: number, clientY: number) => {
-      if (exitingRef.current) {
-        return;
-      }
-      const node = previewRef.current;
-      if (!node) {
-        return;
-      }
-      lastPointerRef.current = { x: clientX, y: clientY };
+    lastPointerRef.current = { x, y };
+    const node = previewRef.current;
+    if (node) {
       const { width, height } = sizeRef.current;
-      applyPreviewTransform(node, clientX, clientY, width, height, scaleForDistance(clientX, clientY));
-    };
+      node.style.transition = 'none';
+      applyPreviewTransform(node, x, y, width, height, scaleForDistance(x, y));
+    }
 
-    const onDragOver = (event: DragEvent) => {
-      movePreview(event.clientX, event.clientY);
-    };
+    const nextTarget = hitDropTarget(x, y);
+    setDropTarget((current) => (current === nextTarget ? current : nextTarget));
+  }, []);
 
-    const onDrag = (event: DragEvent) => {
-      if (event.clientX === 0 && event.clientY === 0) {
+  const releasePointer = useCallback(
+    (x: number, y: number) => {
+      if (exitingRef.current || !draggingItemRef.current) {
         return;
       }
-      movePreview(event.clientX, event.clientY);
-    };
 
-    // Сразу на dragend (capture), без setTimeout — иначе кадр зависания
-    const onDragEndCapture = () => {
-      if (!exitingRef.current) {
-        endMediaDrag('return');
+      lastPointerRef.current = { x, y };
+      const item = draggingItemRef.current;
+      const target = hitDropTarget(x, y);
+
+      if (target && dropActionRef.current) {
+        dropActionRef.current(item, target);
+        return;
       }
-    };
 
-    window.addEventListener('dragover', onDragOver, true);
-    window.addEventListener('drag', onDrag, true);
-    window.addEventListener('dragend', onDragEndCapture, true);
+      endMediaDrag('return');
+    },
+    [endMediaDrag],
+  );
 
-    return () => {
-      window.removeEventListener('dragover', onDragOver, true);
-      window.removeEventListener('drag', onDrag, true);
-      window.removeEventListener('dragend', onDragEndCapture, true);
-    };
-  }, [draggingItem, endMediaDrag]);
+  const setDropAction = useCallback((action: DropAction | null) => {
+    dropActionRef.current = action;
+  }, []);
 
-  useEffect(() => () => clearExitTimer(), [clearExitTimer]);
+  useEffect(() => () => hardClear(), [hardClear]);
 
   const value = useMemo(
     () => ({
@@ -355,8 +399,19 @@ export function MediaDragProvider({ children }: { children: ReactNode }) {
       beginMediaDrag,
       endMediaDrag,
       setDropTarget,
+      setDropAction,
+      updatePointer,
+      releasePointer,
     }),
-    [beginMediaDrag, draggingItem, dropTarget, endMediaDrag],
+    [
+      beginMediaDrag,
+      draggingItem,
+      dropTarget,
+      endMediaDrag,
+      releasePointer,
+      setDropAction,
+      updatePointer,
+    ],
   );
 
   return (
@@ -382,25 +437,4 @@ export function useMediaDrag() {
   }
 
   return context;
-}
-
-export function writeMediaDragData(dataTransfer: DataTransfer, item: MediaItem) {
-  dataTransfer.effectAllowed = 'copyMove';
-  dataTransfer.setData(MEDIA_DRAG_MIME, item.id);
-  dataTransfer.setData('text/plain', item.id);
-}
-
-/** Прячет нативный ghost — рисуем свой превью. */
-export function hideNativeDragImage(dataTransfer: DataTransfer) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  canvas.style.position = 'fixed';
-  canvas.style.top = '-1000px';
-  canvas.style.left = '-1000px';
-  document.body.appendChild(canvas);
-  dataTransfer.setDragImage(canvas, 0, 0);
-  window.setTimeout(() => {
-    canvas.remove();
-  }, 0);
 }

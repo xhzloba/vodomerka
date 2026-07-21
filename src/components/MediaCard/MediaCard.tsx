@@ -1,7 +1,7 @@
-import { useCallback, useRef, useState, type DragEvent, type MouseEvent, type PointerEvent } from 'react';
+import { useCallback, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
-import { useMediaDrag, writeMediaDragData, hideNativeDragImage } from '@/shared/domain/MediaDragContext';
+import { useMediaDrag } from '@/shared/domain/MediaDragContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
 import { unlockUiSounds } from '@/shared/audio/uiSounds';
 import { useMediaImage } from '@/shared/hooks/useMediaImage';
@@ -25,14 +25,22 @@ interface MediaCardProps {
   onSelect: (item: MediaItem) => void;
 }
 
+const DRAG_THRESHOLD_PX = 8;
+
 export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: MediaCardProps) {
   const { settings } = useAppSettings();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { isWatched, toggleWatched } = useWatched();
-  const { beginMediaDrag, endMediaDrag } = useMediaDrag();
+  const { beginMediaDrag, updatePointer, releasePointer } = useMediaDrag();
   const { showToast } = useToast();
   const cardRef = useRef<HTMLElement>(null);
   const suppressClickRef = useRef(false);
+  const dragSessionRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    active: boolean;
+  } | null>(null);
   const inFavorites = isFavorite(item.id);
   const watched = isWatched(item.id);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -100,52 +108,114 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
     [copyMediaId, item, onSelect, showToast, toggleFavorite, toggleWatched],
   );
 
-  const handlePointerDown = useCallback((_event: PointerEvent<HTMLElement>) => {
-    // Жест мыши раньше dragstart — иначе Electron глотает HTMLAudio после DnD
-    unlockUiSounds();
-  }, []);
+  const handlePointerDown = useCallback(
+    (event: PointerEvent<HTMLElement>) => {
+      if (event.button !== 0) {
+        return;
+      }
 
-  const handleDragStart = useCallback(
-    (event: DragEvent<HTMLElement>) => {
-      suppressClickRef.current = true;
-      setIsDragging(true);
-      closeContextMenu();
       unlockUiSounds();
-      writeMediaDragData(event.dataTransfer, item);
-      hideNativeDragImage(event.dataTransfer);
+      closeContextMenu();
 
-      const poster = cardRef.current?.querySelector('.media-card__poster') as HTMLImageElement | null;
-      const wrap = cardRef.current?.querySelector('.media-card__poster-wrap') as HTMLElement | null;
-      const rect = (poster ?? wrap ?? cardRef.current)?.getBoundingClientRect();
+      const session = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        active: false,
+      };
+      dragSessionRef.current = session;
 
-      beginMediaDrag(
-        item,
-        {
-          posterUrl: poster?.currentSrc || poster?.src || item.poster || undefined,
-          width: Math.round(rect?.width || 120),
-          height: Math.round(rect?.height || 180),
-        },
-        { x: event.clientX, y: event.clientY },
-        rect
-          ? {
-              x: rect.left,
-              y: rect.top,
-              width: rect.width,
-              height: rect.height,
-            }
-          : undefined,
-      );
+      const startDrag = (clientX: number, clientY: number) => {
+        if (!dragSessionRef.current || dragSessionRef.current.active) {
+          return;
+        }
+        dragSessionRef.current.active = true;
+        suppressClickRef.current = true;
+        setIsDragging(true);
+
+        try {
+          cardRef.current?.setPointerCapture(session.pointerId);
+        } catch {
+          // ignore
+        }
+
+        const poster = cardRef.current?.querySelector('.media-card__poster') as HTMLImageElement | null;
+        const wrap = cardRef.current?.querySelector('.media-card__poster-wrap') as HTMLElement | null;
+        const rect = (poster ?? wrap ?? cardRef.current)?.getBoundingClientRect();
+
+        beginMediaDrag(
+          item,
+          {
+            posterUrl: poster?.currentSrc || poster?.src || item.poster || undefined,
+            width: Math.round(rect?.width || 120),
+            height: Math.round(rect?.height || 180),
+          },
+          { x: clientX, y: clientY },
+          rect
+            ? {
+                x: rect.left,
+                y: rect.top,
+                width: rect.width,
+                height: rect.height,
+              }
+            : undefined,
+        );
+      };
+
+      const onPointerMove = (moveEvent: globalThis.PointerEvent) => {
+        if (!dragSessionRef.current || moveEvent.pointerId !== session.pointerId) {
+          return;
+        }
+
+        if (!dragSessionRef.current.active) {
+          const dx = moveEvent.clientX - session.startX;
+          const dy = moveEvent.clientY - session.startY;
+          if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) {
+            return;
+          }
+          startDrag(moveEvent.clientX, moveEvent.clientY);
+        }
+
+        moveEvent.preventDefault();
+        updatePointer(moveEvent.clientX, moveEvent.clientY);
+      };
+
+      const onPointerUp = (upEvent: globalThis.PointerEvent) => {
+        if (!dragSessionRef.current || upEvent.pointerId !== session.pointerId) {
+          return;
+        }
+
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+
+        const wasDragging = dragSessionRef.current.active;
+        dragSessionRef.current = null;
+
+        if (cardRef.current?.hasPointerCapture(session.pointerId)) {
+          try {
+            cardRef.current.releasePointerCapture(session.pointerId);
+          } catch {
+            // ignore
+          }
+        }
+
+        if (wasDragging) {
+          upEvent.preventDefault();
+          releasePointer(upEvent.clientX, upEvent.clientY);
+          setIsDragging(false);
+          window.setTimeout(() => {
+            suppressClickRef.current = false;
+          }, 0);
+        }
+      };
+
+      window.addEventListener('pointermove', onPointerMove, { passive: false });
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
     },
-    [beginMediaDrag, closeContextMenu, item],
+    [beginMediaDrag, closeContextMenu, item, releasePointer, updatePointer],
   );
-
-  const handleDragEnd = useCallback(() => {
-    setIsDragging(false);
-    endMediaDrag('return');
-    window.setTimeout(() => {
-      suppressClickRef.current = false;
-    }, 0);
-  }, [endMediaDrag]);
 
   const primaryUrl = variant === 'wide' ? item.backdrop || item.poster : item.poster;
   const fallbackUrl = variant === 'wide' ? item.poster : item.backdrop;
@@ -170,11 +240,9 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
     <>
       <article
         ref={cardRef}
+        data-no-drag-scroll
         className={`media-card ${variant === 'wide' ? 'media-card--wide' : ''} ${isFocused ? 'media-card--focused' : ''}${isEmptyCard && !isLoading ? ' media-card--empty' : ''}${isDragging ? ' media-card--dragging' : ''}`}
-        draggable
         onPointerDown={handlePointerDown}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
         onClick={() => {
           if (suppressClickRef.current) {
             return;

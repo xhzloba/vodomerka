@@ -1,12 +1,9 @@
-import { useCallback, useEffect, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
-import {
-  MEDIA_DRAG_MIME,
-  useMediaDrag,
-  type MediaDragDropTarget,
-} from '@/shared/domain/MediaDragContext';
+import { useMediaDrag, type MediaDragDropTarget } from '@/shared/domain/MediaDragContext';
+import type { MediaItem } from '@/shared/domain/media';
 import { useWatched } from '@/shared/domain/WatchedContext';
 import { playLikeSound } from '@/shared/audio/uiSounds';
 import { useAppTopProgressIslandState } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
@@ -61,16 +58,12 @@ function remainingSnakeCycleMs(startedAt: number, now = performance.now()): numb
   return left < 48 ? 0 : left;
 }
 
-function isMediaDragEvent(event: DragEvent): boolean {
-  return Array.from(event.dataTransfer.types).includes(MEDIA_DRAG_MIME);
-}
-
 export function DynamicIsland() {
   const { toast, dismissToast, pauseToastAutoDismiss, resumeToastAutoDismiss } =
     useToastIslandState();
   const { showToast } = useToast();
   const progress = useAppTopProgressIslandState();
-  const { draggingItem, dropTarget, setDropTarget, endMediaDrag } = useMediaDrag();
+  const { draggingItem, dropTarget, endMediaDrag, setDropAction } = useMediaDrag();
   const { isFavorite, addFavorite } = useFavorites();
   const { isWatched, addWatched } = useWatched();
 
@@ -122,7 +115,6 @@ export function DynamicIsland() {
     }
 
     setDropContentOn(false);
-    setDropTarget(null);
     const shrinkId = window.setTimeout(() => {
       setShellMode((current) => (current === 'drop' ? 'idle' : current));
     }, CONTENT_OUT_MS);
@@ -131,7 +123,7 @@ export function DynamicIsland() {
       clearTimers(dropTimers);
       clearHoverAddTimer();
     };
-  }, [clearHoverAddTimer, isDropMode, setDropTarget]);
+  }, [clearHoverAddTimer, isDropMode]);
 
   useEffect(() => {
     if (isDropMode) {
@@ -225,13 +217,12 @@ export function DynamicIsland() {
   const tipInteractive = Boolean(isTip && toast && toastContentOn && shellMode === 'toast');
 
   const applyDropTarget = useCallback(
-    (target: Exclude<MediaDragDropTarget, null>) => {
-      if (!draggingItem || appliedDropRef.current) {
+    (item: MediaItem, target: Exclude<MediaDragDropTarget, null>) => {
+      if (appliedDropRef.current) {
         return;
       }
 
       appliedDropRef.current = true;
-      const item = draggingItem;
       endMediaDrag('absorb');
 
       if (target === 'favorite') {
@@ -269,53 +260,29 @@ export function DynamicIsland() {
         });
       });
     },
-    [
-      addFavorite,
-      addWatched,
-      draggingItem,
-      endMediaDrag,
-      isFavorite,
-      isWatched,
-      showToast,
-    ],
+    [addFavorite, addWatched, endMediaDrag, isFavorite, isWatched, showToast],
   );
 
-  const handleZoneDragOver = (event: DragEvent<HTMLButtonElement>, target: Exclude<MediaDragDropTarget, null>) => {
-    if (!isMediaDragEvent(event) && !draggingItem) {
+  useEffect(() => {
+    setDropAction((item, target) => {
+      applyDropTarget(item, target);
+    });
+    return () => setDropAction(null);
+  }, [applyDropTarget, setDropAction]);
+
+  useEffect(() => {
+    if (!draggingItem || !dropTarget || appliedDropRef.current) {
+      clearHoverAddTimer();
       return;
     }
 
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'copy';
-    if (dropTarget !== target) {
-      setDropTarget(target);
-    }
-  };
-
-  const handleZoneDragLeave = (event: DragEvent<HTMLButtonElement>) => {
-    const next = event.relatedTarget as Node | null;
-    if (next && event.currentTarget.contains(next)) {
-      return;
-    }
-    clearHoverAddTimer();
-    setDropTarget(null);
-  };
-
-  const scheduleHoverAdd = (target: Exclude<MediaDragDropTarget, null>) => {
-    clearHoverAddTimer();
-    setDropTarget(target);
     hoverAddTimer.current = window.setTimeout(() => {
       hoverAddTimer.current = null;
-      applyDropTarget(target);
-    }, 90);
-  };
+      applyDropTarget(draggingItem, dropTarget);
+    }, 100);
 
-  const handleZoneDrop = (event: DragEvent<HTMLButtonElement>, target: Exclude<MediaDragDropTarget, null>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    clearHoverAddTimer();
-    applyDropTarget(target);
-  };
+    return () => clearHoverAddTimer();
+  }, [applyDropTarget, clearHoverAddTimer, draggingItem, dropTarget]);
 
   const toggleTipExpanded = () => {
     if (!tipInteractive) {
@@ -431,7 +398,7 @@ export function DynamicIsland() {
                       dismissToast();
                     }}
                   >
-                    <X size={14} strokeWidth={2} />
+                    <X size={15} strokeWidth={2.2} />
                   </button>
                 ) : null}
               </>
@@ -447,17 +414,11 @@ export function DynamicIsland() {
           <div className="dynamic-island__drop" aria-hidden={!dropContentOn}>
             <button
               type="button"
+              data-media-drop="favorite"
               className={`dynamic-island__drop-zone dynamic-island__drop-zone--favorite${
                 dropTarget === 'favorite' ? ' dynamic-island__drop-zone--active' : ''
               }`}
               aria-label="В избранное"
-              onDragEnter={(event) => {
-                event.preventDefault();
-                scheduleHoverAdd('favorite');
-              }}
-              onDragOver={(event) => handleZoneDragOver(event, 'favorite')}
-              onDragLeave={handleZoneDragLeave}
-              onDrop={(event) => handleZoneDrop(event, 'favorite')}
             >
               <span className="dynamic-island__drop-zone__icon" aria-hidden="true">
                 <FavoritesIcon size={18} filled={dropTarget === 'favorite'} strokeWidth={1.9} />
@@ -467,17 +428,11 @@ export function DynamicIsland() {
             <span className="dynamic-island__drop-divider" aria-hidden="true" />
             <button
               type="button"
+              data-media-drop="watched"
               className={`dynamic-island__drop-zone dynamic-island__drop-zone--watched${
                 dropTarget === 'watched' ? ' dynamic-island__drop-zone--active' : ''
               }`}
               aria-label="В просмотренное"
-              onDragEnter={(event) => {
-                event.preventDefault();
-                scheduleHoverAdd('watched');
-              }}
-              onDragOver={(event) => handleZoneDragOver(event, 'watched')}
-              onDragLeave={handleZoneDragLeave}
-              onDrop={(event) => handleZoneDrop(event, 'watched')}
             >
               <span className="dynamic-island__drop-zone__icon" aria-hidden="true">
                 <EyeIcon size={18} strokeWidth={1.9} />

@@ -17,7 +17,8 @@
   width: var(--media-card-width, 180px);
   cursor: grab;
   scroll-snap-align: start;
-  -webkit-user-drag: element;
+  -webkit-user-drag: none;
+  touch-action: none;
 }
 
 .media-card:active {
@@ -26,6 +27,7 @@
 
 .media-card--dragging {
   opacity: 0.55;
+  pointer-events: none;
 }
 
 .media-card:hover,

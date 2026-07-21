@@ -81,21 +81,21 @@ function resolveKind(options?: ToastOptions): ToastKind {
 export function ToastIconView({ kind }: { kind: ToastKind }) {
   switch (kind) {
     case 'play':
-      return <PlayIcon size={17} />;
+      return <PlayIcon size={18} strokeWidth={1.9} />;
     case 'hide':
-      return <EyeOffIcon size={17} strokeWidth={1.75} />;
+      return <EyeOffIcon size={18} strokeWidth={1.9} />;
     case 'restore':
-      return <EyeIcon size={17} strokeWidth={1.75} />;
+      return <EyeIcon size={18} strokeWidth={1.9} />;
     case 'favorite':
-      return <FavoritesIcon size={17} strokeWidth={1.75} filled />;
+      return <FavoritesIcon size={18} strokeWidth={1.9} filled />;
     case 'copy':
-      return <CopyIcon size={17} strokeWidth={1.75} />;
+      return <CopyIcon size={17} strokeWidth={1.9} />;
     case 'success':
-      return <CircleCheck size={17} strokeWidth={1.75} />;
+      return <CircleCheck size={18} strokeWidth={1.9} />;
     case 'error':
-      return <CircleAlert size={17} strokeWidth={1.75} />;
+      return <CircleAlert size={18} strokeWidth={1.9} />;
     case 'tip':
-      return <Lightbulb size={17} strokeWidth={1.75} />;
+      return <Lightbulb size={18} strokeWidth={1.9} />;
     default:
       return null;
   }

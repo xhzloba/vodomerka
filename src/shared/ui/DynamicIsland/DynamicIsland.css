@@ -5,16 +5,22 @@
   --island-content-out: 180ms cubic-bezier(0.4, 0, 1, 1);
   --island-idle-w: 112px;
   --island-idle-h: 34px;
-  --island-compact-w: 318px;
-  --island-compact-h: 48px;
-  --island-roomy-w: 340px;
-  --island-roomy-h: 64px;
-  --island-tip-expanded-w: 420px;
-  --island-tip-expanded-h: 142px;
+  --island-idle-r: 17px;
+  --island-compact-w: 280px;
+  --island-compact-h: 44px;
+  --island-compact-r: 22px;
+  --island-roomy-w: 312px;
+  --island-roomy-h: 58px;
+  --island-roomy-r: 29px;
+  --island-tip-expanded-w: 404px;
+  --island-tip-expanded-h: 148px;
+  --island-tip-expanded-r: 48px;
   --island-loading-w: 198px;
   --island-loading-h: 40px;
+  --island-loading-r: 20px;
   --island-drop-w: 236px;
   --island-drop-h: 58px;
+  --island-drop-r: 29px;
 
   position: fixed;
   top: 14px;
@@ -32,17 +38,31 @@
 .dynamic-island__snake {
   position: relative;
   padding: 1.5px;
-  border-radius: 999px;
+  border-radius: var(--island-idle-r);
   overflow: hidden;
   isolation: isolate;
+  transition: border-radius var(--island-morph);
+}
+
+.dynamic-island--compact .dynamic-island__snake {
+  border-radius: var(--island-compact-r);
 }
 
 .dynamic-island--roomy .dynamic-island__snake {
-  border-radius: 22px;
+  border-radius: var(--island-roomy-r);
 }
 
 .dynamic-island--tip-expanded .dynamic-island__snake {
-  border-radius: 26px;
+  border-radius: var(--island-tip-expanded-r);
+  transition: border-radius var(--island-morph);
+}
+
+.dynamic-island--loading .dynamic-island__snake {
+  border-radius: var(--island-loading-r);
+}
+
+.dynamic-island--drop .dynamic-island__snake {
+  border-radius: var(--island-drop-r);
 }
 
 .dynamic-island__snake-ring {
@@ -132,11 +152,11 @@
   padding: 0;
   overflow: hidden;
   border: none;
-  border-radius: 999px;
-  background: #0b0b0f;
+  border-radius: var(--island-idle-r);
+  background: #000;
   box-shadow:
     0 10px 28px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
   transition:
     width var(--island-morph-out),
     height var(--island-morph-out),
@@ -147,10 +167,10 @@
 }
 
 .dynamic-island--toast .dynamic-island__shell {
-  background: #0a0a0e;
+  background: #000;
   box-shadow:
-    0 14px 36px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    0 14px 36px rgba(0, 0, 0, 0.55),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
   transition:
     width var(--island-morph),
     height var(--island-morph),
@@ -163,30 +183,37 @@
 .dynamic-island--compact .dynamic-island__shell {
   width: min(var(--island-compact-w), calc(100vw - 28px));
   height: var(--island-compact-h);
-  border-radius: 999px;
-  padding: 0 12px 0 8px;
+  border-radius: var(--island-compact-r);
+  padding: 0 14px 0 12px;
 }
 
 .dynamic-island--roomy .dynamic-island__shell {
   width: min(var(--island-roomy-w), calc(100vw - 28px));
   height: var(--island-roomy-h);
-  border-radius: 22px;
+  border-radius: var(--island-roomy-r);
   padding: 0 14px 0 12px;
+  max-width: min(404px, calc(100vw - 28px));
 }
 
 .dynamic-island--tip-expanded .dynamic-island__shell {
   width: min(var(--island-tip-expanded-w), calc(100vw - 28px));
   height: var(--island-tip-expanded-h);
-  border-radius: 26px;
-  padding: 14px 14px 14px 12px;
-  align-items: flex-start;
+  border-radius: var(--island-tip-expanded-r);
+  /* inset от скругления ~48px, иначе иконка/close лезут в углы */
+  padding: 22px 22px 20px;
+  align-items: stretch;
+  max-width: min(404px, calc(100vw - 28px));
 }
 
 .dynamic-island--loading .dynamic-island__shell {
   width: var(--island-loading-w);
   height: var(--island-loading-h);
-  border-radius: 999px;
+  border-radius: var(--island-loading-r);
   padding: 0 16px 0 14px;
+  background: #000;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
   transition:
     width var(--island-morph),
     height var(--island-morph),
@@ -199,7 +226,7 @@
 .dynamic-island--drop .dynamic-island__shell {
   width: min(var(--island-drop-w), calc(100vw - 28px));
   height: var(--island-drop-h);
-  border-radius: 999px;
+  border-radius: var(--island-drop-r);
   padding: 0 6px;
   background: #000;
   box-shadow:
@@ -248,11 +275,11 @@
 .dynamic-island__toast {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(6px) scale(0.96);
+  transform: translateY(4px) scale(0.97);
   pointer-events: none;
   transition:
     opacity var(--island-content-out),
@@ -276,60 +303,67 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  width: 20px;
+  height: 20px;
   border: none;
-  color: var(--app-text);
+  border-radius: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.dynamic-island__icon svg {
+  display: block;
 }
 
 .dynamic-island--toast-favorite .dynamic-island__icon {
   color: #ff7a9a;
-  background: rgba(255, 122, 154, 0.14);
+  background: transparent;
 }
 
 .dynamic-island--toast-error .dynamic-island__icon {
-  color: #f0a0a0;
-  background: rgba(240, 160, 160, 0.12);
+  color: #ff8f8f;
+  background: transparent;
 }
 
 .dynamic-island--toast-success .dynamic-island__icon {
-  color: #8fd4b0;
-  background: rgba(143, 212, 176, 0.12);
+  color: #7ddea8;
+  background: transparent;
 }
 
 .dynamic-island--toast-tip .dynamic-island__icon {
-  width: 32px;
-  height: 32px;
-  color: var(--app-accent);
-  background: var(--app-accent-soft);
+  width: 20px;
+  height: 20px;
+  color: rgba(255, 255, 255, 0.92);
+  background: transparent;
 }
 
 .dynamic-island--toast-play .dynamic-island__icon,
-.dynamic-island--toast-restore .dynamic-island__icon {
-  color: #9fd0ff;
-  background: rgba(159, 208, 255, 0.12);
+.dynamic-island--toast-restore .dynamic-island__icon,
+.dynamic-island--toast-copy .dynamic-island__icon {
+  color: rgba(255, 255, 255, 0.92);
+  background: transparent;
 }
 
 .dynamic-island--toast-hide .dynamic-island__icon {
-  color: var(--app-text-muted);
-  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+  background: transparent;
 }
 
 .dynamic-island__copy {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  justify-content: center;
+  gap: 1px;
   min-width: 0;
   flex: 1;
 }
 
 .dynamic-island__title {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--app-text-muted);
+  font-size: 0.625rem;
+  font-weight: 510;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: rgba(255, 255, 255, 0.45);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -338,15 +372,15 @@
 .dynamic-island--compact .dynamic-island__title {
   text-transform: none;
   letter-spacing: -0.01em;
-  font-size: 0.7rem;
+  font-size: 0.625rem;
 }
 
 .dynamic-island__message {
   font-size: 0.8125rem;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.02em;
-  color: var(--app-text);
+  font-weight: 590;
+  line-height: 1.2;
+  letter-spacing: -0.022em;
+  color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -358,13 +392,24 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   font-size: 0.8125rem;
-  font-weight: 500;
-  line-height: 1.35;
+  font-weight: 510;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
 }
 
 .dynamic-island--tip-expanded .dynamic-island__toast {
   align-items: flex-start;
   gap: 12px;
+  height: 100%;
+}
+
+.dynamic-island--tip-expanded .dynamic-island__icon {
+  margin-top: 1px;
+}
+
+.dynamic-island--tip-expanded .dynamic-island__copy {
+  gap: 4px;
+  padding-top: 1px;
 }
 
 .dynamic-island--tip-expanded .dynamic-island__message {
@@ -374,20 +419,27 @@
   overflow: visible;
   text-overflow: unset;
   font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.45;
+  font-weight: 510;
+  line-height: 1.4;
+  letter-spacing: -0.018em;
 }
 
 .dynamic-island--tip-expanded .dynamic-island__title {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  text-transform: none;
+  letter-spacing: -0.01em;
   font-size: 0.625rem;
-  margin-bottom: 2px;
+  margin-bottom: 0;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.dynamic-island--tip-expanded .dynamic-island__close {
+  margin-top: -2px;
+  margin-right: -4px;
 }
 
 .dynamic-island--roomy .dynamic-island__title {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  text-transform: none;
+  letter-spacing: -0.01em;
   font-size: 0.625rem;
 }
 
@@ -396,22 +448,21 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
+  margin-right: -2px;
   border: none;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--app-text-muted);
+  border-radius: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   pointer-events: auto;
-  transition:
-    background var(--transition-fast),
-    color var(--transition-fast);
+  transition: color 160ms ease, opacity 160ms ease;
 }
 
 .dynamic-island__close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--app-text);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .dynamic-island__loading {
@@ -588,10 +639,10 @@
 .dynamic-island__loading-label {
   min-width: 0;
   font-size: 0.8125rem;
-  font-weight: 500;
-  letter-spacing: -0.015em;
+  font-weight: 510;
+  letter-spacing: -0.02em;
   line-height: 1;
-  color: rgba(170, 174, 184, 0.78);
+  color: rgba(255, 255, 255, 0.72);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -611,6 +662,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .dynamic-island__shell,
+  .dynamic-island__snake,
   .dynamic-island__toast,
   .dynamic-island__loading,
   .dynamic-island__drop,
