@@ -10,9 +10,10 @@ import { ContentRow } from '../ContentRow/ContentRow';
 
 interface LibraryViewProps {
   onMediaSelect: (item: MediaItem) => void;
+  isActive?: boolean;
 }
 
-export function LibraryView({ onMediaSelect }: LibraryViewProps) {
+export function LibraryView({ onMediaSelect, isActive = true }: LibraryViewProps) {
   const { favorites, isLoading, clearAllFavorites } = useFavorites();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -48,6 +49,7 @@ export function LibraryView({ onMediaSelect }: LibraryViewProps) {
         onClearRequest={() => setConfirmOpen(true)}
         emptyIcon={<FavoritesIcon size={48} strokeWidth={1.5} />}
         emptyText="Сохранённые фильмы и сериалы появятся здесь"
+        isActive={isActive}
       >
         <ContentRow title="ВСЕ" items={favorites} onMediaSelect={onMediaSelect} edgeFade />
         {movies.length > 0 ? (

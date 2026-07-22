@@ -339,7 +339,10 @@ export function MainAppShell() {
             }`}
             aria-hidden={activeNav !== 'library'}
           >
-            <LibraryView onMediaSelect={handleMediaSelect} />
+            <LibraryView
+              isActive={activeNav === 'library'}
+              onMediaSelect={handleMediaSelect}
+            />
           </div>
           <div
             className={`app__view-layer${
@@ -347,7 +350,10 @@ export function MainAppShell() {
             }`}
             aria-hidden={activeNav !== 'watched'}
           >
-            <WatchedView onMediaSelect={handleMediaSelect} />
+            <WatchedView
+              isActive={activeNav === 'watched'}
+              onMediaSelect={handleMediaSelect}
+            />
           </div>
         </main>
       </div>

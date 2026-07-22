@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { PageLoading } from '@/shared/ui/PageState';
 import { TrashIcon } from '@/shared/ui/icons';
@@ -13,6 +14,8 @@ interface LibraryCollectionViewProps {
   onClearRequest: () => void;
   emptyIcon: ReactNode;
   emptyText: string;
+  /** Kept-mounted views: reset scroll when the page becomes visible again. */
+  isActive?: boolean;
   children: ReactNode;
 }
 
@@ -25,9 +28,18 @@ export function LibraryCollectionView({
   onClearRequest,
   emptyIcon,
   emptyText,
+  isActive = true,
   children,
 }: LibraryCollectionViewProps) {
   const scrollRef = useOverlayScroll<HTMLDivElement>();
+
+  useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+  }, [isActive, scrollRef]);
 
   return (
     <div ref={scrollRef} className="library-view scroll-overlay">

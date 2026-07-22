@@ -10,9 +10,10 @@ import { ContentRow } from '../ContentRow/ContentRow';
 
 interface WatchedViewProps {
   onMediaSelect: (item: MediaItem) => void;
+  isActive?: boolean;
 }
 
-export function WatchedView({ onMediaSelect }: WatchedViewProps) {
+export function WatchedView({ onMediaSelect, isActive = true }: WatchedViewProps) {
   const { watched, isLoading, clearAllWatched } = useWatched();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -48,6 +49,7 @@ export function WatchedView({ onMediaSelect }: WatchedViewProps) {
         onClearRequest={() => setConfirmOpen(true)}
         emptyIcon={<EyeIcon size={48} strokeWidth={1.5} />}
         emptyText="Отмечайте фильмы и сериалы в деталке — они появятся здесь"
+        isActive={isActive}
       >
         <ContentRow title="ВСЕ" items={watched} onMediaSelect={onMediaSelect} edgeFade />
         {movies.length > 0 ? (

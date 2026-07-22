@@ -87,7 +87,6 @@ export function BrowseView({
   const [error, setError] = useState<string | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [isFiltersMenuOpen, setIsFiltersMenuOpen] = useState(false);
-  const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
   const [isCategoryHintActive, setIsCategoryHintActive] = useState(false);
   const categoryHintStartedRef = useRef(false);
 
@@ -255,24 +254,6 @@ export function BrowseView({
     }
   }, [settingsMenuOpen]);
 
-  useEffect(() => {
-    const element = scrollRef.current;
-    if (!element) {
-      return;
-    }
-
-    const onScroll = () => {
-      setIsHeaderScrolled(element.scrollTop > 2);
-    };
-
-    onScroll();
-    element.addEventListener('scroll', onScroll, { passive: true });
-
-    return () => {
-      element.removeEventListener('scroll', onScroll);
-    };
-  }, [scrollRef, items.length, isContentLoading, error]);
-
   const loadContentRef = useRef(loadContent);
   loadContentRef.current = loadContent;
 
@@ -419,18 +400,10 @@ export function BrowseView({
     void loadContent(selectedCategory, { pageUrl: nextPageUrl, append: true });
   }, [selectedCategory, nextPageUrl, isLoadingMore, isContentLoading, loadContent]);
 
-  const scrollShadow = (
-    <div
-      className={`browse-view__scroll-top-shadow${isHeaderScrolled ? ' browse-view__scroll-top-shadow--visible' : ''}`}
-      aria-hidden="true"
-    />
-  );
-
   if (error && categories.length === 0 && !isCategoriesLoading) {
     return (
       <div className="browse-view">
         <div ref={scrollRef} className="browse-view__scroll scroll-overlay">
-          {scrollShadow}
           <PageError title="Ошибка каталога" text={error} />
         </div>
 
@@ -552,7 +525,6 @@ export function BrowseView({
       {catalogSettingsMenu}
 
       <div ref={scrollRef} className="browse-view__scroll scroll-overlay">
-        {scrollShadow}
         {error && <p className="browse-view__error">{error}</p>}
 
         {isContentLoading ? (
