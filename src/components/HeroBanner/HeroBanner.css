@@ -102,6 +102,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  filter: var(--hero-meta-filter);
 }
 
 .hero__meta-text {
@@ -120,7 +121,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.42));
+  filter: var(--hero-title-filter);
 }
 
 .hero__meta-icon {
@@ -129,7 +130,7 @@
   justify-content: center;
   flex-shrink: 0;
   margin-right: 6px;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--hero-meta-icon-color);
 }
 
 .hero__meta-icon svg {
@@ -149,7 +150,7 @@
   width: 1.05em;
   height: 1.05em;
   flex-shrink: 0;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--hero-meta-icon-color);
 }
 
 .hero__meta-age-badge {
@@ -159,13 +160,13 @@
   min-width: 26px;
   height: 1.15em;
   padding: 0 5px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1px solid var(--hero-meta-badge-border);
   border-radius: 2px;
   font-size: 0.72em;
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0;
-  color: rgb(255, 255, 255);
+  color: var(--hero-meta-badge-color);
 }
 
 .hero__meta-sep {
@@ -173,12 +174,7 @@
   width: 1px;
   height: 0.9em;
   margin: 0 10px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    rgba(255, 255, 255, 0.42) 50%,
-    rgba(255, 255, 255, 0.08) 100%
-  );
+  background: var(--hero-meta-sep);
   flex-shrink: 0;
 }
 
@@ -193,8 +189,8 @@
   margin: 0 0 10px;
   object-fit: contain;
   object-position: left center;
-  -webkit-filter: var(--media-brand-logo-shadow);
-  filter: var(--media-brand-logo-shadow);
+  -webkit-filter: var(--media-brand-logo-filter);
+  filter: var(--media-brand-logo-filter);
 }
 
 .hero__description {
@@ -204,8 +200,9 @@
   font-size: 1.1875rem;
   font-weight: 400;
   line-height: 1.55;
-  color: var(--app-text-muted);
-  opacity: 0.72;
+  color: var(--hero-description-color);
+  opacity: var(--hero-description-opacity);
+  filter: var(--hero-description-filter);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;

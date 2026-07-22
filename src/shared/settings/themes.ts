@@ -1,6 +1,7 @@
 import {
   BUILTIN_THEME_IDS,
   DEFAULT_THEME_ID,
+  LIGHT_BUILTIN_THEME_IDS,
   type AppTheme,
   type BuiltinThemeId,
   type InstalledThemePlugin,
@@ -19,15 +20,23 @@ export const APP_THEME_OPTIONS: Array<{
   {
     id: 'obsidian',
     label: 'Обсидиан',
-    description: 'Тёплый графитовый фон с серебристым свечением',
+    description: 'Глубокий графит с серебристым акцентом',
     preview: { bg: '#0a0a0e', accent: '#c8ced8' },
+  },
+  {
+    id: 'pearl',
+    label: 'Жемчуг',
+    description: 'Светлый холодный фон с графитовым акцентом',
+    preview: { bg: '#eceef2', accent: '#4f5968' },
   },
 ];
 
 const BUILTIN_THEME_BACKGROUNDS: Record<BuiltinThemeId, string> = {
   obsidian: '#0a0a0e',
+  pearl: '#eceef2',
 };
 
+const LIGHT_BUILTIN = new Set<string>(LIGHT_BUILTIN_THEME_IDS);
 const THEME_ID_PATTERN = /^[a-z][a-z0-9-]{1,47}$/;
 const PLUGIN_STYLE_ID = 'vodomerka-plugin-theme';
 
@@ -51,6 +60,18 @@ export function getThemeBackgroundColor(theme: AppTheme): string {
   return BUILTIN_THEME_BACKGROUNDS.obsidian;
 }
 
+export function resolveThemeColorScheme(theme: AppTheme, pluginCss?: string | null): 'light' | 'dark' {
+  if (LIGHT_BUILTIN.has(theme)) {
+    return 'light';
+  }
+
+  if (pluginCss && /color-scheme\s*:\s*light/i.test(pluginCss)) {
+    return 'light';
+  }
+
+  return 'dark';
+}
+
 export function buildScopedThemeCss(themeId: string, css: string): string {
   const trimmed = css.trim();
   if (
@@ -70,7 +91,7 @@ export function clearPluginThemeStyles(): void {
 export function applyAppTheme(theme: AppTheme, pluginCss?: string | null): void {
   const root = document.documentElement;
   root.dataset.theme = theme;
-  root.style.colorScheme = 'dark';
+  root.style.colorScheme = resolveThemeColorScheme(theme, pluginCss);
 
   if (isBuiltinTheme(theme) || !pluginCss) {
     clearPluginThemeStyles();

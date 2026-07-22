@@ -130,10 +130,10 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--chrome-border);
   background: color-mix(in srgb, var(--app-bg) 72%, transparent);
   backdrop-filter: blur(10px);
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--chrome-strong);
   transition:
     background var(--transition-fast),
     color var(--transition-fast);
@@ -255,8 +255,8 @@
   max-height: 84px;
   object-fit: contain;
   object-position: left top;
-  -webkit-filter: var(--media-brand-logo-shadow);
-  filter: var(--media-brand-logo-shadow);
+  -webkit-filter: var(--media-brand-logo-filter);
+  filter: var(--media-brand-logo-filter);
 }
 
 .media-detail__subtitle {
@@ -368,7 +368,7 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--chrome-muted);
 }
 
 .media-detail__fact-value {
@@ -478,7 +478,7 @@
 }
 
 .media-detail--window .media-detail__facts {
-  border-top-color: rgba(255, 255, 255, 0.08);
+  border-top-color: var(--chrome-border);
 }
 
 .media-detail--window .media-detail__panel,

@@ -3,9 +3,12 @@ export const THEME_PLUGIN_ENGINE = 1;
 
 export const DEFAULT_THEME_ID = 'obsidian';
 
-export const BUILTIN_THEME_IDS = ['obsidian'] as const;
+export const BUILTIN_THEME_IDS = ['obsidian', 'pearl'] as const;
 
 export type BuiltinThemeId = (typeof BUILTIN_THEME_IDS)[number];
+
+/** Built-in themes that use light color-scheme. */
+export const LIGHT_BUILTIN_THEME_IDS = ['pearl'] as const;
 
 /** Any theme id: builtin or installed plugin. */
 export type AppTheme = string;

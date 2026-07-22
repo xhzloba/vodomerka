@@ -24,7 +24,7 @@
   padding: 0;
   border: none;
   background: none;
-  color: rgba(255, 255, 255, 0.34);
+  color: var(--chrome-faint);
   text-transform: none;
   opacity: 0;
   transition:
@@ -38,7 +38,7 @@
 }
 
 .content-row__hide-btn:hover {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--chrome-soft);
 }
 
 .content-row__hide-btn svg {
@@ -155,9 +155,9 @@
   width: 74px;
   height: 36px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  background: var(--chrome-surface);
+  border: 1px solid var(--chrome-border);
+  box-shadow: inset 0 1px 0 var(--chrome-inset);
   overflow: hidden;
 }
 
@@ -165,7 +165,7 @@
   width: 1px;
   flex-shrink: 0;
   align-self: stretch;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--chrome-divider);
 }
 
 .content-row__nav-btn {
@@ -177,15 +177,15 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--chrome-muted);
   transition:
     background var(--transition-fast),
     color var(--transition-fast);
 }
 
 .content-row__nav-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.78);
+  background: var(--chrome-surface-hover);
+  color: var(--chrome-strong);
 }
 
 .content-row__nav-btn svg {

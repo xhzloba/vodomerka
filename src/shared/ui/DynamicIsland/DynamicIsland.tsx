@@ -8,6 +8,8 @@ import { useWatched } from '@/shared/domain/WatchedContext';
 import { playLikeSound } from '@/shared/audio/uiSounds';
 import { useAppTopProgressIslandState } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
 import { EyeIcon, FavoritesIcon } from '@/shared/ui/icons';
+import { useAppSettings } from '@/shared/settings/AppSettingsContext';
+import { resolveThemeColorScheme } from '@/shared/settings/themes';
 import {
   ToastIconView,
   useToast,
@@ -62,6 +64,7 @@ export function DynamicIsland() {
   const { toast, dismissToast, pauseToastAutoDismiss, resumeToastAutoDismiss } =
     useToastIslandState();
   const { showToast } = useToast();
+  const { settings } = useAppSettings();
   const progress = useAppTopProgressIslandState();
   const { draggingItem, dropTarget, endMediaDrag, setDropAction } = useMediaDrag();
   const { isFavorite, addFavorite } = useFavorites();
@@ -85,8 +88,9 @@ export function DynamicIsland() {
 
   const isProgressActive = progress?.mode === 'active';
   const isDropMode = Boolean(draggingItem);
-  /** Snake while dragging to island or while top progress runs (not under toast). */
-  const snakeHold = isDropMode || (isProgressActive && !toast);
+  const snakeAllowed = resolveThemeColorScheme(settings.theme) === 'dark';
+  /** Snake while dragging to island or while top progress runs (not under toast). Light themes: off. */
+  const snakeHold = snakeAllowed && (isDropMode || (isProgressActive && !toast));
 
   const clearHoverAddTimer = useCallback(() => {
     if (hoverAddTimer.current != null) {

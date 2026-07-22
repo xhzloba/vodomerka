@@ -40,6 +40,7 @@ const DEFAULT_HIDDEN_BUILTIN_HOME_SECTIONS = DEFAULT_SETTINGS.hiddenHomeSections
 
 const BUILTIN_THEME_BACKGROUNDS: Record<(typeof BUILTIN_THEME_IDS)[number], string> = {
   obsidian: '#0a0a0e',
+  pearl: '#eceef2',
 };
 
 const THEME_ID_PATTERN = /^[a-z][a-z0-9-]{1,47}$/;

@@ -319,3 +319,21 @@
     opacity: 0.85;
   }
 }
+
+/* Light themes (Pearl): no cover snake */
+[data-theme='pearl'] .media-card__snake-ring,
+[data-theme='pearl'] .media-card:hover .media-card__snake-ring,
+[data-theme='pearl'] .media-card--focused .media-card__snake-ring {
+  opacity: 0 !important;
+}
+
+[data-theme='pearl'] .media-card__snake-beam--trail,
+[data-theme='pearl'] .media-card__snake-beam--core,
+[data-theme='pearl'] .media-card:hover .media-card__snake-beam--trail,
+[data-theme='pearl'] .media-card:hover .media-card__snake-beam--core,
+[data-theme='pearl'] .media-card--focused .media-card__snake-beam--trail,
+[data-theme='pearl'] .media-card--focused .media-card__snake-beam--core {
+  animation: none !important;
+  --snake-arc-half: 5deg;
+  --snake-trail-half: 6deg;
+}

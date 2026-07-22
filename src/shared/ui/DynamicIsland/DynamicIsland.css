@@ -689,3 +689,13 @@
     background: color-mix(in srgb, var(--media-snake-3) 35%, transparent);
   }
 }
+
+/* Light themes (Pearl): no island snake */
+[data-theme='pearl'] .dynamic-island--snake .dynamic-island__snake-ring {
+  opacity: 0 !important;
+}
+
+[data-theme='pearl'] .dynamic-island--snake .dynamic-island__snake-beam {
+  animation: none !important;
+  opacity: 0 !important;
+}

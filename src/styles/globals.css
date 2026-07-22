@@ -42,6 +42,66 @@
   --media-snake-3: rgba(236, 239, 244, 0.98);
   --media-snake-4: rgba(186, 214, 252, 0.75);
 
+  --media-brand-text-shadow:
+    0 0 1px rgba(0, 0, 0, 0.95),
+    0 1px 1px rgba(0, 0, 0, 0.9),
+    0 2px 4px rgba(0, 0, 0, 0.78),
+    0 4px 10px rgba(0, 0, 0, 0.52);
+  --media-pearl-text-gradient: linear-gradient(
+    112deg,
+    #ffffff 0%,
+    #eef3f2 14%,
+    #ffffff 28%,
+    #b9c7c3 46%,
+    #f8fbfb 62%,
+    #d2dcd9 78%,
+    #ffffff 100%
+  );
+  --media-fade-text-gradient: var(--media-pearl-text-gradient);
+  --media-brand-logo-shadow:
+    drop-shadow(0 0 0.75px rgba(0, 0, 0, 0.98)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.92))
+    drop-shadow(0 2px 5px rgba(0, 0, 0, 0.78)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+  --media-brand-logo-filter: var(--media-brand-logo-shadow);
+
+  --hero-meta-icon-color: rgba(255, 255, 255, 0.88);
+  --hero-meta-sep: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.42) 50%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  --hero-meta-badge-border: rgba(255, 255, 255, 0.45);
+  --hero-meta-badge-color: rgb(255, 255, 255);
+  --hero-meta-filter: none;
+  --hero-title-filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.42));
+  --hero-description-color: var(--app-text-muted);
+  --hero-description-opacity: 0.72;
+  --hero-description-filter: none;
+
+  --chrome-faint: rgba(255, 255, 255, 0.34);
+  --chrome-muted: rgba(255, 255, 255, 0.42);
+  --chrome-soft: rgba(255, 255, 255, 0.72);
+  --chrome-strong: rgba(255, 255, 255, 0.78);
+  --chrome-surface: rgba(255, 255, 255, 0.035);
+  --chrome-surface-hover: rgba(255, 255, 255, 0.05);
+  --chrome-border: rgba(255, 255, 255, 0.08);
+  --chrome-divider: rgba(255, 255, 255, 0.1);
+  --chrome-inset: rgba(255, 255, 255, 0.03);
+
+  --slide-scrim-a: rgba(0, 0, 0, 0.5);
+  --slide-scrim-b: rgba(0, 0, 0, 0.36);
+  --slide-scrim-c: rgba(0, 0, 0, 0.24);
+  --slide-scrim-d: rgba(0, 0, 0, 0.12);
+  --slide-scrim-e: rgba(0, 0, 0, 0.05);
+  --slide-scrim-wide-a: rgba(0, 0, 0, 0.66);
+  --slide-scrim-wide-b: rgba(0, 0, 0, 0.52);
+  --slide-scrim-wide-c: rgba(0, 0, 0, 0.36);
+  --slide-scrim-wide-d: rgba(0, 0, 0, 0.2);
+  --slide-scrim-wide-e: rgba(0, 0, 0, 0.1);
+  --slide-panel-border: color-mix(in srgb, var(--app-accent-border) 24%, rgba(255, 255, 255, 0.08));
+  --slide-panel-shadow: 0 -16px 44px rgba(0, 0, 0, 0.36);
+  --slide-panel-inset: rgba(255, 255, 255, 0.06);
+
   --bg-primary: var(--app-bg);
   --bg-secondary: var(--app-elevated);
   --bg-elevated: #15151b;
@@ -52,6 +112,111 @@
   --accent: var(--app-accent);
   --accent-blue: var(--app-accent);
   --focus-glow: rgba(200, 206, 216, 0.2);
+}
+
+[data-theme='pearl'] {
+  color-scheme: light;
+
+  /* Pearl — cool light twin of Obsidian */
+  --app-bg: #eceef2;
+  --app-surface: rgba(24, 28, 36, 0.035);
+  --app-surface-hover: rgba(24, 28, 36, 0.055);
+  --app-border: rgba(24, 28, 36, 0.08);
+  --app-border-strong: rgba(24, 28, 36, 0.14);
+  --app-text: #1a1d24;
+  --app-text-muted: #5c6573;
+  --app-accent: #4f5968;
+  --app-accent-soft: rgba(79, 89, 104, 0.1);
+  --app-accent-border: rgba(79, 89, 104, 0.22);
+  --app-accent-nav: rgba(79, 89, 104, 0.09);
+  --app-elevated: #ffffff;
+  --app-glow-1: rgba(120, 140, 170, 0.14);
+  --app-glow-2: rgba(90, 110, 140, 0.09);
+  --app-card-shadow:
+    0 14px 32px rgba(30, 36, 48, 0.08),
+    0 2px 8px rgba(30, 36, 48, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+
+  --app-sidebar-bg:
+    radial-gradient(circle at 12% -2%, var(--app-glow-1), transparent 40%),
+    radial-gradient(circle at 94% 102%, var(--app-glow-2), transparent 38%),
+    var(--app-bg);
+
+  --app-shell-bg: var(--app-sidebar-bg);
+
+  --media-snake-1: rgba(70, 85, 110, 0.14);
+  --media-snake-2: rgba(90, 110, 140, 0.48);
+  --media-snake-3: rgba(45, 58, 78, 0.88);
+  --media-snake-4: rgba(100, 130, 170, 0.55);
+
+  --media-brand-text-shadow: none;
+  --media-pearl-text-gradient: linear-gradient(
+    112deg,
+    #1a1d24 0%,
+    #2c3340 18%,
+    #1a1d24 36%,
+    #4a5564 54%,
+    #22262f 72%,
+    #1a1d24 100%
+  );
+  --media-fade-text-gradient: var(--media-pearl-text-gradient);
+  --media-brand-logo-shadow:
+    drop-shadow(0 0 0.6px rgba(30, 36, 48, 0.22))
+    drop-shadow(0 1px 2px rgba(30, 36, 48, 0.2))
+    drop-shadow(0 4px 12px rgba(30, 36, 48, 0.22))
+    drop-shadow(0 12px 28px rgba(30, 36, 48, 0.16));
+  --media-brand-logo-filter: var(--media-brand-logo-shadow);
+
+  --hero-meta-filter: brightness(1.05) contrast(1.02) saturate(1.04);
+  --hero-title-filter: brightness(1.04) contrast(1.02) saturate(1.03);
+  --hero-description-filter: brightness(1.03) saturate(1.02);
+
+  --hero-meta-icon-color: color-mix(in srgb, var(--app-text) 78%, transparent);
+  --hero-meta-sep: linear-gradient(
+    180deg,
+    rgba(26, 29, 36, 0.06) 0%,
+    rgba(26, 29, 36, 0.28) 50%,
+    rgba(26, 29, 36, 0.06) 100%
+  );
+  --hero-meta-badge-border: rgba(26, 29, 36, 0.28);
+  --hero-meta-badge-color: #1a1d24;
+  --hero-description-color: #4a5360;
+  --hero-description-opacity: 0.92;
+
+  --chrome-faint: rgba(26, 29, 36, 0.32);
+  --chrome-muted: rgba(26, 29, 36, 0.42);
+  --chrome-soft: rgba(26, 29, 36, 0.68);
+  --chrome-strong: rgba(26, 29, 36, 0.82);
+  --chrome-surface: rgba(26, 29, 36, 0.04);
+  --chrome-surface-hover: rgba(26, 29, 36, 0.07);
+  --chrome-border: rgba(26, 29, 36, 0.1);
+  --chrome-divider: rgba(26, 29, 36, 0.12);
+  --chrome-inset: rgba(255, 255, 255, 0.65);
+
+  --slide-scrim-a: rgba(30, 36, 48, 0.2);
+  --slide-scrim-b: rgba(30, 36, 48, 0.14);
+  --slide-scrim-c: rgba(30, 36, 48, 0.09);
+  --slide-scrim-d: rgba(30, 36, 48, 0.05);
+  --slide-scrim-e: rgba(30, 36, 48, 0.02);
+  --slide-scrim-wide-a: rgba(30, 36, 48, 0.28);
+  --slide-scrim-wide-b: rgba(30, 36, 48, 0.2);
+  --slide-scrim-wide-c: rgba(30, 36, 48, 0.14);
+  --slide-scrim-wide-d: rgba(30, 36, 48, 0.08);
+  --slide-scrim-wide-e: rgba(30, 36, 48, 0.04);
+  --slide-panel-border: color-mix(in srgb, var(--app-border-strong) 70%, transparent);
+  --slide-panel-shadow: 0 -12px 36px rgba(30, 36, 48, 0.12);
+  --slide-panel-inset: rgba(255, 255, 255, 0.8);
+
+  --bg-primary: var(--app-bg);
+  --bg-secondary: var(--app-elevated);
+  --bg-elevated: #e2e5eb;
+  --bg-glass: rgba(255, 255, 255, 0.9);
+  --text-primary: var(--app-text);
+  --text-secondary: var(--app-text-muted);
+  --text-tertiary: rgba(92, 101, 115, 0.78);
+  --accent: var(--app-accent);
+  --accent-blue: var(--app-accent);
+  --focus-glow: rgba(79, 89, 104, 0.18);
 }
 
 :root {
@@ -78,25 +243,6 @@
       (var(--hero-eyebrow-font-size) * var(--hero-eyebrow-line-height) / 2) +
       var(--app-titlebar-height)
   );
-  --media-brand-text-shadow:
-    0 0 1px rgba(0, 0, 0, 0.95),
-    0 1px 1px rgba(0, 0, 0, 0.9),
-    0 2px 4px rgba(0, 0, 0, 0.78),
-    0 4px 10px rgba(0, 0, 0, 0.52);
-  --media-pearl-text-gradient: linear-gradient(
-    112deg,
-    #ffffff 0%,
-    #eef3f2 14%,
-    #ffffff 28%,
-    #b9c7c3 46%,
-    #f8fbfb 62%,
-    #d2dcd9 78%,
-    #ffffff 100%
-  );
-  --media-fade-text-gradient: var(--media-pearl-text-gradient);
-  --media-brand-logo-shadow:
-    drop-shadow(0 0 0.75px rgba(0, 0, 0, 0.98)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.92))
-    drop-shadow(0 2px 5px rgba(0, 0, 0, 0.78)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
   --sidebar-nav-surface-pad-y: 11px;
   --sidebar-nav-item-pad-y: 2px;
   --sidebar-nav-align-nudge: -4px;
