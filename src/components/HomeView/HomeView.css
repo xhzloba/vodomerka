@@ -29,30 +29,29 @@
 }
 
 /*
- * Apple sidebar overlays main. Expand home under the menu so overflow-x
- * clips at the window edge — not at the content inset (that was the hard cut).
- * Resting card/header positions match classic overlay layout (no jump on toggle).
+ * Apple sidebar (expanded only): bleed rows under the translucent panel.
+ * Collapsed: keep inset — covers must not slide over the icon rail.
  */
-.app-shell--apple-sidebar .home-view {
+.app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed) .home-view {
   margin-left: calc(-1 * var(--app-sidebar-width));
   width: calc(100% + var(--app-sidebar-width));
 }
 
 /* abspos content ignores padding — shift metadata back to the content column */
-.app-shell--apple-sidebar .home-view .hero__content {
+.app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed) .home-view .hero__content {
   left: calc(var(--app-sidebar-width) + 18px);
 }
 
-.app-shell--apple-sidebar .home-view__content .content-row {
+.app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed) .home-view__content .content-row {
   padding-left: 0;
 }
 
-.app-shell--apple-sidebar .home-view__content .content-row__header {
+.app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed) .home-view__content .content-row__header {
   padding-left: calc(var(--app-sidebar-width) + 18px);
   padding-right: 18px;
 }
 
-.app-shell--apple-sidebar .home-view__content .content-row__scroll {
+.app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed) .home-view__content .content-row__scroll {
   padding: 8px 0 12px;
   padding-left: calc(var(--app-sidebar-width) + 18px);
   margin-right: 0;
@@ -60,7 +59,7 @@
   scroll-padding-right: 0;
 }
 
-.app-shell--apple-sidebar .home-view__content--no-hero {
+.app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed) .home-view__content--no-hero {
   padding-left: 0;
 }
 
