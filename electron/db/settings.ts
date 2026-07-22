@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   posterSize: 'medium',
   sidebarCollapsed: false,
   sidebarMenuAnimation: 'magnetic-water',
+  sidebarStyle: 'default',
   hiddenHomeSections: [
     { id: '__home_serial_updates__', title: 'Обновление сериалов' },
     { id: '__home_movie_updates__', title: 'Обновление фильмов' },
@@ -56,6 +57,7 @@ const SETTING_KEYS = {
   posterSize: 'poster_size',
   sidebarCollapsed: 'sidebar_collapsed',
   sidebarMenuAnimation: 'sidebar_menu_animation',
+  sidebarStyle: 'sidebar_style',
   hiddenHomeSections: 'hidden_home_sections',
   homeSectionRestoreOrder: 'home_section_restore_order',
   homeFavoritesSection: 'home_favorites_section',
@@ -145,6 +147,10 @@ function getDefaultSettingEntries(): Array<{ key: string; value: string }> {
     {
       key: SETTING_KEYS.sidebarMenuAnimation,
       value: DEFAULT_SETTINGS.sidebarMenuAnimation,
+    },
+    {
+      key: SETTING_KEYS.sidebarStyle,
+      value: DEFAULT_SETTINGS.sidebarStyle,
     },
     {
       key: SETTING_KEYS.hiddenHomeSections,
@@ -294,6 +300,14 @@ function normalizeSidebarMenuAnimation(
   return DEFAULT_SETTINGS.sidebarMenuAnimation;
 }
 
+function normalizeSidebarStyle(value: string | undefined): AppSettings['sidebarStyle'] {
+  if (value === 'apple') {
+    return 'apple';
+  }
+
+  return DEFAULT_SETTINGS.sidebarStyle;
+}
+
 function normalizeHiddenHomeSectionsArray(
   value: AppSettings['hiddenHomeSections'],
 ): AppSettings['hiddenHomeSections'] {
@@ -441,6 +455,7 @@ function parseSettings(database: Database.Database): AppSettings {
   const posterSizeRaw = readSetting(database, SETTING_KEYS.posterSize);
   const sidebarCollapsedRaw = readSetting(database, SETTING_KEYS.sidebarCollapsed);
   const sidebarMenuAnimationRaw = readSetting(database, SETTING_KEYS.sidebarMenuAnimation);
+  const sidebarStyleRaw = readSetting(database, SETTING_KEYS.sidebarStyle);
   const hiddenHomeSectionsRaw = readSetting(database, SETTING_KEYS.hiddenHomeSections);
   const homeSectionRestoreOrderRaw = readSetting(database, SETTING_KEYS.homeSectionRestoreOrder);
   const homeFavoritesSectionRaw = readSetting(database, SETTING_KEYS.homeFavoritesSection);
@@ -466,6 +481,7 @@ function parseSettings(database: Database.Database): AppSettings {
     posterSize: normalizePosterSize(posterSizeRaw),
     sidebarCollapsed: sidebarCollapsedRaw === '1',
     sidebarMenuAnimation: normalizeSidebarMenuAnimation(sidebarMenuAnimationRaw),
+    sidebarStyle: normalizeSidebarStyle(sidebarStyleRaw),
     hiddenHomeSections: parseHiddenHomeSections(hiddenHomeSectionsRaw),
     homeSectionRestoreOrder: parseHomeSectionRestoreOrder(homeSectionRestoreOrderRaw),
     homeFavoritesSection: normalizeHomeFavoritesSection(homeFavoritesSectionRaw),
@@ -573,6 +589,13 @@ export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
     upsert.run({
       key: SETTING_KEYS.sidebarMenuAnimation,
       value: normalizeSidebarMenuAnimation(patch.sidebarMenuAnimation),
+    });
+  }
+
+  if (patch.sidebarStyle !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.sidebarStyle,
+      value: normalizeSidebarStyle(patch.sidebarStyle),
     });
   }
 

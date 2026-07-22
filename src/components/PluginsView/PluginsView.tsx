@@ -377,7 +377,7 @@ export function PluginsView() {
               activeId={activeTab}
               onChange={(id) => setActiveTab(id as PluginTabId)}
               ariaLabel="Типы плагинов"
-              variant="segmented"
+              variant="settings"
             />
           </div>
         </div>

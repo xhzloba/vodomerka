@@ -17,6 +17,7 @@ import {
   POSTER_SIZE_OPTIONS,
   API_SERVER_OPTIONS,
   SIDEBAR_MENU_ANIMATION_OPTIONS,
+  SIDEBAR_STYLE_OPTIONS,
 } from '@/shared/settings/types';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { PageLoading } from '@/shared/ui/PageState';
@@ -305,10 +306,41 @@ export function SettingsView() {
 
         {activeTab === 'interface' ? (
           <div className="settings-panels-grid">
+            <section className="settings-panel" aria-labelledby="settings-sidebar-style-title">
+              <div className="settings-panel__intro">
+                <h2 id="settings-sidebar-style-title" className="settings-panel__title">
+                  Стиль бокового меню
+                </h2>
+                <p className="settings-panel__description">
+                  Оформление панели Главная / Каталог / … слева.
+                </p>
+              </div>
+
+              <div className="settings-mode-picker" role="radiogroup" aria-label="Стиль бокового меню">
+                {SIDEBAR_STYLE_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={settings.sidebarStyle === option.id}
+                    className={`settings-mode-picker__option${
+                      settings.sidebarStyle === option.id
+                        ? ' settings-mode-picker__option--active'
+                        : ''
+                    }`}
+                    onClick={() => void updateSettings({ sidebarStyle: option.id })}
+                  >
+                    <span className="settings-mode-picker__label">{option.label}</span>
+                    <span className="settings-mode-picker__hint">{option.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
             <section className="settings-panel" aria-labelledby="settings-sidebar-menu-title">
               <div className="settings-panel__intro">
                 <h2 id="settings-sidebar-menu-title" className="settings-panel__title">
-                  Боковое меню
+                  Анимация бокового меню
                 </h2>
                 <p className="settings-panel__description">
                   По умолчанию — Водяной магнит. Остальные анимации ставятся в «Плагины».

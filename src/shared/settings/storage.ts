@@ -12,6 +12,7 @@ import {
   normalizeHomeRecentlyViewedSection,
   normalizePosterSize,
   normalizeSidebarMenuAnimation,
+  normalizeSidebarStyle,
   normalizeTipShownAt,
   type AppSettings,
 } from './types';
@@ -113,6 +114,7 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     posterSize: normalizePosterSize(value.posterSize),
     sidebarCollapsed: readSidebarCollapsed(value),
     sidebarMenuAnimation: normalizeSidebarMenuAnimation(value.sidebarMenuAnimation),
+    sidebarStyle: normalizeSidebarStyle(value.sidebarStyle),
     hiddenHomeSections: normalizeHiddenHomeSections(value.hiddenHomeSections),
     homeSectionRestoreOrder: normalizeHomeSectionRestoreOrder(value.homeSectionRestoreOrder),
     homeFavoritesSection: normalizeHomeFavoritesSection(value.homeFavoritesSection),

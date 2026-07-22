@@ -3,8 +3,8 @@ import type { BrowserWindow } from 'electron';
 import { IPC_CHANNELS } from '../../contracts/ipc';
 
 const MAC_TRAFFIC_LIGHT_POSITION = {
-  expanded: { x: 22, y: 16 },
-  collapsed: { x: 16, y: 16 },
+  expanded: { x: 22, y: 20 },
+  collapsed: { x: 20, y: 20 },
 } as const;
 
 export function registerWindowChromeIpc(getWindow: () => BrowserWindow | null): void {

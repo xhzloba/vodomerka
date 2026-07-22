@@ -6,6 +6,7 @@ import type {
   HomeSectionMode,
   PosterSizePreset,
   SidebarMenuAnimation,
+  SidebarStyle,
 } from '../../../contracts/ipc';
 
 export type {
@@ -17,6 +18,7 @@ export type {
   HomeSectionMode as HomeFavoritesSectionMode,
   PosterSizePreset,
   SidebarMenuAnimation,
+  SidebarStyle,
 } from '../../../contracts/ipc';
 
 type HomeFavoritesSectionMode = HomeSectionMode;
@@ -58,6 +60,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   posterSize: 'medium',
   sidebarCollapsed: false,
   sidebarMenuAnimation: 'magnetic-water',
+  sidebarStyle: 'default',
   hiddenHomeSections: [
     { id: '__home_serial_updates__', title: 'Обновление сериалов' },
     { id: '__home_movie_updates__', title: 'Обновление фильмов' },
@@ -120,6 +123,31 @@ export function normalizeSidebarMenuAnimation(value: unknown): SidebarMenuAnimat
 
   return DEFAULT_APP_SETTINGS.sidebarMenuAnimation;
 }
+
+export function normalizeSidebarStyle(value: unknown): SidebarStyle {
+  if (value === 'apple') {
+    return 'apple';
+  }
+
+  return DEFAULT_APP_SETTINGS.sidebarStyle;
+}
+
+export const SIDEBAR_STYLE_OPTIONS: Array<{
+  id: SidebarStyle;
+  label: string;
+  hint: string;
+}> = [
+  {
+    id: 'default',
+    label: 'Классика',
+    hint: 'Текущий прозрачный сайдбар',
+  },
+  {
+    id: 'apple',
+    label: 'Системный',
+    hint: 'Как в настройках macOS: скругления, фон или обводка',
+  },
+];
 
 export function normalizeHiddenHomeSections(value: unknown): HiddenHomeSection[] {
   if (!Array.isArray(value)) {

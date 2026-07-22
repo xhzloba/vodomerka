@@ -41,6 +41,8 @@ export type HomeSectionMode = 'auto' | 'on' | 'off';
 
 export type ApiServerId = '1' | '2';
 
+export type SidebarStyle = 'default' | 'apple';
+
 export interface HiddenHomeSection {
   id: string;
   title: string;
@@ -57,6 +59,7 @@ export interface AppSettings {
   posterSize: PosterSizePreset;
   sidebarCollapsed: boolean;
   sidebarMenuAnimation: SidebarMenuAnimation;
+  sidebarStyle: SidebarStyle;
   hiddenHomeSections: HiddenHomeSection[];
   homeSectionRestoreOrder: string[];
   homeFavoritesSection: HomeSectionMode;

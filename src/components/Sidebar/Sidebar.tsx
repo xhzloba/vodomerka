@@ -1,7 +1,7 @@
 import type { CSSProperties, PointerEvent } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { NavItem } from '@/types';
-import type { SidebarMenuAnimation } from '@/shared/settings/types';
+import type { SidebarMenuAnimation, SidebarStyle } from '@/shared/settings/types';
 import { getSearchShortcutLabel } from '@/features/onboarding/tips/platformShortcut';
 import { playMenuSound, playSubmenuSound } from '@/shared/audio/uiSounds';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
@@ -28,6 +28,7 @@ interface SidebarProps {
   activeNav: NavItem;
   collapsed: boolean;
   menuAnimation?: SidebarMenuAnimation;
+  sidebarStyle?: SidebarStyle;
   macSidebarChrome?: boolean;
   onNavChange: (nav: NavItem) => void;
   itemSettingsActions?: Partial<Record<NavItem, SidebarItemSettingsAction>>;
@@ -48,6 +49,7 @@ export function Sidebar({
   activeNav,
   collapsed,
   menuAnimation = 'magnetic-water',
+  sidebarStyle = 'default',
   macSidebarChrome = false,
   onNavChange,
   itemSettingsActions,
@@ -204,9 +206,9 @@ export function Sidebar({
   return (
     <aside
       ref={sidebarRef}
-      className={`sidebar sidebar--menu-${menuAnimation}${collapsed ? ' sidebar--collapsed' : ''}${
-        macSidebarChrome ? ' sidebar--mac-chrome' : ''
-      }`}
+      className={`sidebar sidebar--menu-${menuAnimation}${
+        sidebarStyle === 'apple' ? ' sidebar--apple' : ''
+      }${collapsed ? ' sidebar--collapsed' : ''}${macSidebarChrome ? ' sidebar--mac-chrome' : ''}`}
     >
       {edgePulseEnabled && edgePulse.ready ? (
         <span className="sidebar__window-edge-pulse" aria-hidden="true" style={edgePulseStyle}>

@@ -310,6 +310,7 @@ export function MainAppShell() {
           activeNav={activeNav}
           collapsed={sidebarCollapsed}
           menuAnimation={sidebarMenuBehavior}
+          sidebarStyle={settings.sidebarStyle}
           macSidebarChrome={macSidebarChrome}
           onNavChange={navigate}
           itemSettingsActions={{
