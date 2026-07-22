@@ -233,9 +233,9 @@ export function Sidebar({
             const itemButton = (
               <button
                 type="button"
-                className={`sidebar__item ${isActive ? 'sidebar__item--active' : ''}${
-                  showItemSettings ? ' sidebar__item--with-action' : ''
-                }`}
+                className={`sidebar__item sidebar__item--nav-${item.id}${
+                  isActive ? ' sidebar__item--active' : ''
+                }${showItemSettings ? ' sidebar__item--with-action' : ''}`}
                 onPointerDown={(event) => handleNavPointerDown(event, item.id)}
                 onClick={() => handleNavClick(item.id)}
                 aria-label={

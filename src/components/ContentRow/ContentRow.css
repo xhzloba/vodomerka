@@ -71,9 +71,9 @@
   align-items: center;
   gap: 8px;
   font-size: 1.125rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-weight: 510;
+  letter-spacing: -0.022em;
+  text-transform: none;
   color: var(--app-text-muted);
 }
 
@@ -104,8 +104,8 @@
 
 .content-row__title-count {
   font-size: 1.125rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-weight: 510;
+  letter-spacing: -0.022em;
   color: var(--app-text-muted);
   opacity: 0.62;
 }

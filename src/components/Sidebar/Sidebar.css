@@ -42,6 +42,7 @@
   border-right: none;
   -webkit-app-region: drag;
   transform: translateZ(0);
+  font-family: var(--font-system);
   transition: width var(--transition-smooth), padding var(--transition-smooth);
 }
 
@@ -124,10 +125,11 @@
   border-radius: var(--radius-sm);
   background: transparent;
   overflow: visible;
+  font-family: var(--font-system);
   font-size: var(--sidebar-nav-font-size);
-  font-weight: 500;
+  font-weight: 510;
   line-height: 1;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.022em;
   transition:
     color var(--transition-fast),
     background var(--transition-fast),
@@ -270,6 +272,10 @@
   justify-content: center;
   flex-shrink: 0;
   opacity: 0.85;
+  transform-origin: center;
+  transition:
+    color var(--transition-fast),
+    opacity var(--transition-fast);
 }
 
 .sidebar__item--active .sidebar__item-icon {
@@ -281,6 +287,203 @@
   display: block;
   width: var(--sidebar-nav-icon-size);
   height: var(--sidebar-nav-icon-size);
+  transform-origin: center;
+}
+
+/* Per-item active icon motions — one pass on select */
+.sidebar__item--nav-home.sidebar__item--active .sidebar__item-icon {
+  animation: sidebar-icon-home 1.1s ease-in-out 1 both;
+}
+
+.sidebar__item--nav-browse.sidebar__item--active .sidebar__item-icon {
+  animation: sidebar-icon-browse 1s ease-in-out 1 both;
+}
+
+.sidebar__item--nav-compilations.sidebar__item--active .sidebar__item-icon {
+  animation: sidebar-icon-compilations 1.15s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1 both;
+}
+
+.sidebar__item--nav-library.sidebar__item--active .sidebar__item-icon {
+  animation: sidebar-icon-library 0.9s ease-in-out 1 both;
+}
+
+.sidebar__item--nav-watched.sidebar__item--active .sidebar__item-icon {
+  animation: sidebar-icon-watched 0.95s ease-in-out 1 both;
+}
+
+.sidebar__item--nav-search.sidebar__item--active .sidebar__item-icon {
+  animation: sidebar-icon-search 1.05s cubic-bezier(0.4, 0, 0.2, 1) 1 both;
+}
+
+.sidebar__item--nav-plugins.sidebar__item--active .sidebar__item-icon {
+  animation: sidebar-icon-plugins 0.85s ease-in-out 1 both;
+}
+
+.sidebar__item--nav-settings.sidebar__item--active .sidebar__item-icon {
+  animation: sidebar-icon-settings 1.1s cubic-bezier(0.4, 0, 0.2, 1) 1 both;
+}
+
+.sidebar__item--nav-home.sidebar__item--active .sidebar__item-icon svg,
+.sidebar__item--nav-browse.sidebar__item--active .sidebar__item-icon svg,
+.sidebar__item--nav-compilations.sidebar__item--active .sidebar__item-icon svg,
+.sidebar__item--nav-library.sidebar__item--active .sidebar__item-icon svg,
+.sidebar__item--nav-watched.sidebar__item--active .sidebar__item-icon svg,
+.sidebar__item--nav-search.sidebar__item--active .sidebar__item-icon svg,
+.sidebar__item--nav-plugins.sidebar__item--active .sidebar__item-icon svg,
+.sidebar__item--nav-settings.sidebar__item--active .sidebar__item-icon svg {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--app-accent) 42%, transparent));
+}
+
+@keyframes sidebar-icon-home {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+
+  35% {
+    transform: translateY(-4px) scale(1.08);
+  }
+
+  55% {
+    transform: translateY(0) scale(0.96);
+  }
+
+  75% {
+    transform: translateY(-1.5px) scale(1.03);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes sidebar-icon-browse {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+
+  25% {
+    transform: rotate(-10deg) scale(1.06);
+  }
+
+  55% {
+    transform: rotate(10deg) scale(1.08);
+  }
+
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes sidebar-icon-compilations {
+  0% {
+    transform: perspective(120px) rotateY(0deg) scale(1);
+  }
+
+  55% {
+    transform: perspective(120px) rotateY(180deg) scale(1.06);
+  }
+
+  100% {
+    transform: perspective(120px) rotateY(360deg) scale(1);
+  }
+}
+
+@keyframes sidebar-icon-library {
+  0% {
+    transform: scale(1);
+  }
+
+  18% {
+    transform: scale(1.2);
+  }
+
+  36% {
+    transform: scale(0.92);
+  }
+
+  54% {
+    transform: scale(1.12);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes sidebar-icon-watched {
+  0% {
+    transform: rotate(0deg) translateY(0);
+  }
+
+  25% {
+    transform: rotate(-14deg) translateY(-1px);
+  }
+
+  50% {
+    transform: rotate(12deg) translateY(0);
+  }
+
+  72% {
+    transform: rotate(-4deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes sidebar-icon-search {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+
+  70% {
+    transform: rotate(360deg) scale(1.08);
+  }
+
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes sidebar-icon-plugins {
+  0% {
+    transform: rotate(0deg) translate(0, 0);
+  }
+
+  25% {
+    transform: rotate(-16deg) translate(-1px, 1px);
+  }
+
+  50% {
+    transform: rotate(14deg) translate(1px, -1px);
+  }
+
+  75% {
+    transform: rotate(-8deg) translate(0, 1px);
+  }
+
+  100% {
+    transform: rotate(0deg) translate(0, 0);
+  }
+}
+
+@keyframes sidebar-icon-settings {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar__item--active .sidebar__item-icon,
+  .sidebar__item--active .sidebar__item-icon svg {
+    animation: none;
+    filter: none;
+  }
 }
 
 .sidebar--collapsed .sidebar__item-icon {
