@@ -306,36 +306,128 @@ export function SettingsView() {
 
         {activeTab === 'interface' ? (
           <div className="settings-panels-grid">
-            <section className="settings-panel" aria-labelledby="settings-sidebar-style-title">
-              <div className="settings-panel__intro">
-                <h2 id="settings-sidebar-style-title" className="settings-panel__title">
-                  Стиль бокового меню
-                </h2>
-                <p className="settings-panel__description">
-                  Оформление панели Главная / Каталог / … слева.
-                </p>
-              </div>
+            <div className="settings-panels-stack">
+              <section className="settings-panel" aria-labelledby="settings-sidebar-style-title">
+                <div className="settings-panel__intro">
+                  <h2 id="settings-sidebar-style-title" className="settings-panel__title">
+                    Стиль бокового меню
+                  </h2>
+                  <p className="settings-panel__description">
+                    Оформление панели Главная / Каталог / … слева.
+                  </p>
+                </div>
 
-              <div className="settings-mode-picker" role="radiogroup" aria-label="Стиль бокового меню">
-                {SIDEBAR_STYLE_OPTIONS.map((option) => (
+                <div className="settings-mode-picker" role="radiogroup" aria-label="Стиль бокового меню">
+                  {SIDEBAR_STYLE_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={settings.sidebarStyle === option.id}
+                      className={`settings-mode-picker__option${
+                        settings.sidebarStyle === option.id
+                          ? ' settings-mode-picker__option--active'
+                          : ''
+                      }`}
+                      onClick={() => void updateSettings({ sidebarStyle: option.id })}
+                    >
+                      <span className="settings-mode-picker__label">{option.label}</span>
+                      <span className="settings-mode-picker__hint">{option.hint}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <section className="settings-panel" aria-labelledby="settings-poster-size-title">
+                <div className="settings-panel__intro">
+                  <h2 id="settings-poster-size-title" className="settings-panel__title">
+                    Размер постеров
+                  </h2>
+                  <p className="settings-panel__description">
+                    Главная, каталог, подборки, избранное и просмотренное.
+                  </p>
+                </div>
+
+                <div className="settings-mode-picker" role="radiogroup" aria-label="Размер постеров">
+                  {POSTER_SIZE_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={settings.posterSize === option.id}
+                      className={`settings-mode-picker__option${
+                        settings.posterSize === option.id
+                          ? ' settings-mode-picker__option--active'
+                          : ''
+                      }`}
+                      onClick={() => void updateSettings({ posterSize: option.id })}
+                    >
+                      <span className="settings-mode-picker__label">{option.label}</span>
+                      <span className="settings-mode-picker__hint">{option.hint}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <section className="settings-panel" aria-labelledby="settings-card-labels-title">
+                <div className="settings-panel__intro">
+                  <h2 id="settings-card-labels-title" className="settings-panel__title">
+                    Подписи к карточкам
+                  </h2>
+                  <p className="settings-panel__description">
+                    Название, год и рейтинг под обложками на главной, в каталоге, в поиске и в
+                    подборках.
+                  </p>
+                </div>
+
+                <div className="settings-row settings-row--solo">
+                  <div className="settings-row__body">
+                    <p className="settings-row__label">Показывать подписи</p>
+                    <p className="settings-row__hint">Название, год и рейтинг под обложкой</p>
+                  </div>
+
                   <button
-                    key={option.id}
                     type="button"
-                    role="radio"
-                    aria-checked={settings.sidebarStyle === option.id}
-                    className={`settings-mode-picker__option${
-                      settings.sidebarStyle === option.id
-                        ? ' settings-mode-picker__option--active'
-                        : ''
-                    }`}
-                    onClick={() => void updateSettings({ sidebarStyle: option.id })}
+                    className={`settings-toggle ${settings.cardShowInfo ? 'settings-toggle--on' : ''}`}
+                    role="switch"
+                    aria-checked={settings.cardShowInfo}
+                    onClick={() => void updateSettings({ cardShowInfo: !settings.cardShowInfo })}
                   >
-                    <span className="settings-mode-picker__label">{option.label}</span>
-                    <span className="settings-mode-picker__hint">{option.hint}</span>
+                    <span className="settings-toggle__thumb" />
                   </button>
-                ))}
-              </div>
-            </section>
+                </div>
+              </section>
+
+              <section className="settings-panel" aria-labelledby="settings-tips-title">
+                <div className="settings-panel__intro">
+                  <h2 id="settings-tips-title" className="settings-panel__title">
+                    Подсказки
+                  </h2>
+                  <p className="settings-panel__description">
+                    Короткие советы по интерфейсу в виде уведомлений с разной периодичностью.
+                  </p>
+                </div>
+
+                <div className="settings-row settings-row--solo">
+                  <div className="settings-row__body">
+                    <p className="settings-row__label">Показывать подсказки автоматически</p>
+                    <p className="settings-row__hint">
+                      Горячие клавиши, скрытие секций и другие возможности приложения
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className={`settings-toggle ${settings.autoTipsEnabled ? 'settings-toggle--on' : ''}`}
+                    role="switch"
+                    aria-checked={settings.autoTipsEnabled}
+                    onClick={() => void updateSettings({ autoTipsEnabled: !settings.autoTipsEnabled })}
+                  >
+                    <span className="settings-toggle__thumb" />
+                  </button>
+                </div>
+              </section>
+            </div>
 
             <section className="settings-panel" aria-labelledby="settings-sidebar-menu-title">
               <div className="settings-panel__intro">
@@ -372,65 +464,6 @@ export function SettingsView() {
                     <span className="settings-mode-picker__hint">{option.hint}</span>
                   </button>
                 ))}
-              </div>
-            </section>
-
-            <section className="settings-panel" aria-labelledby="settings-poster-size-title">
-              <div className="settings-panel__intro">
-                <h2 id="settings-poster-size-title" className="settings-panel__title">
-                  Размер постеров
-                </h2>
-                <p className="settings-panel__description">
-                  Главная, каталог, подборки, избранное и просмотренное.
-                </p>
-              </div>
-
-              <div className="settings-mode-picker" role="radiogroup" aria-label="Размер постеров">
-                {POSTER_SIZE_OPTIONS.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={settings.posterSize === option.id}
-                    className={`settings-mode-picker__option${
-                      settings.posterSize === option.id ? ' settings-mode-picker__option--active' : ''
-                    }`}
-                    onClick={() => void updateSettings({ posterSize: option.id })}
-                  >
-                    <span className="settings-mode-picker__label">{option.label}</span>
-                    <span className="settings-mode-picker__hint">{option.hint}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="settings-panel" aria-labelledby="settings-tips-title">
-              <div className="settings-panel__intro">
-                <h2 id="settings-tips-title" className="settings-panel__title">
-                  Подсказки
-                </h2>
-                <p className="settings-panel__description">
-                  Короткие советы по интерфейсу в виде уведомлений с разной периодичностью.
-                </p>
-              </div>
-
-              <div className="settings-row settings-row--solo">
-                <div className="settings-row__body">
-                  <p className="settings-row__label">Показывать подсказки автоматически</p>
-                  <p className="settings-row__hint">
-                    Горячие клавиши, скрытие секций и другие возможности приложения
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  className={`settings-toggle ${settings.autoTipsEnabled ? 'settings-toggle--on' : ''}`}
-                  role="switch"
-                  aria-checked={settings.autoTipsEnabled}
-                  onClick={() => void updateSettings({ autoTipsEnabled: !settings.autoTipsEnabled })}
-                >
-                  <span className="settings-toggle__thumb" />
-                </button>
               </div>
             </section>
           </div>

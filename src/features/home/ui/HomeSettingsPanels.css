@@ -3,9 +3,26 @@
   gap: 14px;
 }
 
+/* Participate in SettingsView's 2-col tiles grid */
+.home-settings-panels--settings {
+  display: contents;
+}
+
+/* Short tiles stacked against the tall slider column */
+.home-settings-panels__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
 .home-settings-panels--menu {
   gap: 12px;
   padding-right: 8px;
+}
+
+.home-settings-panels--menu .home-settings-panels__stack {
+  gap: 12px;
 }
 
 .home-settings-panels--menu .settings-panel {

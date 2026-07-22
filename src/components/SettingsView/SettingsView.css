@@ -37,6 +37,14 @@
   }
 }
 
+/* Column stack: tiles flow one after another without row gaps */
+.settings-panels-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
 .settings-panel {
   min-width: 0;
   padding: 20px;

@@ -43,8 +43,7 @@ export function HomeSettingsPanels({ variant = 'settings' }: HomeSettingsPanelsP
     }
 
     const current = settings.heroSourceSectionIds;
-    const alreadySingle =
-      current.length === 1 && current[0] === resolved[0];
+    const alreadySingle = current.length === 1 && current[0] === resolved[0];
 
     if (alreadySingle) {
       return;
@@ -66,34 +65,102 @@ export function HomeSettingsPanels({ variant = 'settings' }: HomeSettingsPanelsP
 
   return (
     <div className={`home-settings-panels home-settings-panels--${variant}`}>
-      <section className="settings-panel" aria-labelledby="home-settings-hero-title">
-        <div className="settings-panel__intro">
-          <h2 id="home-settings-hero-title" className="settings-panel__title">
-            Блок рекомендаций
-          </h2>
-          <p className="settings-panel__description">
-            Большой hero-баннер на главной: backdrop фильма, метаданные и кнопки «Смотреть» /
-            «Подробнее».
-          </p>
-        </div>
-
-        <div className="settings-row settings-row--solo">
-          <div className="settings-row__body">
-            <p className="settings-row__label">Показывать на главной</p>
-            <p className="settings-row__hint">Скрывает или возвращает hero-блок целиком</p>
+      <div className="home-settings-panels__stack">
+        <section className="settings-panel" aria-labelledby="home-settings-hero-title">
+          <div className="settings-panel__intro">
+            <h2 id="home-settings-hero-title" className="settings-panel__title">
+              Блок рекомендаций
+            </h2>
+            <p className="settings-panel__description">
+              Большой hero-баннер на главной: backdrop фильма, метаданные и кнопки «Смотреть» /
+              «Подробнее».
+            </p>
           </div>
 
-          <button
-            type="button"
-            className={`settings-toggle ${settings.heroEnabled ? 'settings-toggle--on' : ''}`}
-            role="switch"
-            aria-checked={settings.heroEnabled}
-            onClick={() => void updateSettings({ heroEnabled: !settings.heroEnabled })}
+          <div className="settings-row settings-row--solo">
+            <div className="settings-row__body">
+              <p className="settings-row__label">Показывать на главной</p>
+              <p className="settings-row__hint">Скрывает или возвращает hero-блок целиком</p>
+            </div>
+
+            <button
+              type="button"
+              className={`settings-toggle ${settings.heroEnabled ? 'settings-toggle--on' : ''}`}
+              role="switch"
+              aria-checked={settings.heroEnabled}
+              onClick={() => void updateSettings({ heroEnabled: !settings.heroEnabled })}
+            >
+              <span className="settings-toggle__thumb" />
+            </button>
+          </div>
+        </section>
+
+        <section className="settings-panel" aria-labelledby="home-settings-favorites-title">
+          <div className="settings-panel__intro">
+            <h2 id="home-settings-favorites-title" className="settings-panel__title">
+              Избранное
+            </h2>
+            <p className="settings-panel__description">
+              Ряд с сохранёнными фильмами на главной, перед «В тренде».
+            </p>
+          </div>
+
+          <div className="settings-mode-picker" role="radiogroup" aria-label="Режим секции «Избранное»">
+            {HOME_FAVORITES_SECTION_MODE_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={settings.homeFavoritesSection === option.id}
+                className={`settings-mode-picker__option${
+                  settings.homeFavoritesSection === option.id
+                    ? ' settings-mode-picker__option--active'
+                    : ''
+                }`}
+                onClick={() => void updateSettings({ homeFavoritesSection: option.id })}
+              >
+                <span className="settings-mode-picker__label">{option.label}</span>
+                <span className="settings-mode-picker__hint">{option.hint}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="settings-panel" aria-labelledby="home-settings-recent-title">
+          <div className="settings-panel__intro">
+            <h2 id="home-settings-recent-title" className="settings-panel__title">
+              {HOME_RECENTLY_VIEWED_SECTION_TITLE}
+            </h2>
+            <p className="settings-panel__description">
+              Ряд с фильмами, которые вы открывали в деталке.
+            </p>
+          </div>
+
+          <div
+            className="settings-mode-picker"
+            role="radiogroup"
+            aria-label={`Режим секции «${HOME_RECENTLY_VIEWED_SECTION_TITLE}»`}
           >
-            <span className="settings-toggle__thumb" />
-          </button>
-        </div>
-      </section>
+            {HOME_RECENTLY_VIEWED_SECTION_MODE_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={settings.homeRecentlyViewedSection === option.id}
+                className={`settings-mode-picker__option${
+                  settings.homeRecentlyViewedSection === option.id
+                    ? ' settings-mode-picker__option--active'
+                    : ''
+                }`}
+                onClick={() => void updateSettings({ homeRecentlyViewedSection: option.id })}
+              >
+                <span className="settings-mode-picker__label">{option.label}</span>
+                <span className="settings-mode-picker__hint">{option.hint}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
 
       <section className="settings-panel" aria-labelledby="home-settings-slider-title">
         <div className="settings-panel__intro">
@@ -151,9 +218,7 @@ export function HomeSettingsPanels({ variant = 'settings' }: HomeSettingsPanelsP
 
         <div className="settings-subgroup settings-subgroup--hero-sources">
           <p className="settings-subgroup__label">Категория в слайдере</p>
-          <p className="settings-subgroup__hint">
-            Только одна секция. По умолчанию — «В тренде»
-          </p>
+          <p className="settings-subgroup__hint">Только одна секция. По умолчанию — «В тренде»</p>
 
           {!heroSourceOptions.length ? (
             <p className="settings-hidden-empty">Секции главной ещё не загружены</p>
@@ -187,70 +252,6 @@ export function HomeSettingsPanels({ variant = 'settings' }: HomeSettingsPanelsP
               })}
             </ul>
           )}
-        </div>
-      </section>
-
-      <section className="settings-panel settings-panel--full" aria-labelledby="home-settings-sections-title">
-        <div className="settings-panel__intro">
-          <h2 id="home-settings-sections-title" className="settings-panel__title">
-            Секции главной
-          </h2>
-          <p className="settings-panel__description">
-            «Избранное» и «{HOME_RECENTLY_VIEWED_SECTION_TITLE}» выводятся перед «В тренде» по тем же
-            правилам показа.
-          </p>
-        </div>
-
-        <div className="settings-subgroup">
-          <p className="settings-subgroup__label">Избранное</p>
-          <p className="settings-subgroup__hint">Показ ряда с сохранёнными фильмами на главной</p>
-          <div className="settings-mode-picker" role="radiogroup" aria-label="Режим секции «Избранное»">
-            {HOME_FAVORITES_SECTION_MODE_OPTIONS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                role="radio"
-                aria-checked={settings.homeFavoritesSection === option.id}
-                className={`settings-mode-picker__option${
-                  settings.homeFavoritesSection === option.id
-                    ? ' settings-mode-picker__option--active'
-                    : ''
-                }`}
-                onClick={() => void updateSettings({ homeFavoritesSection: option.id })}
-              >
-                <span className="settings-mode-picker__label">{option.label}</span>
-                <span className="settings-mode-picker__hint">{option.hint}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="settings-subgroup">
-          <p className="settings-subgroup__label">{HOME_RECENTLY_VIEWED_SECTION_TITLE}</p>
-          <p className="settings-subgroup__hint">Ряд с фильмами, которые вы открывали в деталке</p>
-          <div
-            className="settings-mode-picker"
-            role="radiogroup"
-            aria-label={`Режим секции «${HOME_RECENTLY_VIEWED_SECTION_TITLE}»`}
-          >
-            {HOME_RECENTLY_VIEWED_SECTION_MODE_OPTIONS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                role="radio"
-                aria-checked={settings.homeRecentlyViewedSection === option.id}
-                className={`settings-mode-picker__option${
-                  settings.homeRecentlyViewedSection === option.id
-                    ? ' settings-mode-picker__option--active'
-                    : ''
-                }`}
-                onClick={() => void updateSettings({ homeRecentlyViewedSection: option.id })}
-              >
-                <span className="settings-mode-picker__label">{option.label}</span>
-                <span className="settings-mode-picker__hint">{option.hint}</span>
-              </button>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -293,34 +294,6 @@ export function HomeSettingsPanels({ variant = 'settings' }: HomeSettingsPanelsP
             ))}
           </ul>
         )}
-      </section>
-
-      <section className="settings-panel" aria-labelledby="home-settings-cards-title">
-        <div className="settings-panel__intro">
-          <h2 id="home-settings-cards-title" className="settings-panel__title">
-            Подписи к карточкам
-          </h2>
-          <p className="settings-panel__description">
-            Название, год и рейтинг под обложками на главной, в каталоге, в поиске и в подборках.
-          </p>
-        </div>
-
-        <div className="settings-row settings-row--solo">
-          <div className="settings-row__body">
-            <p className="settings-row__label">Показывать подписи</p>
-            <p className="settings-row__hint">Название, год и рейтинг под обложкой</p>
-          </div>
-
-          <button
-            type="button"
-            className={`settings-toggle ${settings.cardShowInfo ? 'settings-toggle--on' : ''}`}
-            role="switch"
-            aria-checked={settings.cardShowInfo}
-            onClick={() => void updateSettings({ cardShowInfo: !settings.cardShowInfo })}
-          >
-            <span className="settings-toggle__thumb" />
-          </button>
-        </div>
       </section>
     </div>
   );
