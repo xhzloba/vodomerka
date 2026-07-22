@@ -14,7 +14,8 @@ import {
   listInstalledSidebarAnimations,
   uninstallSidebarAnimation,
 } from '../plugins/sidebar';
-import { getAppSettings, getThemeBackgroundColor, updateAppSettings } from '../db/settings';
+import { getAppSettings, updateAppSettings } from '../db/settings';
+import { applyThemeWindowChrome } from '../themeChrome';
 import { DEFAULT_SIDEBAR_ANIMATION_ID, DEFAULT_THEME_ID } from '../../contracts/themes';
 
 function emitInstallProgress(sender: WebContents, event: PluginInstallProgressEvent): void {
@@ -39,7 +40,7 @@ export function registerPluginsIpc(getWindow: () => BrowserWindow | null) {
       const settings = getAppSettings();
       if (settings.theme === id) {
         const next = updateAppSettings({ theme: DEFAULT_THEME_ID });
-        getWindow()?.setBackgroundColor(getThemeBackgroundColor(next.theme));
+        applyThemeWindowChrome(next.theme);
       }
     }
     return result;

@@ -2,6 +2,7 @@ import { BrowserWindow, type WebContents } from 'electron';
 import path from 'path';
 import type { StoredMediaItem } from './db/favorites';
 import { getAppSettings, getThemeBackgroundColor } from './db/settings';
+import { applyThemeWindowChrome } from './themeChrome';
 import { getRendererUrl } from './appUrl';
 
 const detailWindows = new Map<string, BrowserWindow>();
@@ -50,7 +51,9 @@ export function tryFocusDetailWindow(mediaId: string): boolean {
 export function openDetailWindow(item: StoredMediaItem): void {
   detailPayloads.set(item.id, item);
 
-  const backgroundColor = getThemeBackgroundColor(getAppSettings().theme);
+  const theme = getAppSettings().theme;
+  applyThemeWindowChrome(theme);
+  const backgroundColor = getThemeBackgroundColor(theme);
   const win = new BrowserWindow({
     width: DETAIL_WINDOW_WIDTH,
     height: DETAIL_WINDOW_HEIGHT,
@@ -75,6 +78,10 @@ export function openDetailWindow(item: StoredMediaItem): void {
 
   win.webContents.setWindowOpenHandler(() => {
     return { action: 'deny' };
+  });
+
+  win.once('ready-to-show', () => {
+    win.setBackgroundColor(getThemeBackgroundColor(getAppSettings().theme));
   });
 
   const revealFallbackTimer = setTimeout(() => {

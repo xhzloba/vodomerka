@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell } from 'electron';
 import path from 'path';
 import { closeDatabase } from './db/database';
 import { getAppSettings, getThemeBackgroundColor } from './db/settings';
+import { applyThemeWindowChrome } from './themeChrome';
 import { registerApiIpc } from './ipc/api';
 import { registerFavoritesIpc } from './ipc/favorites';
 import { registerRecentlyViewedIpc } from './ipc/recentlyViewed';
@@ -48,6 +49,7 @@ function bindWindowTitle(win: BrowserWindow): void {
 
 function createWindow() {
   const initialSettings = getAppSettings();
+  applyThemeWindowChrome(initialSettings.theme);
   const initialBackground = getThemeBackgroundColor(initialSettings.theme);
 
   mainWindow = new BrowserWindow({
@@ -79,6 +81,7 @@ function createWindow() {
   }
 
   mainWindow.once('ready-to-show', () => {
+    mainWindow?.setBackgroundColor(getThemeBackgroundColor(getAppSettings().theme));
     mainWindow?.show();
   });
 
