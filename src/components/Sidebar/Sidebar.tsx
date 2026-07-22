@@ -49,7 +49,7 @@ export function Sidebar({
   activeNav,
   collapsed,
   menuAnimation = 'magnetic-water',
-  sidebarStyle = 'default',
+  sidebarStyle = 'apple',
   macSidebarChrome = false,
   onNavChange,
   itemSettingsActions,

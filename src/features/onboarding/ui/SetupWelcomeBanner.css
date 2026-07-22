@@ -3,7 +3,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 120;
+  z-index: 1150;
   pointer-events: none;
   animation: setupWelcomeEnter 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }

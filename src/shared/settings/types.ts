@@ -60,7 +60,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   posterSize: 'medium',
   sidebarCollapsed: false,
   sidebarMenuAnimation: 'magnetic-water',
-  sidebarStyle: 'default',
+  sidebarStyle: 'apple',
   hiddenHomeSections: [
     { id: '__home_serial_updates__', title: 'Обновление сериалов' },
     { id: '__home_movie_updates__', title: 'Обновление фильмов' },
@@ -125,8 +125,8 @@ export function normalizeSidebarMenuAnimation(value: unknown): SidebarMenuAnimat
 }
 
 export function normalizeSidebarStyle(value: unknown): SidebarStyle {
-  if (value === 'apple') {
-    return 'apple';
+  if (value === 'apple' || value === 'default') {
+    return value;
   }
 
   return DEFAULT_APP_SETTINGS.sidebarStyle;
@@ -138,14 +138,14 @@ export const SIDEBAR_STYLE_OPTIONS: Array<{
   hint: string;
 }> = [
   {
-    id: 'default',
-    label: 'Классика',
-    hint: 'Текущий прозрачный сайдбар',
-  },
-  {
     id: 'apple',
     label: 'Системный',
     hint: 'Как в настройках macOS: скругления, фон или обводка',
+  },
+  {
+    id: 'default',
+    label: 'Классика',
+    hint: 'Текущий прозрачный сайдбар',
   },
 ];
 

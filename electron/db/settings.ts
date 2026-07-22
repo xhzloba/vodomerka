@@ -19,7 +19,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   posterSize: 'medium',
   sidebarCollapsed: false,
   sidebarMenuAnimation: 'magnetic-water',
-  sidebarStyle: 'default',
+  sidebarStyle: 'apple',
   hiddenHomeSections: [
     { id: '__home_serial_updates__', title: 'Обновление сериалов' },
     { id: '__home_movie_updates__', title: 'Обновление фильмов' },
@@ -81,6 +81,7 @@ function openDatabase() {
 
 function seedDefaults(database: Database.Database) {
   migrateSetupWelcomeDismissed(database);
+  migrateSidebarStyleDefaultToApple(database);
 
   const insert = database.prepare(`
     INSERT OR IGNORE INTO settings (key, value) VALUES (@key, @value)
@@ -108,6 +109,34 @@ function migrateSetupWelcomeDismissed(database: Database.Database): void {
       VALUES (@key, '1', strftime('%s', 'now'))
     `)
     .run({ key: SETTING_KEYS.setupWelcomeDismissed });
+}
+
+/** One-shot: previous product default was classic; switch lingering `default` to apple. */
+function migrateSidebarStyleDefaultToApple(database: Database.Database): void {
+  const flagKey = 'migrate_sidebar_style_apple_default_v1';
+  if (readSetting(database, flagKey) !== undefined) {
+    return;
+  }
+
+  const current = readSetting(database, SETTING_KEYS.sidebarStyle);
+  if (current === undefined || current === 'default') {
+    database
+      .prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES (@key, @value, strftime('%s', 'now'))
+        ON CONFLICT(key) DO UPDATE SET
+          value = excluded.value,
+          updated_at = excluded.updated_at
+      `)
+      .run({ key: SETTING_KEYS.sidebarStyle, value: 'apple' });
+  }
+
+  database
+    .prepare(`
+      INSERT INTO settings (key, value, updated_at)
+      VALUES (@key, '1', strftime('%s', 'now'))
+    `)
+    .run({ key: flagKey });
 }
 
 function writeDefaultSettings(database: Database.Database) {
@@ -301,8 +330,8 @@ function normalizeSidebarMenuAnimation(
 }
 
 function normalizeSidebarStyle(value: string | undefined): AppSettings['sidebarStyle'] {
-  if (value === 'apple') {
-    return 'apple';
+  if (value === 'apple' || value === 'default') {
+    return value;
   }
 
   return DEFAULT_SETTINGS.sidebarStyle;
