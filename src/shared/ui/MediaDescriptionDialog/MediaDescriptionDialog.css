@@ -116,7 +116,7 @@
   max-height: min(68vh, 517px);
   padding: 22px 24px 24px;
   border-radius: var(--radius-lg);
-  background: var(--app-modal-bg);
+  background: var(--app-elevated);
   box-shadow: var(--app-card-shadow);
 }
 
@@ -151,7 +151,7 @@
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--chrome-muted);
   flex-shrink: 0;
   transition: color var(--transition-fast);
 }
@@ -189,7 +189,7 @@
 .media-desc-dialog__genres--with-text {
   margin-bottom: 22px;
   padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--chrome-divider);
 }
 
 .media-desc-dialog__genres-label {
@@ -198,21 +198,21 @@
   line-height: 1.55;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--app-text-muted);
 }
 
 .media-desc-dialog__genres-value {
   margin: 0;
   font-size: 0.9375rem;
   line-height: 1.55;
-  color: rgba(237, 237, 239, 0.88);
+  color: color-mix(in srgb, var(--app-text) 88%, transparent);
 }
 
 .media-desc-dialog__text {
   margin: 0;
   font-size: 1.0625rem;
   line-height: 1.62;
-  color: rgba(237, 237, 239, 0.9);
+  color: color-mix(in srgb, var(--app-text) 92%, transparent);
 }
 
 @keyframes media-desc-dialog-snake-spin {
@@ -242,4 +242,21 @@
   .media-desc-dialog__snake-beam--core {
     animation: none;
   }
+}
+
+/* Pearl / light: no snake, opaque panel contrast */
+[data-theme='pearl'] .media-desc-dialog__backdrop {
+  background: rgba(30, 36, 48, 0.28);
+}
+
+[data-theme='pearl'] .media-desc-dialog__snake {
+  padding: 0;
+  border: 1px solid var(--app-border-strong);
+  background: var(--app-elevated);
+}
+
+[data-theme='pearl'] .media-desc-dialog__snake-ring,
+[data-theme='pearl'] .media-desc-dialog__snake-beam {
+  opacity: 0 !important;
+  animation: none !important;
 }

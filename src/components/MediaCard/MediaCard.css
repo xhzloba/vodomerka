@@ -206,7 +206,7 @@
   height: 30px;
   border-radius: 999px;
   background: var(--app-text);
-  color: #050608;
+  color: var(--app-bg);
   box-shadow: 0 5px 14px rgba(0, 0, 0, 0.34);
 }
 
