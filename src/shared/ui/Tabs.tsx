@@ -11,7 +11,7 @@ interface TabsProps {
   activeId: string | null;
   onChange: (id: string) => void;
   ariaLabel?: string;
-  variant?: 'default' | 'settings';
+  variant?: 'default' | 'settings' | 'segmented';
 }
 
 export function Tabs({ items, activeId, onChange, ariaLabel, variant = 'default' }: TabsProps) {
@@ -86,7 +86,7 @@ export function Tabs({ items, activeId, onChange, ariaLabel, variant = 'default'
       aria-label={ariaLabel}
       onMouseLeave={() => setHoveredTab(null)}
     >
-      {tabIndicator.ready ? (
+      {variant !== 'segmented' && tabIndicator.ready ? (
         <span className="ui-tabs__indicator" aria-hidden="true" style={tabIndicatorStyle} />
       ) : null}
 

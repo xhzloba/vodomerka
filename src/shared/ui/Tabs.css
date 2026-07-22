@@ -68,6 +68,51 @@
   font-weight: 600;
 }
 
+/* Apple-like segmented control */
+.ui-tabs--segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  width: max-content;
+  max-width: 100%;
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid var(--ui-segmented-border);
+  background: var(--ui-segmented-bg);
+}
+
+.ui-tabs--segmented .ui-tabs__tab {
+  padding: 7px 14px;
+  border-radius: 9px;
+  font-size: 0.9375rem;
+  font-weight: 510;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--app-text-muted);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.ui-tabs--segmented .ui-tabs__tab:hover {
+  color: var(--app-text);
+  background: var(--ui-segmented-hover-bg);
+}
+
+.ui-tabs--segmented .ui-tabs__tab--active {
+  color: var(--ui-segmented-active-color);
+  font-weight: 590;
+  background: var(--ui-segmented-active-bg);
+  box-shadow: var(--ui-segmented-active-shadow);
+}
+
+.ui-tabs--segmented .ui-tabs__tab--active:hover {
+  color: var(--ui-segmented-active-color);
+  background: var(--ui-segmented-active-bg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ui-tabs__indicator {
     transition: none;

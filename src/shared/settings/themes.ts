@@ -90,8 +90,10 @@ export function clearPluginThemeStyles(): void {
 
 export function applyAppTheme(theme: AppTheme, pluginCss?: string | null): void {
   const root = document.documentElement;
+  const colorScheme = resolveThemeColorScheme(theme, pluginCss);
   root.dataset.theme = theme;
-  root.style.colorScheme = resolveThemeColorScheme(theme, pluginCss);
+  root.dataset.colorScheme = colorScheme;
+  root.style.colorScheme = colorScheme;
 
   if (isBuiltinTheme(theme) || !pluginCss) {
     clearPluginThemeStyles();
