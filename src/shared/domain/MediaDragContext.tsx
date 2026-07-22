@@ -232,6 +232,8 @@ export function MediaDragProvider({ children }: { children: ReactNode }) {
       setDropTarget(null);
       setOrigin(nextOrigin ?? null);
       document.body.classList.add('is-media-dragging');
+      // Force style recalc so Electron drops app-region:drag before the next move
+      void document.body.offsetHeight;
       unlockUiSounds();
     },
     [hardClear],
@@ -391,6 +393,31 @@ export function MediaDragProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => () => hardClear(), [hardClear]);
+
+  useEffect(() => {
+    const clearStuckDrag = () => {
+      if (!draggingItemRef.current && !document.body.classList.contains('is-media-dragging')) {
+        return;
+      }
+      hardClear();
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        clearStuckDrag();
+      }
+    };
+
+    window.addEventListener('blur', clearStuckDrag);
+    document.addEventListener('visibilitychange', clearStuckDrag);
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      window.removeEventListener('blur', clearStuckDrag);
+      document.removeEventListener('visibilitychange', clearStuckDrag);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [hardClear]);
 
   const value = useMemo(
     () => ({

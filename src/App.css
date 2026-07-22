@@ -5,6 +5,7 @@
   right: 0;
   height: var(--app-titlebar-height);
   z-index: 1000;
+  background: transparent;
   -webkit-app-region: drag;
 }
 
@@ -13,11 +14,38 @@ body.is-media-dragging * {
   cursor: grabbing !important;
 }
 
-.app-shell--mac-sidebar-chrome .titlebar {
+/* Keep Electron from stealing the media→island gesture */
+body.is-media-dragging .sidebar,
+body.is-media-dragging .sidebar *,
+body.is-media-dragging .titlebar {
+  -webkit-app-region: no-drag !important;
+}
+
+body.is-media-dragging .app-shell--apple-sidebar .sidebar,
+body.is-media-dragging .app-shell--apple-sidebar .sidebar * {
+  pointer-events: none !important;
+}
+
+.app-shell--mac-sidebar-chrome:not(.app-shell--apple-sidebar) .titlebar {
   left: var(--app-sidebar-width);
   right: 0;
   width: auto;
   transition: left var(--transition-smooth);
+}
+
+/* Apple: full-bleed top drag strip — identical to detail-window-shell .titlebar */
+.app-shell--apple-sidebar .titlebar {
+  left: 0;
+  right: 0;
+  width: auto;
+  z-index: 1100;
+  background: transparent;
+  pointer-events: auto;
+  -webkit-app-region: drag !important;
+}
+
+body.is-media-dragging .app-shell--apple-sidebar .titlebar {
+  -webkit-app-region: no-drag !important;
 }
 
 .app-shell {
@@ -47,9 +75,22 @@ body.is-media-dragging * {
 }
 
 .app-shell--apple-sidebar .sidebar {
-  position: absolute;
-  inset: 0 auto 0 0;
+  /* fixed: Electron app-region:drag is unreliable on absolute overlays */
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
   z-index: 900;
+  transform: none;
+  -webkit-app-region: drag;
+}
+
+.app-shell--apple-sidebar .sidebar__nav {
+  -webkit-app-region: no-drag;
+}
+
+.app-shell--apple-sidebar .sidebar__chrome {
+  -webkit-app-region: drag;
 }
 
 .app-shell--apple-sidebar .app__main {

@@ -304,7 +304,6 @@ export function MainAppShell() {
         macSidebarChrome ? ' app-shell--mac-sidebar-chrome' : ''
       }${settings.sidebarStyle === 'apple' ? ' app-shell--apple-sidebar' : ''}`}
     >
-      <div className="titlebar" aria-hidden="true" />
       <div className="app-shell__body">
         <Sidebar
           activeNav={activeNav}
@@ -358,6 +357,9 @@ export function MainAppShell() {
           </div>
         </main>
       </div>
+
+      {/* Same as detail window: fixed full-bleed drag strip above content */}
+      <div className="titlebar" aria-hidden="true" />
 
       {showSetupWelcome ? (
         <SetupWelcomeBanner
