@@ -40,6 +40,25 @@ body.is-media-dragging * {
   transition: grid-template-columns var(--transition-smooth);
 }
 
+/* Apple sidebar overlays content so home rows can scroll underneath */
+.app-shell--apple-sidebar .app-shell__body {
+  display: block;
+  position: relative;
+}
+
+.app-shell--apple-sidebar .sidebar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 900;
+}
+
+.app-shell--apple-sidebar .app__main {
+  width: 100%;
+  padding-left: var(--app-sidebar-width);
+  box-sizing: border-box;
+  transition: padding-left var(--transition-smooth);
+}
+
 .app__main {
   min-width: 0;
   min-height: 100%;

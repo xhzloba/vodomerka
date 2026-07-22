@@ -302,7 +302,7 @@ export function MainAppShell() {
     <div
       className={`app-shell${sidebarCollapsed ? ' app-shell--sidebar-collapsed' : ''}${
         macSidebarChrome ? ' app-shell--mac-sidebar-chrome' : ''
-      }`}
+      }${settings.sidebarStyle === 'apple' ? ' app-shell--apple-sidebar' : ''}`}
     >
       <div className="titlebar" aria-hidden="true" />
       <div className="app-shell__body">
