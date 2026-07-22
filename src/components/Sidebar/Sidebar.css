@@ -65,13 +65,16 @@
   flex-direction: column;
   min-height: 0;
   padding: 8px 6px;
-  border: none;
+  box-sizing: border-box;
+  /* Always 1px so apple border-color fades from transparent, not currentColor/black */
+  border: 1px solid transparent;
   border-radius: calc(var(--radius-lg) + 2px);
   background: transparent;
   box-shadow: none;
   overflow: visible;
   transition:
-    background var(--transition-smooth),
+    background-color var(--transition-smooth),
+    border-color var(--transition-smooth),
     box-shadow var(--transition-smooth),
     padding var(--transition-smooth);
 }
@@ -756,7 +759,7 @@
 
 /* Expanded only: rounded frame + translucent fill */
 .sidebar.sidebar--apple:not(.sidebar--collapsed) > .sidebar__panel {
-  border: 1px solid var(--ui-sidebar-apple-border) !important;
+  border-color: var(--ui-sidebar-apple-border) !important;
   border-radius: calc(var(--radius-lg) + 2px) !important;
   background-color: var(--ui-sidebar-apple-bg) !important;
   background-image: none !important;
@@ -764,18 +767,11 @@
   backdrop-filter: blur(18px) saturate(1.08);
   -webkit-backdrop-filter: blur(18px) saturate(1.08);
   isolation: isolate;
-  transition:
-    background-color var(--transition-smooth),
-    border-color var(--transition-smooth),
-    border-radius var(--transition-smooth),
-    box-shadow var(--transition-smooth),
-    backdrop-filter var(--transition-smooth),
-    padding var(--transition-smooth);
 }
 
 /* Collapsed: no apple chrome */
 .sidebar.sidebar--apple.sidebar--collapsed > .sidebar__panel {
-  border: none !important;
+  border-color: transparent !important;
   background: transparent !important;
   background-image: none !important;
   box-shadow: none !important;
