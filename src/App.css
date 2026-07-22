@@ -7,6 +7,7 @@
   z-index: 1000;
   background: transparent;
   -webkit-app-region: drag;
+  transition: left var(--transition-smooth);
 }
 
 body.is-media-dragging,
@@ -30,7 +31,6 @@ body.is-media-dragging .app-shell--apple-sidebar .sidebar * {
   left: var(--app-sidebar-width);
   right: 0;
   width: auto;
-  transition: left var(--transition-smooth);
 }
 
 /* Apple: full-bleed top drag strip — identical to detail-window-shell .titlebar */
@@ -59,23 +59,18 @@ body.is-media-dragging .app-shell--apple-sidebar .titlebar {
   --app-sidebar-width: var(--sidebar-width-collapsed);
 }
 
+/*
+ * One layout for classic + Apple: fixed sidebar overlay + padded main.
+ * Style switch only toggles chrome/bleed — no grid↔block jump.
+ */
 .app-shell__body {
-  display: grid;
-  grid-template-columns: var(--app-sidebar-width) 1fr;
-  align-items: stretch;
-  min-height: 100%;
-  height: 100%;
-  transition: grid-template-columns var(--transition-smooth);
-}
-
-/* Apple sidebar overlays content so home rows can scroll underneath */
-.app-shell--apple-sidebar .app-shell__body {
   display: block;
   position: relative;
+  min-height: 100%;
+  height: 100%;
 }
 
-.app-shell--apple-sidebar .sidebar {
-  /* fixed: Electron app-region:drag is unreliable on absolute overlays */
+.app-shell .sidebar {
   position: fixed;
   top: 0;
   left: 0;
@@ -85,28 +80,25 @@ body.is-media-dragging .app-shell--apple-sidebar .titlebar {
   -webkit-app-region: drag;
 }
 
-.app-shell--apple-sidebar .sidebar__nav {
+.app-shell .sidebar__nav {
   -webkit-app-region: no-drag;
 }
 
-.app-shell--apple-sidebar .sidebar__chrome {
+.app-shell .sidebar__chrome {
   -webkit-app-region: drag;
-}
-
-.app-shell--apple-sidebar .app__main {
-  width: 100%;
-  padding-left: var(--app-sidebar-width);
-  box-sizing: border-box;
-  transition: padding-left var(--transition-smooth);
 }
 
 .app__main {
   min-width: 0;
   min-height: 100%;
   height: 100%;
+  width: 100%;
+  padding-left: var(--app-sidebar-width);
+  box-sizing: border-box;
   overflow: hidden;
   position: relative;
   -webkit-app-region: no-drag;
+  transition: padding-left var(--transition-smooth);
 }
 
 .app__view-layer {

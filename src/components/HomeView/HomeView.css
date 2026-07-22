@@ -31,6 +31,7 @@
 /*
  * Apple sidebar overlays main. Expand home under the menu so overflow-x
  * clips at the window edge — not at the content inset (that was the hard cut).
+ * Resting card/header positions match classic overlay layout (no jump on toggle).
  */
 .app-shell--apple-sidebar .home-view {
   margin-left: calc(-1 * var(--app-sidebar-width));
