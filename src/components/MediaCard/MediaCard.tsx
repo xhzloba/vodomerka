@@ -22,12 +22,20 @@ interface MediaCardProps {
   item: MediaItem;
   variant?: 'poster' | 'wide';
   isFocused?: boolean;
+  /** In horizontal sliders: island drag only on upward pull so left-drag can scroll the row. */
+  islandDragFrom?: 'any' | 'up';
   onSelect: (item: MediaItem) => void;
 }
 
 const DRAG_THRESHOLD_PX = 8;
 
-export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: MediaCardProps) {
+export function MediaCard({
+  item,
+  variant = 'poster',
+  isFocused,
+  islandDragFrom = 'any',
+  onSelect,
+}: MediaCardProps) {
   const { settings } = useAppSettings();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { isWatched, toggleWatched } = useWatched();
@@ -173,7 +181,17 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
           if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) {
             return;
           }
+
+          // Sliders: only pull toward the island (up). Horizontal stays for row scroll.
+          if (islandDragFrom === 'up' && (dy >= 0 || Math.abs(dy) < Math.abs(dx))) {
+            return;
+          }
+
           startDrag(moveEvent.clientX, moveEvent.clientY);
+        }
+
+        if (!dragSessionRef.current?.active) {
+          return;
         }
 
         moveEvent.preventDefault();
@@ -214,7 +232,7 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
       window.addEventListener('pointerup', onPointerUp);
       window.addEventListener('pointercancel', onPointerUp);
     },
-    [beginMediaDrag, closeContextMenu, item, releasePointer, updatePointer],
+    [beginMediaDrag, closeContextMenu, islandDragFrom, item, releasePointer, updatePointer],
   );
 
   const primaryUrl = variant === 'wide' ? item.backdrop || item.poster : item.poster;
@@ -240,7 +258,7 @@ export function MediaCard({ item, variant = 'poster', isFocused, onSelect }: Med
     <>
       <article
         ref={cardRef}
-        data-no-drag-scroll
+        {...(islandDragFrom === 'any' ? { 'data-no-drag-scroll': true } : {})}
         className={`media-card ${variant === 'wide' ? 'media-card--wide' : ''} ${isFocused ? 'media-card--focused' : ''}${isEmptyCard && !isLoading ? ' media-card--empty' : ''}${isDragging ? ' media-card--dragging' : ''}`}
         onPointerDown={handlePointerDown}
         onClick={() => {

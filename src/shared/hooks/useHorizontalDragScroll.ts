@@ -37,8 +37,28 @@ export function useHorizontalDragScroll<T extends HTMLElement>(
       activePointerId = null;
     };
 
+    const detachWindowListeners = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+    };
+
     const onPointerMove = (event: PointerEvent) => {
       if (activePointerId !== event.pointerId) {
+        return;
+      }
+
+      // Island drag stole the gesture (e.g. upward pull from a slider card).
+      if (document.body.classList.contains('is-media-dragging')) {
+        if (element.hasPointerCapture(event.pointerId)) {
+          try {
+            element.releasePointerCapture(event.pointerId);
+          } catch {
+            // ignore
+          }
+        }
+        detachWindowListeners();
+        stopDragging();
         return;
       }
 
@@ -51,7 +71,11 @@ export function useHorizontalDragScroll<T extends HTMLElement>(
 
         isDragging = true;
         element.classList.add('content-row__scroll--dragging');
-        element.setPointerCapture(event.pointerId);
+        try {
+          element.setPointerCapture(event.pointerId);
+        } catch {
+          // ignore
+        }
       }
 
       event.preventDefault();
@@ -63,13 +87,19 @@ export function useHorizontalDragScroll<T extends HTMLElement>(
         return;
       }
 
+      detachWindowListeners();
+
       if (isDragging) {
         suppressClickUntil = Date.now() + CLICK_SUPPRESS_MS;
         event.preventDefault();
       }
 
       if (element.hasPointerCapture(event.pointerId)) {
-        element.releasePointerCapture(event.pointerId);
+        try {
+          element.releasePointerCapture(event.pointerId);
+        } catch {
+          // ignore
+        }
       }
 
       stopDragging();
@@ -92,6 +122,10 @@ export function useHorizontalDragScroll<T extends HTMLElement>(
       startX = event.clientX;
       startScrollLeft = element.scrollLeft;
       isDragging = false;
+
+      window.addEventListener('pointermove', onPointerMove, { passive: false });
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
     };
 
     const onClickCapture = (event: MouseEvent) => {
@@ -102,16 +136,11 @@ export function useHorizontalDragScroll<T extends HTMLElement>(
     };
 
     element.addEventListener('pointerdown', onPointerDown);
-    element.addEventListener('pointermove', onPointerMove);
-    element.addEventListener('pointerup', onPointerUp);
-    element.addEventListener('pointercancel', onPointerUp);
     element.addEventListener('click', onClickCapture, true);
 
     return () => {
+      detachWindowListeners();
       element.removeEventListener('pointerdown', onPointerDown);
-      element.removeEventListener('pointermove', onPointerMove);
-      element.removeEventListener('pointerup', onPointerUp);
-      element.removeEventListener('pointercancel', onPointerUp);
       element.removeEventListener('click', onClickCapture, true);
       element.classList.remove('content-row__scroll--dragging');
     };

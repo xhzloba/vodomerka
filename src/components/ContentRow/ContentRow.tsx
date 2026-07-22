@@ -217,6 +217,7 @@ export function ContentRow({
                 key={item.id}
                 item={item}
                 variant={variant}
+                islandDragFrom="up"
                 onSelect={onMediaSelect}
               />
             ))}
@@ -229,6 +230,7 @@ export function ContentRow({
               key={item.id}
               item={item}
               variant={variant}
+              islandDragFrom="up"
               onSelect={onMediaSelect}
             />
           ))}
