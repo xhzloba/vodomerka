@@ -425,8 +425,6 @@ export function DynamicIsland() {
 
           <div className="dynamic-island__loading" aria-hidden={!loadingContentOn || isDropMode}>
             <span className="dynamic-island__spinner" aria-hidden="true" />
-            <span className="dynamic-island__loading-divider" aria-hidden="true" />
-            <span className="dynamic-island__loading-label">Обновление</span>
           </div>
 
           <div className="dynamic-island__drop" aria-hidden={!dropContentOn}>

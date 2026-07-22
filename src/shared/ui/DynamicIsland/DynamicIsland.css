@@ -15,9 +15,6 @@
   --island-tip-expanded-w: 404px;
   --island-tip-expanded-h: 148px;
   --island-tip-expanded-r: 48px;
-  --island-loading-w: 198px;
-  --island-loading-h: 40px;
-  --island-loading-r: 20px;
   --island-drop-w: 236px;
   --island-drop-h: 58px;
   --island-drop-r: 29px;
@@ -58,10 +55,6 @@
 .dynamic-island--tip-expanded .dynamic-island__snake {
   border-radius: var(--island-tip-expanded-r);
   transition: border-radius var(--island-morph);
-}
-
-.dynamic-island--loading .dynamic-island__snake {
-  border-radius: var(--island-loading-r);
 }
 
 .dynamic-island--drop .dynamic-island__snake {
@@ -210,21 +203,15 @@
 }
 
 .dynamic-island--loading .dynamic-island__shell {
-  width: var(--island-loading-w);
-  height: var(--island-loading-h);
-  border-radius: var(--island-loading-r);
-  padding: 0 16px 0 14px;
+  /* Stay at idle size — spinner only, no expand */
+  width: var(--island-idle-w);
+  height: var(--island-idle-h);
+  border-radius: var(--island-idle-r);
+  padding: 0;
   background: #000;
   box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 10px 28px rgba(0, 0, 0, 0.45),
     inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
-  transition:
-    width var(--island-morph),
-    height var(--island-morph),
-    border-radius var(--island-morph),
-    padding var(--island-morph),
-    background var(--island-morph),
-    box-shadow var(--island-morph);
 }
 
 .dynamic-island--drop .dynamic-island__shell {
@@ -266,7 +253,6 @@
 }
 
 .dynamic-island__toast,
-.dynamic-island__loading,
 .dynamic-island__drop {
   grid-area: island;
   width: 100%;
@@ -470,29 +456,25 @@
 }
 
 .dynamic-island__loading {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
-  min-width: 0;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  margin: 0;
+  padding: 0;
+  border: none;
   opacity: 0;
   visibility: hidden;
-  transform: translateX(-4px);
   pointer-events: none;
-  white-space: nowrap;
   transition:
     opacity var(--island-content-out),
-    transform var(--island-content-out),
     visibility var(--island-content-out);
 }
 
 .dynamic-island--loading-content-on .dynamic-island__loading {
   opacity: 1;
   visibility: visible;
-  transform: translateX(0);
   transition:
     opacity var(--island-content-in),
-    transform var(--island-content-in),
     visibility var(--island-content-in);
 }
 
@@ -623,38 +605,28 @@
 }
 
 .dynamic-island__spinner {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-top-color: color-mix(in srgb, var(--app-accent) 82%, white 8%);
-  animation: dynamic-island-spinner 0.8s linear infinite;
-}
-
-.dynamic-island__loading-divider {
-  width: 1px;
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  display: block;
+  width: 14px;
   height: 14px;
-  flex-shrink: 0;
-  border-radius: 1px;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.dynamic-island__loading-label {
-  min-width: 0;
-  font-size: 0.8125rem;
-  font-weight: 510;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.72);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin: 0;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-top-color: color-mix(in srgb, var(--app-accent) 82%, white 8%);
+  transform: translateY(-50%);
+  animation: dynamic-island-spinner 0.75s linear infinite;
 }
 
 @keyframes dynamic-island-spinner {
+  from {
+    transform: translateY(-50%) rotate(0deg);
+  }
+
   to {
-    transform: rotate(360deg);
+    transform: translateY(-50%) rotate(360deg);
   }
 }
 
@@ -680,6 +652,8 @@
   }
 
   .dynamic-island__spinner {
+    animation: none;
+    transform: translateY(-50%);
     border-color: color-mix(in srgb, var(--app-accent) 55%, transparent);
     opacity: 0.85;
   }
