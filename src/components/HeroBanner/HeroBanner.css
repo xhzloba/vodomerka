@@ -88,6 +88,16 @@
   }
 }
 
+.hero__brand {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: var(--hero-brand-height);
+  margin: 0 0 10px;
+}
+
 .hero__meta {
   position: relative;
   z-index: 3;
@@ -112,12 +122,12 @@
 .hero__title {
   position: relative;
   z-index: 4;
+  width: 100%;
   font-size: clamp(2rem, 4.2vw, 3rem);
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.08;
-  margin: 0 0 10px;
-  min-height: 3.25rem;
+  margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -185,10 +195,10 @@
   width: auto;
   max-width: min(100%, 420px);
   height: auto;
-  max-height: clamp(72px, 12vw, 120px);
-  margin: 0 0 10px;
+  max-height: 100%;
+  margin: 0;
   object-fit: contain;
-  object-position: left center;
+  object-position: left bottom;
   -webkit-filter: var(--media-brand-logo-filter);
   filter: var(--media-brand-logo-filter);
 }

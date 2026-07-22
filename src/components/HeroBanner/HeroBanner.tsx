@@ -174,18 +174,20 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
       </div>
 
       <div key={item.id} className="hero__content hero__content--enter">
-        {showLogo ? (
-          <img
-            key={logoSrc}
-            className="hero__logo"
-            src={logoSrc}
-            alt={item.title}
-            loading="eager"
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <h2 className="hero__title media-pearl-text">{item.title}</h2>
-        )}
+        <div className="hero__brand">
+          {showLogo ? (
+            <img
+              key={logoSrc}
+              className="hero__logo"
+              src={logoSrc}
+              alt={item.title}
+              loading="eager"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <h2 className="hero__title media-pearl-text">{item.title}</h2>
+          )}
+        </div>
 
         {metaParts.length > 0 ? (
           <p className="hero__meta">
