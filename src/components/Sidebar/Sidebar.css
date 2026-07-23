@@ -96,6 +96,130 @@
   -webkit-app-region: no-drag;
 }
 
+.sidebar__mediateka {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 4px;
+}
+
+.sidebar__mediateka-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px 4px;
+}
+
+.sidebar__mediateka-title {
+  font-family: var(--font-system);
+  font-size: 0.75rem;
+  font-weight: 510;
+  letter-spacing: -0.01em;
+  color: var(--app-text-muted);
+}
+
+.sidebar__mediateka-edit {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--font-system);
+  font-size: 0.75rem;
+  font-weight: 510;
+  letter-spacing: -0.01em;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: color var(--transition-fast);
+}
+
+.sidebar__mediateka-edit:hover {
+  color: var(--app-text);
+}
+
+.sidebar__mediateka-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar__mediateka-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--app-text);
+  text-align: left;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: background var(--transition-fast);
+}
+
+.sidebar__mediateka-edit-row:hover {
+  background: color-mix(in srgb, var(--app-text) 8%, transparent);
+}
+
+.sidebar__mediateka-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--app-text) 22%, transparent);
+  background: color-mix(in srgb, var(--app-text) 8%, transparent);
+  color: #fff;
+  box-sizing: border-box;
+}
+
+.sidebar__mediateka-check--on {
+  border-color: transparent;
+  background: #0a84ff;
+}
+
+.sidebar__mediateka-edit-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sidebar-nav-icon-size);
+  height: var(--sidebar-nav-icon-size);
+  flex-shrink: 0;
+  color: var(--app-text-muted);
+  opacity: 0.92;
+}
+
+.sidebar__mediateka-edit-label {
+  font-family: var(--font-system);
+  font-size: var(--sidebar-nav-font-size);
+  font-weight: 510;
+  letter-spacing: -0.022em;
+  line-height: 1.15;
+}
+
+[data-color-scheme='light'] .sidebar__mediateka-edit-row:hover {
+  background: color-mix(in srgb, var(--app-text) 6%, transparent);
+}
+
+[data-color-scheme='light'] .sidebar__mediateka-check {
+  border-color: color-mix(in srgb, var(--app-text) 18%, transparent);
+  background: color-mix(in srgb, var(--app-text) 5%, transparent);
+}
+
+[data-color-scheme='light'] .sidebar__mediateka-check--on {
+  background: #007aff;
+  color: #fff;
+}
+
+.sidebar--collapsed .sidebar__mediateka {
+  margin: 4px 0;
+}
+
 .sidebar--mac-chrome:not(.sidebar--collapsed) .sidebar__nav {
   margin-top: calc(
     var(--app-section-title-top) - var(--app-titlebar-height) - var(--sidebar-nav-item-pad-y) -

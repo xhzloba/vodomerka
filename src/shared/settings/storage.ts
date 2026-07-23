@@ -1,4 +1,5 @@
 import { migrateBuiltinHiddenHomeSections } from '@/shared/domain/homeSections';
+import { normalizeHiddenMediatekaItemIds } from '@/shared/domain/mediatekaMenu';
 import {
   clampHeroSlideIntervalSec,
   DEFAULT_APP_SETTINGS,
@@ -116,6 +117,7 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     sidebarMenuAnimation: normalizeSidebarMenuAnimation(value.sidebarMenuAnimation),
     sidebarStyle: normalizeSidebarStyle(value.sidebarStyle),
     hiddenHomeSections: normalizeHiddenHomeSections(value.hiddenHomeSections),
+    hiddenMediatekaItemIds: normalizeHiddenMediatekaItemIds(value.hiddenMediatekaItemIds),
     homeSectionRestoreOrder: normalizeHomeSectionRestoreOrder(value.homeSectionRestoreOrder),
     homeFavoritesSection: normalizeHomeFavoritesSection(value.homeFavoritesSection),
     homeRecentlyViewedSection: normalizeHomeRecentlyViewedSection(value.homeRecentlyViewedSection),

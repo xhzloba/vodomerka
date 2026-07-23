@@ -11,6 +11,7 @@ import {
   mergeUniqueItems,
   sortBrowseCategories,
 } from '@/shared/api/vokino/browse';
+import { extractBrowseType } from '@/shared/api/vokino/browseQuery';
 import { createBrowseFilterFields } from '@/features/browse/model/filterDefinitions';
 import { useBrowseFilters } from '@/features/browse/model/useBrowseFilters';
 import { BrowseFiltersPanel } from '@/features/browse/ui/BrowseFiltersPanel';
@@ -322,6 +323,30 @@ export function BrowseView({
       bootstrapSessionRef.current += 1;
     };
   }, []);
+
+  useEffect(() => {
+    if (!browseTarget || categories.length === 0 || isCategoriesLoading) {
+      return;
+    }
+
+    const targetCategory = findBrowseCategoryByType(categories, browseTarget.categoryType);
+    if (!targetCategory) {
+      onBrowseTargetConsumedRef.current?.();
+      return;
+    }
+
+    if (selectedCategory && extractBrowseType(selectedCategory) === browseTarget.categoryType) {
+      onBrowseTargetConsumedRef.current?.();
+      return;
+    }
+
+    setSelectedCategory(targetCategory);
+    onBrowseTargetConsumedRef.current?.();
+    void loadContentRef.current(targetCategory, {
+      filters: {},
+      manageLoading: true,
+    });
+  }, [browseTarget, categories, isCategoriesLoading, selectedCategory]);
 
   useEffect(() => {
     void ensureMediaOverridesLoaded().then(() => {

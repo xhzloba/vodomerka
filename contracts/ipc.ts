@@ -61,6 +61,7 @@ export interface AppSettings {
   sidebarMenuAnimation: SidebarMenuAnimation;
   sidebarStyle: SidebarStyle;
   hiddenHomeSections: HiddenHomeSection[];
+  hiddenMediatekaItemIds: string[];
   homeSectionRestoreOrder: string[];
   homeFavoritesSection: HomeSectionMode;
   homeRecentlyViewedSection: HomeSectionMode;

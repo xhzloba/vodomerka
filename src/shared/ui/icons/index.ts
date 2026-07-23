@@ -1,6 +1,9 @@
 export type { IconProps } from './Icon';
 export {
+  AnimeIcon,
   BookOpenIcon,
+  CartoonIcon,
+  CartoonSeriesIcon,
   CheckIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -13,6 +16,7 @@ export {
   EyeIcon,
   EyeOffIcon,
   FavoritesIcon,
+  FilmIcon,
   GridIcon,
   HistoryIcon,
   HomeIcon,
@@ -25,6 +29,7 @@ export {
   SettingsIcon,
   TrashIcon,
   TrendingIcon,
+  TvIcon,
   WatchingIcon,
   PuzzleIcon,
 } from './icons';

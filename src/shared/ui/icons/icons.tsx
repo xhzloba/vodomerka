@@ -300,6 +300,54 @@ export function CompilationsIcon(props: IconProps) {
   );
 }
 
+export function FilmIcon(props: IconProps) {
+  return (
+    <StrokeIcon {...props}>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+      <path d="M8 4.5v15M16 4.5v15M3.5 9h17M3.5 15h17" />
+    </StrokeIcon>
+  );
+}
+
+export function TvIcon(props: IconProps) {
+  return (
+    <StrokeIcon {...props}>
+      <rect x="3.5" y="5.5" width="17" height="12" rx="2" />
+      <path d="M9 20.5h6M12 17.5v3" />
+    </StrokeIcon>
+  );
+}
+
+export function AnimeIcon(props: IconProps) {
+  return (
+    <StrokeIcon {...props}>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M8.5 13.5c1.2 1.4 2.6 2 3.5 2s2.3-.6 3.5-2" />
+      <path d="M9 9.25h.01M15 9.25h.01" />
+    </StrokeIcon>
+  );
+}
+
+export function CartoonIcon(props: IconProps) {
+  return (
+    <StrokeIcon {...props}>
+      <circle cx="12" cy="11" r="6.5" />
+      <path d="M8.5 18.5c1.2-1.4 2.6-2 3.5-2s2.3.6 3.5 2" />
+      <path d="M9.5 10h.01M14.5 10h.01" />
+      <path d="M10.5 13c.5.6 1.2.9 1.5.9s1-.3 1.5-.9" />
+    </StrokeIcon>
+  );
+}
+
+export function CartoonSeriesIcon(props: IconProps) {
+  return (
+    <StrokeIcon {...props}>
+      <rect x="4" y="6" width="13" height="10" rx="2" />
+      <path d="M7 19h10M17 8.5l3-1.5v8l-3-1.5" />
+    </StrokeIcon>
+  );
+}
+
 export function TrendingIcon(props: IconProps) {
   return (
     <StrokeIcon {...props}>

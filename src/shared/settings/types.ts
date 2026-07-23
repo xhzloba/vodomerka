@@ -66,6 +66,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     { id: '__home_movie_updates__', title: 'Обновление фильмов' },
     { id: '__home_multfilm__', title: 'Мультфильмы' },
   ],
+  hiddenMediatekaItemIds: [],
   homeSectionRestoreOrder: [],
   homeFavoritesSection: 'auto',
   homeRecentlyViewedSection: 'auto',

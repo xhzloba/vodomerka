@@ -39,8 +39,10 @@ export function MainAppShell() {
     searchQuery,
     setSearchQuery,
     navigate,
+    openBrowse,
     openCompilation,
     browseTarget,
+    browseCategoryType,
     compilationTarget,
     clearBrowseTarget,
     clearCompilationTarget,
@@ -311,7 +313,9 @@ export function MainAppShell() {
           menuAnimation={sidebarMenuBehavior}
           sidebarStyle={settings.sidebarStyle}
           macSidebarChrome={macSidebarChrome}
+          browseCategoryType={browseCategoryType}
           onNavChange={navigate}
+          onOpenBrowseCategory={(categoryType) => openBrowse({ categoryType })}
           itemSettingsActions={{
             home: {
               ariaLabel: 'Настройки главной',

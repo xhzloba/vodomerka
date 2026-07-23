@@ -25,6 +25,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     { id: '__home_movie_updates__', title: 'Обновление фильмов' },
     { id: '__home_multfilm__', title: 'Мультфильмы' },
   ],
+  hiddenMediatekaItemIds: [],
   homeSectionRestoreOrder: [],
   homeFavoritesSection: 'auto',
   homeRecentlyViewedSection: 'auto',
@@ -59,6 +60,7 @@ const SETTING_KEYS = {
   sidebarMenuAnimation: 'sidebar_menu_animation',
   sidebarStyle: 'sidebar_style',
   hiddenHomeSections: 'hidden_home_sections',
+  hiddenMediatekaItemIds: 'hidden_mediateka_item_ids',
   homeSectionRestoreOrder: 'home_section_restore_order',
   homeFavoritesSection: 'home_favorites_section',
   homeRecentlyViewedSection: 'home_recently_viewed_section',
@@ -184,6 +186,10 @@ function getDefaultSettingEntries(): Array<{ key: string; value: string }> {
     {
       key: SETTING_KEYS.hiddenHomeSections,
       value: JSON.stringify(DEFAULT_SETTINGS.hiddenHomeSections),
+    },
+    {
+      key: SETTING_KEYS.hiddenMediatekaItemIds,
+      value: JSON.stringify(DEFAULT_SETTINGS.hiddenMediatekaItemIds),
     },
     {
       key: SETTING_KEYS.homeSectionRestoreOrder,
@@ -385,6 +391,27 @@ function parseHomeSectionRestoreOrder(value: string | undefined): AppSettings['h
   }
 }
 
+const MEDIATEKA_ITEM_IDS = new Set(['movie', 'serial', 'anime', 'multfilm', 'multserial']);
+
+function parseHiddenMediatekaItemIds(value: string | undefined): AppSettings['hiddenMediatekaItemIds'] {
+  if (!value) {
+    return DEFAULT_SETTINGS.hiddenMediatekaItemIds;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) {
+      return DEFAULT_SETTINGS.hiddenMediatekaItemIds;
+    }
+
+    return parsed.filter(
+      (item): item is string => typeof item === 'string' && MEDIATEKA_ITEM_IDS.has(item),
+    );
+  } catch {
+    return DEFAULT_SETTINGS.hiddenMediatekaItemIds;
+  }
+}
+
 function parseHeroSourceSectionIds(value: string | undefined): AppSettings['heroSourceSectionIds'] {
   if (!value) {
     return DEFAULT_SETTINGS.heroSourceSectionIds;
@@ -486,6 +513,7 @@ function parseSettings(database: Database.Database): AppSettings {
   const sidebarMenuAnimationRaw = readSetting(database, SETTING_KEYS.sidebarMenuAnimation);
   const sidebarStyleRaw = readSetting(database, SETTING_KEYS.sidebarStyle);
   const hiddenHomeSectionsRaw = readSetting(database, SETTING_KEYS.hiddenHomeSections);
+  const hiddenMediatekaItemIdsRaw = readSetting(database, SETTING_KEYS.hiddenMediatekaItemIds);
   const homeSectionRestoreOrderRaw = readSetting(database, SETTING_KEYS.homeSectionRestoreOrder);
   const homeFavoritesSectionRaw = readSetting(database, SETTING_KEYS.homeFavoritesSection);
   const homeRecentlyViewedSectionRaw = readSetting(database, SETTING_KEYS.homeRecentlyViewedSection);
@@ -512,6 +540,7 @@ function parseSettings(database: Database.Database): AppSettings {
     sidebarMenuAnimation: normalizeSidebarMenuAnimation(sidebarMenuAnimationRaw),
     sidebarStyle: normalizeSidebarStyle(sidebarStyleRaw),
     hiddenHomeSections: parseHiddenHomeSections(hiddenHomeSectionsRaw),
+    hiddenMediatekaItemIds: parseHiddenMediatekaItemIds(hiddenMediatekaItemIdsRaw),
     homeSectionRestoreOrder: parseHomeSectionRestoreOrder(homeSectionRestoreOrderRaw),
     homeFavoritesSection: normalizeHomeFavoritesSection(homeFavoritesSectionRaw),
     homeRecentlyViewedSection: normalizeHomeRecentlyViewedSection(homeRecentlyViewedSectionRaw),
@@ -632,6 +661,17 @@ export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
     upsert.run({
       key: SETTING_KEYS.hiddenHomeSections,
       value: JSON.stringify(normalizeHiddenHomeSectionsArray(patch.hiddenHomeSections)),
+    });
+  }
+
+  if (patch.hiddenMediatekaItemIds !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.hiddenMediatekaItemIds,
+      value: JSON.stringify(
+        patch.hiddenMediatekaItemIds.filter(
+          (item): item is string => typeof item === 'string' && MEDIATEKA_ITEM_IDS.has(item),
+        ),
+      ),
     });
   }
 
