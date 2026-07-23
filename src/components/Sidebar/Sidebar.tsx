@@ -35,14 +35,14 @@ interface SidebarProps {
 }
 
 const navItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
-  { id: 'home', label: 'Главная', icon: <HomeIcon size={24} /> },
-  { id: 'browse', label: 'Каталог', icon: <GridIcon size={24} /> },
-  { id: 'compilations', label: 'Подборки', icon: <CompilationsIcon size={24} /> },
-  { id: 'library', label: 'Избранное', icon: <FavoritesIcon size={24} /> },
-  { id: 'watched', label: 'Просмотренное', icon: <EyeIcon size={24} /> },
-  { id: 'search', label: 'Поиск', icon: <SearchIcon size={24} /> },
-  { id: 'plugins', label: 'Плагины', icon: <PuzzleIcon size={24} /> },
-  { id: 'settings', label: 'Настройки', icon: <SettingsIcon size={24} /> },
+  { id: 'home', label: 'Главная', icon: <HomeIcon size={20} /> },
+  { id: 'browse', label: 'Каталог', icon: <GridIcon size={20} /> },
+  { id: 'compilations', label: 'Подборки', icon: <CompilationsIcon size={20} /> },
+  { id: 'library', label: 'Избранное', icon: <FavoritesIcon size={20} /> },
+  { id: 'watched', label: 'Просмотренное', icon: <EyeIcon size={20} /> },
+  { id: 'search', label: 'Поиск', icon: <SearchIcon size={20} /> },
+  { id: 'plugins', label: 'Плагины', icon: <PuzzleIcon size={20} /> },
+  { id: 'settings', label: 'Настройки', icon: <SettingsIcon size={20} /> },
 ];
 
 export function Sidebar({

@@ -256,13 +256,13 @@
       (var(--hero-eyebrow-font-size) * var(--hero-eyebrow-line-height) / 2) +
       var(--app-titlebar-height)
   );
-  --sidebar-nav-surface-pad-y: 9px;
+  --sidebar-nav-surface-pad-y: 7px;
   --sidebar-nav-item-pad-y: 1px;
   --sidebar-nav-align-nudge: -4px;
-  --sidebar-nav-font-size: 1.1875rem;
-  --sidebar-nav-icon-size: 24px;
-  --sidebar-nav-icon-size-collapsed: 26px;
-  --sidebar-nav-icon-gap: 13px;
+  --sidebar-nav-font-size: 0.9375rem;
+  --sidebar-nav-icon-size: 20px;
+  --sidebar-nav-icon-size-collapsed: 22px;
+  --sidebar-nav-icon-gap: 10px;
   --sidebar-liquid-core: color-mix(in srgb, var(--app-accent) 80%, transparent);
   --sidebar-liquid-mid: color-mix(in srgb, var(--app-accent) 50%, transparent);
   --sidebar-liquid-tail: color-mix(in srgb, var(--app-accent-soft) 86%, transparent);
