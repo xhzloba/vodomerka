@@ -6,6 +6,7 @@ import type {
   ThemeCatalog,
 } from '../../../contracts/ipc';
 import {
+  BUILTIN_SIDEBAR_ANIMATION_IDS,
   DEFAULT_SIDEBAR_ANIMATION_ID,
   THEME_PLUGIN_ENGINE,
 } from '../../../contracts/ipc';
@@ -117,8 +118,8 @@ export async function uninstallSidebarAnimationPlugin(
 export async function resolveSidebarMenuBehavior(
   animationId: string,
 ): Promise<string> {
-  if (animationId === DEFAULT_SIDEBAR_ANIMATION_ID) {
-    return DEFAULT_SIDEBAR_ANIMATION_ID;
+  if ((BUILTIN_SIDEBAR_ANIMATION_IDS as readonly string[]).includes(animationId)) {
+    return animationId;
   }
 
   const installed = await getInstalledSidebarAnimation(animationId);

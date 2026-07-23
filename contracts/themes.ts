@@ -46,11 +46,12 @@ export type SidebarAnimationBehavior =
   | 'snake'
   | 'magnetic'
   | 'magnetic-water'
-  | 'edge-pulse';
+  | 'edge-pulse'
+  | 'highlight';
 
 export const DEFAULT_SIDEBAR_ANIMATION_ID = 'magnetic-water';
 
-export const BUILTIN_SIDEBAR_ANIMATION_IDS = ['magnetic-water'] as const;
+export const BUILTIN_SIDEBAR_ANIMATION_IDS = ['magnetic-water', 'highlight'] as const;
 
 export type BuiltinSidebarAnimationId = (typeof BUILTIN_SIDEBAR_ANIMATION_IDS)[number];
 

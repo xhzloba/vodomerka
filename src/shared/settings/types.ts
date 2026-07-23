@@ -270,6 +270,11 @@ export const SIDEBAR_MENU_ANIMATION_OPTIONS: Array<{
   hint: string;
 }> = [
   {
+    id: 'highlight',
+    label: 'Выделение',
+    hint: 'Мягкая подложка активного пункта, как в боковом меню Apple',
+  },
+  {
     id: 'magnetic-water',
     label: 'Водяной магнит',
     hint: 'Жидкая подложка с пузырьками, плавно переезжает между пунктами',

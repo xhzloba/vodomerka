@@ -24,6 +24,7 @@ const SIDEBAR_BEHAVIORS: SidebarAnimationBehavior[] = [
   'magnetic',
   'magnetic-water',
   'edge-pulse',
+  'highlight',
 ];
 
 function getSidebarPluginsRoot(): string {

@@ -897,6 +897,41 @@
   color: var(--app-text);
 }
 
+/* Simple Apple-like selection pill — works on all themes */
+.sidebar.sidebar--menu-highlight .sidebar__item-surface {
+  border-radius: 10px;
+}
+
+.sidebar.sidebar--menu-highlight .sidebar__item:hover:not(.sidebar__item--active) .sidebar__item-surface,
+.sidebar.sidebar--menu-highlight .sidebar__item:focus-visible:not(.sidebar__item--active) .sidebar__item-surface {
+  background: color-mix(in srgb, var(--app-text) 7%, transparent);
+  color: var(--app-text);
+}
+
+.sidebar.sidebar--menu-highlight .sidebar__item--active .sidebar__item-surface {
+  background: color-mix(in srgb, var(--app-text) 14%, transparent);
+  color: var(--app-text);
+  box-shadow: none;
+}
+
+.sidebar.sidebar--menu-highlight .sidebar__item--active .sidebar__item-icon {
+  color: var(--app-accent);
+  opacity: 1;
+}
+
+.sidebar.sidebar--menu-highlight .sidebar__item--active .sidebar__item-icon svg {
+  filter: none;
+}
+
+[data-color-scheme='light'] .sidebar.sidebar--menu-highlight .sidebar__item--active .sidebar__item-surface {
+  background: color-mix(in srgb, var(--app-text) 9%, transparent);
+}
+
+[data-color-scheme='light'] .sidebar.sidebar--menu-highlight .sidebar__item:hover:not(.sidebar__item--active) .sidebar__item-surface,
+[data-color-scheme='light'] .sidebar.sidebar--menu-highlight .sidebar__item:focus-visible:not(.sidebar__item--active) .sidebar__item-surface {
+  background: color-mix(in srgb, var(--app-text) 5%, transparent);
+}
+
 .sidebar__window-edge-pulse {
   position: absolute;
   top: 0;
