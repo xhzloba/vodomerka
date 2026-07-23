@@ -10,7 +10,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-  padding: var(--app-page-top) 32px 18px;
+  padding: var(--app-page-top) 28px 18px 18px;
   flex-shrink: 0;
 }
 
@@ -32,7 +32,7 @@
 .plugins-view__content {
   flex: 1;
   min-height: 0;
-  padding: 4px 32px 40px;
+  padding: 4px 28px 40px 18px;
   display: flex;
   flex-direction: column;
   gap: 36px;
@@ -358,7 +358,8 @@
 @media (max-width: 720px) {
   .plugins-view__header,
   .plugins-view__content {
-    padding-inline: 20px;
+    padding-left: 18px;
+    padding-right: 20px;
   }
 
   .plugins-view__header {
