@@ -1,6 +1,7 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { getMediaTypeLabel } from '@/shared/domain/media';
+import { useHeroManualSwipe } from '@/shared/hooks/useHeroManualSwipe';
 import { useMediaImage } from '@/shared/hooks/useMediaImage';
 import {
   MediaCoverPlaceholder,
@@ -103,6 +104,7 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
   const [autoSlideItem, setAutoSlideItem] = useState(items[0]);
   const slideQueueRef = useRef<MediaItem[]>([]);
   const slideIndexRef = useRef(0);
+  const heroRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     slideQueueRef.current = createSlideQueue(items);
@@ -137,6 +139,26 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
 
   const item = autoSlide ? autoSlideItem : (items[activeIndex] ?? items[0]);
   const showSlideDots = !autoSlide && items.length > 1;
+  const manualSwipeEnabled = showSlideDots;
+
+  const handleManualSwipe = useCallback(
+    (direction: 1 | -1) => {
+      setActiveIndex((current) => {
+        const total = items.length;
+        if (total <= 1) {
+          return current;
+        }
+
+        return (current + direction + total) % total;
+      });
+    },
+    [items.length],
+  );
+
+  useHeroManualSwipe(heroRef, {
+    enabled: manualSwipeEnabled,
+    onSwipe: handleManualSwipe,
+  });
 
   const metaParts = buildMetaParts(item);
   const { src: heroSrc, failed: heroImageFailed, ready: heroReady, loading, onError } = useMediaImage({
@@ -155,7 +177,10 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
   const showHeroImage = Boolean(heroSrc) && !heroImageFailed && heroReady;
 
   return (
-    <section className="hero">
+    <section
+      ref={heroRef}
+      className={`hero${manualSwipeEnabled ? ' hero--swipeable' : ''}`}
+    >
       <div className="hero__backdrop" aria-hidden="true">
         <div className="hero__image-panel">
           {isHeroLoading ? <MediaCoverPlaceholder className="hero__cover-placeholder" fill /> : null}

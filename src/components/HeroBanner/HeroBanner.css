@@ -8,6 +8,20 @@
   background: transparent;
 }
 
+.hero--swipeable {
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.hero--swipeable.hero--dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.hero--swipeable.hero--dragging .hero__btn {
+  pointer-events: none;
+}
+
 .hero__backdrop {
   position: absolute;
   inset: 0;

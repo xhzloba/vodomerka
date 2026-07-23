@@ -42,6 +42,11 @@
   left: calc(var(--app-sidebar-width) + 18px);
 }
 
+/* Manual slide dots: center on visible main, not under the expanded Apple rail */
+.app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed) .home-view .hero__dots {
+  left: calc(50% + (var(--app-sidebar-width) / 2));
+}
+
 .app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed) .home-view__content .content-row {
   padding-left: 0;
 }
