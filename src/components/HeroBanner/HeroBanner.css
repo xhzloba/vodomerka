@@ -70,6 +70,7 @@
   max-height: calc(100% - var(--hero-metadata-top) - 24px);
   z-index: 2;
   overflow: visible;
+  font-family: var(--font-system);
 }
 
 .hero__content--enter {
@@ -95,7 +96,7 @@
   align-items: flex-end;
   width: 100%;
   height: var(--hero-brand-height);
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
 
 .hero__meta {
@@ -104,11 +105,12 @@
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  margin: 0 0 14px;
+  margin: 0 0 12px;
+  font-family: var(--font-system);
   font-size: var(--hero-eyebrow-font-size);
-  font-weight: 500;
+  font-weight: 510;
   line-height: var(--hero-eyebrow-line-height);
-  letter-spacing: 0.02em;
+  letter-spacing: -0.022em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -123,9 +125,10 @@
   position: relative;
   z-index: 4;
   width: 100%;
-  font-size: clamp(2rem, 4.2vw, 3rem);
+  font-family: var(--font-system);
+  font-size: clamp(1.7rem, 3.5vw, 2.45rem);
   font-weight: 600;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.022em;
   line-height: 1.08;
   margin: 0;
   white-space: nowrap;
@@ -193,7 +196,7 @@
   z-index: 4;
   display: block;
   width: auto;
-  max-width: min(100%, 420px);
+  max-width: min(100%, 340px);
   height: auto;
   max-height: 100%;
   margin: 0;
@@ -207,9 +210,11 @@
   position: relative;
   z-index: 3;
   margin-bottom: 24px;
-  font-size: 1.1875rem;
+  font-family: var(--font-system);
+  font-size: 1.0625rem;
   font-weight: 400;
-  line-height: 1.55;
+  letter-spacing: -0.015em;
+  line-height: 1.5;
   color: var(--hero-description-color);
   opacity: var(--hero-description-opacity);
   filter: var(--hero-description-filter);

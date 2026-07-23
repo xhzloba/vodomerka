@@ -248,9 +248,9 @@
   --sidebar-primary-nav-center-y: calc(
     var(--app-section-title-top) + var(--sidebar-nav-align-nudge) + (var(--sidebar-nav-icon-size) / 2)
   );
-  --hero-eyebrow-font-size: 1.0625rem;
-  --hero-eyebrow-line-height: 1.35;
-  --hero-brand-height: clamp(56px, 9.5vw, 96px);
+  --hero-eyebrow-font-size: 0.9375rem;
+  --hero-eyebrow-line-height: 1.3;
+  --hero-brand-height: clamp(48px, 8vw, 80px);
   --hero-metadata-top: calc(
     var(--sidebar-primary-nav-center-y) -
       (var(--hero-eyebrow-font-size) * var(--hero-eyebrow-line-height) / 2) +
