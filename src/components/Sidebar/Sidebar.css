@@ -172,15 +172,15 @@
   height: 18px;
   flex-shrink: 0;
   border-radius: 5px;
-  border: 1px solid color-mix(in srgb, var(--app-text) 22%, transparent);
-  background: color-mix(in srgb, var(--app-text) 8%, transparent);
+  border: 1px solid var(--ui-checkbox-border);
+  background: var(--ui-checkbox-bg);
   color: #fff;
   box-sizing: border-box;
 }
 
 .sidebar__mediateka-check--on {
   border-color: transparent;
-  background: #0a84ff;
+  background: var(--ui-control-accent);
 }
 
 .sidebar__mediateka-edit-icon {
@@ -207,12 +207,12 @@
 }
 
 [data-color-scheme='light'] .sidebar__mediateka-check {
-  border-color: color-mix(in srgb, var(--app-text) 18%, transparent);
-  background: color-mix(in srgb, var(--app-text) 5%, transparent);
+  border-color: var(--ui-checkbox-border);
+  background: var(--ui-checkbox-bg);
 }
 
 [data-color-scheme='light'] .sidebar__mediateka-check--on {
-  background: #007aff;
+  background: var(--ui-control-accent);
   color: #fff;
 }
 

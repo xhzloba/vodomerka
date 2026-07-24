@@ -1,5 +1,9 @@
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { CATALOG_ROW_GAP_OPTIONS } from '@/shared/settings/types';
+import { SettingsCheckbox } from '@/shared/ui/SettingsControls/SettingsCheckbox';
+import { SettingsGlyph } from '@/shared/ui/SettingsControls/SettingsGlyph';
+import { SettingsSwitch } from '@/shared/ui/SettingsControls/SettingsSwitch';
+import { CoverSpacingIcon, FilmIcon } from '@/shared/ui/icons';
 import '@/components/SettingsView/SettingsView.css';
 import './BrowseSettingsPanels.css';
 
@@ -12,72 +16,63 @@ export function BrowseSettingsPanels({ variant = 'settings' }: BrowseSettingsPan
 
   return (
     <div className={`browse-settings-panels browse-settings-panels--${variant}`}>
-      <section className="settings-panel" aria-labelledby="browse-settings-labels-title">
-        <div className="settings-panel__intro">
-          <h2 id="browse-settings-labels-title" className="settings-panel__title">
-            Подписи к карточкам
-          </h2>
-          <p className="settings-panel__description">
-            Название, год и рейтинг под обложками на главной, в каталоге, в поиске и в подборках.
-          </p>
-        </div>
-
-        <div className="settings-row settings-row--solo">
-          <div className="settings-row__body">
-            <p className="settings-row__label">Показывать подписи</p>
-            <p className="settings-row__hint">Название, год и рейтинг под обложкой</p>
+      <section className="settings-group" aria-labelledby="browse-settings-labels-title">
+        <h2 id="browse-settings-labels-title" className="settings-group__title">
+          Подписи
+        </h2>
+        <div className="settings-panel">
+          <div className="settings-row">
+            <SettingsGlyph tone="blue">
+              <FilmIcon size={15} strokeWidth={1.9} />
+            </SettingsGlyph>
+            <div className="settings-row__body">
+              <p className="settings-row__label">Показывать подписи</p>
+              <p className="settings-row__hint">Название, год и рейтинг под обложкой</p>
+            </div>
+            <SettingsSwitch
+              checked={settings.cardShowInfo}
+              onChange={(checked) => void updateSettings({ cardShowInfo: checked })}
+              aria-label="Показывать подписи"
+            />
           </div>
-
-          <button
-            type="button"
-            className={`settings-toggle ${settings.cardShowInfo ? 'settings-toggle--on' : ''}`}
-            role="switch"
-            aria-checked={settings.cardShowInfo}
-            onClick={() => void updateSettings({ cardShowInfo: !settings.cardShowInfo })}
-          >
-            <span className="settings-toggle__thumb" />
-          </button>
         </div>
       </section>
 
-      <section className="settings-panel" aria-labelledby="browse-settings-gap-title">
-        <div className="settings-panel__intro">
-          <h2 id="browse-settings-gap-title" className="settings-panel__title">
-            Отступы сетки
-          </h2>
-          <p className="settings-panel__description">
-            Расстояние между карточками в каталоге.
-          </p>
-        </div>
+      <section className="settings-group" aria-labelledby="browse-settings-gap-title">
+        <h2 id="browse-settings-gap-title" className="settings-group__title">
+          Отступы сетки
+        </h2>
+        <div className="settings-panel">
+          <div className="settings-choice-list" role="radiogroup" aria-label="Отступы сетки">
+            {CATALOG_ROW_GAP_OPTIONS.map((option) => {
+              const isActive = settings.catalogRowGap === option.id;
 
-        <div
-          className="settings-mode-picker browse-settings-panels__gap-picker"
-          role="radiogroup"
-          aria-label="Отступы сетки"
-        >
-          {CATALOG_ROW_GAP_OPTIONS.map((option) => {
-            const isActive = settings.catalogRowGap === option.id;
-
-            return (
-              <button
-                key={option.id}
-                type="button"
-                role="radio"
-                aria-checked={isActive}
-                className={`settings-mode-picker__option${
-                  isActive ? ' settings-mode-picker__option--active' : ''
-                }`}
-                onClick={() => {
-                  if (!isActive) {
-                    void updateSettings({ catalogRowGap: option.id });
-                  }
-                }}
-              >
-                <span className="settings-mode-picker__label">{option.label}</span>
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  className={`settings-choice${isActive ? ' settings-choice--active' : ''}`}
+                  onClick={() => {
+                    if (!isActive) {
+                      void updateSettings({ catalogRowGap: option.id });
+                    }
+                  }}
+                >
+                  <SettingsGlyph tone="teal">
+                    <CoverSpacingIcon size={15} strokeWidth={1.9} />
+                  </SettingsGlyph>
+                  <span className="settings-choice__body">
+                    <span className="settings-choice__label">{option.label}</span>
+                  </span>
+                  <SettingsCheckbox checked={isActive} decorative />
+                </button>
+              );
+            })}
+          </div>
         </div>
+        <p className="settings-group__footer">Расстояние между карточками в каталоге.</p>
       </section>
     </div>
   );

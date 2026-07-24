@@ -92,6 +92,15 @@
   --ui-sidebar-apple-bg: color-mix(in srgb, var(--app-bg) 34%, transparent);
   --ui-sidebar-apple-border: rgba(255, 255, 255, 0.09);
 
+  /* System Settings controls (switch / checkbox) — same blue */
+  --ui-control-accent: #0a84ff;
+  --ui-control-accent-pressed: #0070e0;
+  --ui-switch-track-off: rgba(120, 120, 128, 0.32);
+  --ui-checkbox-border: color-mix(in srgb, var(--app-text) 22%, transparent);
+  --ui-checkbox-bg: color-mix(in srgb, var(--app-text) 8%, transparent);
+  --settings-group-bg: color-mix(in srgb, #ffffff 7.5%, var(--app-bg));
+  --settings-group-separator: color-mix(in srgb, var(--app-text) 12%, transparent);
+
   /* Segmented control leftovers */
   --ui-segmented-bg: transparent;
   --ui-segmented-border: rgba(255, 255, 255, 0.14);
@@ -280,6 +289,14 @@
   --ui-sidebar-apple-bg: color-mix(in srgb, var(--app-bg) 34%, transparent);
   --ui-sidebar-apple-border: rgba(255, 255, 255, 0.09);
 
+  --ui-control-accent: #0a84ff;
+  --ui-control-accent-pressed: #0070e0;
+  --ui-switch-track-off: rgba(120, 120, 128, 0.32);
+  --ui-checkbox-border: color-mix(in srgb, var(--app-text) 22%, transparent);
+  --ui-checkbox-bg: color-mix(in srgb, var(--app-text) 8%, transparent);
+  --settings-group-bg: color-mix(in srgb, #ffffff 7.5%, var(--app-bg));
+  --settings-group-separator: color-mix(in srgb, var(--app-text) 12%, transparent);
+
   --ui-segmented-bg: transparent;
   --ui-segmented-border: rgba(255, 255, 255, 0.14);
   --ui-segmented-hover-bg: rgba(255, 255, 255, 0.05);
@@ -296,6 +313,14 @@
     transparent
   );
   --ui-sidebar-apple-border: color-mix(in srgb, #252a32 9%, transparent);
+
+  --ui-control-accent: #007aff;
+  --ui-control-accent-pressed: #0066d6;
+  --ui-switch-track-off: rgba(120, 120, 128, 0.2);
+  --ui-checkbox-border: color-mix(in srgb, var(--app-text) 18%, transparent);
+  --ui-checkbox-bg: color-mix(in srgb, var(--app-text) 5%, transparent);
+  --settings-group-bg: #ffffff;
+  --settings-group-separator: color-mix(in srgb, var(--app-text) 10%, transparent);
 
   --ui-segmented-bg: color-mix(in srgb, var(--app-text) 7%, var(--app-bg));
   --ui-segmented-border: color-mix(in srgb, var(--app-text) 10%, transparent);

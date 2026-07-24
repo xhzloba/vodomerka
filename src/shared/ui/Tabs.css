@@ -82,6 +82,15 @@
   background: var(--ui-segmented-bg);
 }
 
+.settings-view__header .ui-tabs--segmented {
+  background: var(--ui-segmented-bg);
+}
+
+.settings-view__header .ui-tabs--segmented .ui-tabs__tab {
+  padding: 6px 12px;
+  font-size: 0.875rem;
+}
+
 .ui-tabs--segmented .ui-tabs__tab {
   padding: 7px 14px;
   border-radius: 9px;

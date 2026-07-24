@@ -11,7 +11,19 @@ import { useWatched } from '@/shared/domain/WatchedContext';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import { playDeleteSound } from '@/shared/audio/uiSounds';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog/ConfirmDialog';
-import { TrashIcon } from '@/shared/ui/icons';
+import { SettingsCheckbox } from '@/shared/ui/SettingsControls/SettingsCheckbox';
+import { SettingsGlyph } from '@/shared/ui/SettingsControls/SettingsGlyph';
+import { SettingsSwitch } from '@/shared/ui/SettingsControls/SettingsSwitch';
+import {
+  CoverSpacingIcon,
+  FilmIcon,
+  GridIcon,
+  InfoIcon,
+  LayersIcon,
+  PuzzleIcon,
+  TrashIcon,
+  WatchingIcon,
+} from '@/shared/ui/icons';
 import { APP_THEME_OPTIONS } from '@/shared/settings/themes';
 import {
   POSTER_SIZE_OPTIONS,
@@ -194,106 +206,112 @@ export function SettingsView() {
     <div className="settings-view">
       <header className="settings-view__header">
         <h1 className="settings-view__title">Настройки</h1>
+        <p className="settings-view__subtitle">Оформление, главная, интерфейс и данные приложения</p>
 
         <Tabs
           items={[...SETTINGS_TABS]}
           activeId={activeTab}
           onChange={(id) => setActiveTab(id as SettingsTabId)}
           ariaLabel="Разделы настроек"
-          variant="settings"
+          variant="segmented"
         />
       </header>
 
       <div ref={scrollRef} className="settings-view__content scroll-overlay">
         {activeTab === 'appearance' ? (
           <div className="settings-panels-grid">
-            <section
-              className="settings-panel settings-panel--full"
-              aria-labelledby="settings-appearance-title"
-            >
-            <div className="settings-panel__intro">
-              <h2 id="settings-appearance-title" className="settings-panel__title">
-                Тема оформления
+            <section className="settings-group" aria-labelledby="settings-appearance-title">
+              <h2 id="settings-appearance-title" className="settings-group__title">
+                Тема
               </h2>
-              <p className="settings-panel__description">
-                Встроенная тема — Обсидиан. Остальные ставятся в разделе «Плагины» и появляются
-                здесь после установки.
+              <div className="settings-panel">
+                <div className="settings-theme-grid" role="radiogroup" aria-label="Тема оформления">
+                  {APP_THEME_OPTIONS.map((option) => {
+                    const isActive = settings.theme === option.id;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isActive}
+                        className={`settings-theme-card${
+                          isActive ? ' settings-theme-card--active' : ''
+                        }`}
+                        onClick={() => {
+                          if (!isActive) {
+                            void updateSettings({ theme: option.id });
+                          }
+                        }}
+                      >
+                        <span className="settings-theme-card__preview" aria-hidden="true">
+                          <span
+                            className="settings-theme-card__swatch settings-theme-card__swatch--bg"
+                            style={{ background: option.preview.bg }}
+                          />
+                          <span
+                            className="settings-theme-card__swatch settings-theme-card__swatch--accent"
+                            style={{ background: option.preview.accent }}
+                          />
+                        </span>
+                        <span className="settings-theme-card__body">
+                          <span className="settings-theme-card__label">{option.label}</span>
+                          <span className="settings-theme-card__description">
+                            {option.description}
+                          </span>
+                        </span>
+                        <span className="settings-theme-card__check">
+                          <SettingsCheckbox checked={isActive} decorative />
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  {installedThemes.map((theme) => {
+                    const isActive = settings.theme === theme.id;
+
+                    return (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isActive}
+                        className={`settings-theme-card${
+                          isActive ? ' settings-theme-card--active' : ''
+                        }`}
+                        onClick={() => {
+                          if (!isActive) {
+                            void updateSettings({ theme: theme.id });
+                          }
+                        }}
+                      >
+                        <span className="settings-theme-card__preview" aria-hidden="true">
+                          <span
+                            className="settings-theme-card__swatch settings-theme-card__swatch--bg"
+                            style={{ background: theme.preview.bg }}
+                          />
+                          <span
+                            className="settings-theme-card__swatch settings-theme-card__swatch--accent"
+                            style={{ background: theme.preview.accent }}
+                          />
+                        </span>
+                        <span className="settings-theme-card__body">
+                          <span className="settings-theme-card__label">{theme.name}</span>
+                          <span className="settings-theme-card__description">
+                            {theme.description}
+                          </span>
+                        </span>
+                        <span className="settings-theme-card__check">
+                          <SettingsCheckbox checked={isActive} decorative />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <p className="settings-group__footer">
+                Встроенная тема — Обсидиан. Остальные ставятся в разделе «Плагины».
               </p>
-            </div>
-
-            <div className="settings-theme-grid" role="radiogroup" aria-label="Тема оформления">
-              {APP_THEME_OPTIONS.map((option) => {
-                const isActive = settings.theme === option.id;
-
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={isActive}
-                    className={`settings-theme-card${
-                      isActive ? ' settings-theme-card--active' : ''
-                    }`}
-                    onClick={() => {
-                      if (!isActive) {
-                        void updateSettings({ theme: option.id });
-                      }
-                    }}
-                  >
-                    <span className="settings-theme-card__preview" aria-hidden="true">
-                      <span
-                        className="settings-theme-card__swatch settings-theme-card__swatch--bg"
-                        style={{ background: option.preview.bg }}
-                      />
-                      <span
-                        className="settings-theme-card__swatch settings-theme-card__swatch--accent"
-                        style={{ background: option.preview.accent }}
-                      />
-                    </span>
-                    <span className="settings-theme-card__body">
-                      <span className="settings-theme-card__label">{option.label}</span>
-                      <span className="settings-theme-card__description">{option.description}</span>
-                    </span>
-                  </button>
-                );
-              })}
-
-              {installedThemes.map((theme) => {
-                const isActive = settings.theme === theme.id;
-
-                return (
-                  <button
-                    key={theme.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={isActive}
-                    className={`settings-theme-card${
-                      isActive ? ' settings-theme-card--active' : ''
-                    }`}
-                    onClick={() => {
-                      if (!isActive) {
-                        void updateSettings({ theme: theme.id });
-                      }
-                    }}
-                  >
-                    <span className="settings-theme-card__preview" aria-hidden="true">
-                      <span
-                        className="settings-theme-card__swatch settings-theme-card__swatch--bg"
-                        style={{ background: theme.preview.bg }}
-                      />
-                      <span
-                        className="settings-theme-card__swatch settings-theme-card__swatch--accent"
-                        style={{ background: theme.preview.accent }}
-                      />
-                    </span>
-                    <span className="settings-theme-card__body">
-                      <span className="settings-theme-card__label">{theme.name}</span>
-                      <span className="settings-theme-card__description">{theme.description}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
             </section>
           </div>
         ) : null}
@@ -306,270 +324,266 @@ export function SettingsView() {
 
         {activeTab === 'interface' ? (
           <div className="settings-panels-grid">
-            <div className="settings-panels-stack">
-              <section className="settings-panel" aria-labelledby="settings-sidebar-style-title">
-                <div className="settings-panel__intro">
-                  <h2 id="settings-sidebar-style-title" className="settings-panel__title">
-                    Стиль бокового меню
-                  </h2>
-                  <p className="settings-panel__description">
-                    Оформление панели Главная / Каталог / … слева.
-                  </p>
-                </div>
+            <section className="settings-group" aria-labelledby="settings-sidebar-style-title">
+              <h2 id="settings-sidebar-style-title" className="settings-group__title">
+                Боковое меню
+              </h2>
+              <div className="settings-panel">
+                <div
+                  className="settings-choice-list"
+                  role="radiogroup"
+                  aria-label="Стиль бокового меню"
+                >
+                  {SIDEBAR_STYLE_OPTIONS.map((option) => {
+                    const isActive = settings.sidebarStyle === option.id;
 
-                <div className="settings-mode-picker" role="radiogroup" aria-label="Стиль бокового меню">
-                  {SIDEBAR_STYLE_OPTIONS.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={settings.sidebarStyle === option.id}
-                      className={`settings-mode-picker__option${
-                        settings.sidebarStyle === option.id
-                          ? ' settings-mode-picker__option--active'
-                          : ''
-                      }`}
-                      onClick={() => void updateSettings({ sidebarStyle: option.id })}
-                    >
-                      <span className="settings-mode-picker__label">{option.label}</span>
-                      <span className="settings-mode-picker__hint">{option.hint}</span>
-                    </button>
-                  ))}
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isActive}
+                        className={`settings-choice${isActive ? ' settings-choice--active' : ''}`}
+                        onClick={() => void updateSettings({ sidebarStyle: option.id })}
+                      >
+                        <SettingsGlyph tone={option.id === 'apple' ? 'blue' : 'gray'}>
+                          {option.id === 'apple' ? (
+                            <LayersIcon size={15} strokeWidth={1.9} />
+                          ) : (
+                            <GridIcon size={15} strokeWidth={1.9} />
+                          )}
+                        </SettingsGlyph>
+                        <span className="settings-choice__body">
+                          <span className="settings-choice__label">{option.label}</span>
+                          <span className="settings-choice__hint">{option.hint}</span>
+                        </span>
+                        <SettingsCheckbox checked={isActive} decorative />
+                      </button>
+                    );
+                  })}
                 </div>
-              </section>
+              </div>
+              <p className="settings-group__footer">
+                Оформление панели Главная / Каталог / … слева.
+              </p>
+            </section>
 
-              <section className="settings-panel" aria-labelledby="settings-poster-size-title">
-                <div className="settings-panel__intro">
-                  <h2 id="settings-poster-size-title" className="settings-panel__title">
-                    Размер постеров
-                  </h2>
-                  <p className="settings-panel__description">
-                    Главная, каталог, подборки, избранное и просмотренное.
-                  </p>
+            <section className="settings-group" aria-labelledby="settings-poster-size-title">
+              <h2 id="settings-poster-size-title" className="settings-group__title">
+                Размер постеров
+              </h2>
+              <div className="settings-panel">
+                <div className="settings-choice-list" role="radiogroup" aria-label="Размер постеров">
+                  {POSTER_SIZE_OPTIONS.map((option) => {
+                    const isActive = settings.posterSize === option.id;
+                    const tone =
+                      option.id === 'small' ? 'teal' : option.id === 'large' ? 'indigo' : 'blue';
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isActive}
+                        className={`settings-choice${isActive ? ' settings-choice--active' : ''}`}
+                        onClick={() => void updateSettings({ posterSize: option.id })}
+                      >
+                        <SettingsGlyph tone={tone}>
+                          <CoverSpacingIcon size={15} strokeWidth={1.9} />
+                        </SettingsGlyph>
+                        <span className="settings-choice__body">
+                          <span className="settings-choice__label">{option.label}</span>
+                          <span className="settings-choice__hint">{option.hint}</span>
+                        </span>
+                        <SettingsCheckbox checked={isActive} decorative />
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
+              <p className="settings-group__footer">
+                Главная, каталог, подборки, избранное и просмотренное.
+              </p>
+            </section>
 
-                <div className="settings-mode-picker" role="radiogroup" aria-label="Размер постеров">
-                  {POSTER_SIZE_OPTIONS.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={settings.posterSize === option.id}
-                      className={`settings-mode-picker__option${
-                        settings.posterSize === option.id
-                          ? ' settings-mode-picker__option--active'
-                          : ''
-                      }`}
-                      onClick={() => void updateSettings({ posterSize: option.id })}
-                    >
-                      <span className="settings-mode-picker__label">{option.label}</span>
-                      <span className="settings-mode-picker__hint">{option.hint}</span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              <section className="settings-panel" aria-labelledby="settings-card-labels-title">
-                <div className="settings-panel__intro">
-                  <h2 id="settings-card-labels-title" className="settings-panel__title">
-                    Подписи к карточкам
-                  </h2>
-                  <p className="settings-panel__description">
-                    Название, год и рейтинг под обложками на главной, в каталоге, в поиске и в
-                    подборках.
-                  </p>
-                </div>
-
-                <div className="settings-row settings-row--solo">
+            <section className="settings-group" aria-labelledby="settings-display-title">
+              <h2 id="settings-display-title" className="settings-group__title">
+                Отображение
+              </h2>
+              <div className="settings-panel">
+                <div className="settings-row">
+                  <SettingsGlyph tone="blue">
+                    <FilmIcon size={15} strokeWidth={1.9} />
+                  </SettingsGlyph>
                   <div className="settings-row__body">
                     <p className="settings-row__label">Показывать подписи</p>
                     <p className="settings-row__hint">Название, год и рейтинг под обложкой</p>
                   </div>
-
-                  <button
-                    type="button"
-                    className={`settings-toggle ${settings.cardShowInfo ? 'settings-toggle--on' : ''}`}
-                    role="switch"
-                    aria-checked={settings.cardShowInfo}
-                    onClick={() => void updateSettings({ cardShowInfo: !settings.cardShowInfo })}
-                  >
-                    <span className="settings-toggle__thumb" />
-                  </button>
-                </div>
-              </section>
-
-              <section className="settings-panel" aria-labelledby="settings-tips-title">
-                <div className="settings-panel__intro">
-                  <h2 id="settings-tips-title" className="settings-panel__title">
-                    Подсказки
-                  </h2>
-                  <p className="settings-panel__description">
-                    Короткие советы по интерфейсу в виде уведомлений с разной периодичностью.
-                  </p>
+                  <SettingsSwitch
+                    checked={settings.cardShowInfo}
+                    onChange={(checked) => void updateSettings({ cardShowInfo: checked })}
+                    aria-label="Показывать подписи"
+                  />
                 </div>
 
-                <div className="settings-row settings-row--solo">
+                <div className="settings-row">
+                  <SettingsGlyph tone="orange">
+                    <InfoIcon size={15} strokeWidth={1.9} />
+                  </SettingsGlyph>
                   <div className="settings-row__body">
-                    <p className="settings-row__label">Показывать подсказки автоматически</p>
+                    <p className="settings-row__label">Показывать подсказки</p>
                     <p className="settings-row__hint">
-                      Горячие клавиши, скрытие секций и другие возможности приложения
+                      Горячие клавиши, скрытие секций и другие возможности
                     </p>
                   </div>
-
-                  <button
-                    type="button"
-                    className={`settings-toggle ${settings.autoTipsEnabled ? 'settings-toggle--on' : ''}`}
-                    role="switch"
-                    aria-checked={settings.autoTipsEnabled}
-                    onClick={() => void updateSettings({ autoTipsEnabled: !settings.autoTipsEnabled })}
-                  >
-                    <span className="settings-toggle__thumb" />
-                  </button>
+                  <SettingsSwitch
+                    checked={settings.autoTipsEnabled}
+                    onChange={(checked) => void updateSettings({ autoTipsEnabled: checked })}
+                    aria-label="Показывать подсказки автоматически"
+                  />
                 </div>
-              </section>
-            </div>
-
-            <section className="settings-panel" aria-labelledby="settings-sidebar-menu-title">
-              <div className="settings-panel__intro">
-                <h2 id="settings-sidebar-menu-title" className="settings-panel__title">
-                  Анимация бокового меню
-                </h2>
-                <p className="settings-panel__description">
-                  Встроенные варианты — Выделение и Водяной магнит. Остальные анимации ставятся в
-                  «Плагины».
-                </p>
               </div>
+            </section>
 
-              <div className="settings-mode-picker" role="radiogroup" aria-label="Анимация бокового меню">
-                {[
-                  ...SIDEBAR_MENU_ANIMATION_OPTIONS,
-                  ...installedSidebarAnimations.map((item) => ({
-                    id: item.id,
-                    label: item.name,
-                    hint: item.description,
-                  })),
-                ].map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={settings.sidebarMenuAnimation === option.id}
-                    className={`settings-mode-picker__option${
-                      settings.sidebarMenuAnimation === option.id
-                        ? ' settings-mode-picker__option--active'
-                        : ''
-                    }`}
-                    onClick={() => void updateSettings({ sidebarMenuAnimation: option.id })}
-                  >
-                    <span className="settings-mode-picker__label">{option.label}</span>
-                    <span className="settings-mode-picker__hint">{option.hint}</span>
-                  </button>
-                ))}
+            <section className="settings-group" aria-labelledby="settings-sidebar-menu-title">
+              <h2 id="settings-sidebar-menu-title" className="settings-group__title">
+                Анимация меню
+              </h2>
+              <div className="settings-panel">
+                <div
+                  className="settings-choice-list"
+                  role="radiogroup"
+                  aria-label="Анимация бокового меню"
+                >
+                  {[
+                    ...SIDEBAR_MENU_ANIMATION_OPTIONS,
+                    ...installedSidebarAnimations.map((item) => ({
+                      id: item.id,
+                      label: item.name,
+                      hint: item.description,
+                    })),
+                  ].map((option) => {
+                    const isActive = settings.sidebarMenuAnimation === option.id;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isActive}
+                        className={`settings-choice${isActive ? ' settings-choice--active' : ''}`}
+                        onClick={() => void updateSettings({ sidebarMenuAnimation: option.id })}
+                      >
+                        <span className="settings-choice__body">
+                          <span className="settings-choice__label">{option.label}</span>
+                          <span className="settings-choice__hint">{option.hint}</span>
+                        </span>
+                        <SettingsCheckbox checked={isActive} decorative />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+              <p className="settings-group__footer">
+                Встроенные варианты — Выделение и Водяной магнит. Остальные ставятся в «Плагины».
+              </p>
             </section>
           </div>
         ) : null}
 
         {activeTab === 'network' ? (
           <div className="settings-panels-grid">
-            <section className="settings-panel" aria-labelledby="settings-api-server-title">
-              <div className="settings-panel__intro">
-                <h2 id="settings-api-server-title" className="settings-panel__title">
-                  API-сервер
-                </h2>
-                <p className="settings-panel__description">
-                  Источник каталога и метаданных. После смены сервера данные подгрузятся заново.
-                </p>
-              </div>
+            <section className="settings-group" aria-labelledby="settings-api-server-title">
+              <h2 id="settings-api-server-title" className="settings-group__title">
+                API-сервер
+              </h2>
+              <div className="settings-panel">
+                <div className="settings-choice-list" role="radiogroup" aria-label="API-сервер">
+                  {API_SERVER_OPTIONS.map((option) => {
+                    const status = health[option.id];
+                    const isActive = settings.apiServer === option.id;
 
-              <div className="settings-mode-picker" role="radiogroup" aria-label="API-сервер">
-                {API_SERVER_OPTIONS.map((option) => {
-                  const status = health[option.id];
-                  const isActive = settings.apiServer === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isActive}
+                        className={`settings-choice${isActive ? ' settings-choice--active' : ''}`}
+                        onClick={() => {
+                          if (isActive) {
+                            return;
+                          }
 
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={isActive}
-                      className={`settings-mode-picker__option${
-                        isActive ? ' settings-mode-picker__option--active' : ''
-                      }`}
-                      onClick={() => {
-                        if (isActive) {
-                          return;
-                        }
-
-                        void updateSettings({ apiServer: option.id }).then(() => {
-                          showToast(`Выбран ${option.label}`, {
-                            kind: 'success',
-                            title: 'Сеть',
+                          void updateSettings({ apiServer: option.id }).then(() => {
+                            showToast(`Выбран ${option.label}`, {
+                              kind: 'success',
+                              title: 'Сеть',
+                            });
                           });
-                        });
-                      }}
-                    >
-                      <span className="settings-mode-picker__label">{option.label}</span>
-                      <span
-                        className={`settings-mode-picker__hint${
-                          status === 'ok'
-                            ? ' settings-mode-picker__hint--ok'
-                            : status === 'fail'
-                              ? ' settings-mode-picker__hint--fail'
-                              : ''
-                        }`}
+                        }}
                       >
-                        {apiServerHealthHint(status, option.hint)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                        <span className="settings-choice__body">
+                          <span className="settings-choice__label">{option.label}</span>
+                          <span
+                            className={`settings-choice__hint${
+                              status === 'ok'
+                                ? ' settings-choice__hint--ok'
+                                : status === 'fail'
+                                  ? ' settings-choice__hint--fail'
+                                  : ''
+                            }`}
+                          >
+                            {apiServerHealthHint(status, option.hint)}
+                          </span>
+                        </span>
+                        <SettingsCheckbox checked={isActive} decorative />
+                      </button>
+                    );
+                  })}
+                </div>
 
-              <div className="settings-data-actions">
-                <button
-                  type="button"
-                  className="settings-action-btn"
-                  disabled={isChecking}
-                  onClick={() => void checkApiServers()}
-                >
-                  {isChecking ? 'Проверка…' : 'Проверить доступность'}
-                </button>
+                <div className="settings-data-actions">
+                  <button
+                    type="button"
+                    className="settings-action-btn"
+                    disabled={isChecking}
+                    onClick={() => void checkApiServers()}
+                  >
+                    {isChecking ? 'Проверка…' : 'Проверить доступность'}
+                  </button>
+                </div>
               </div>
+              <p className="settings-group__footer">
+                Источник каталога и метаданных. После смены сервера данные подгрузятся заново.
+              </p>
             </section>
           </div>
         ) : null}
 
         {activeTab === 'sounds' ? (
           <div className="settings-panels-grid">
-            <section className="settings-panel" aria-labelledby="settings-sounds-title">
-              <div className="settings-panel__intro">
-                <h2 id="settings-sounds-title" className="settings-panel__title">
-                  Звуки интерфейса
-                </h2>
-                <p className="settings-panel__description">
-                  Звуковые эффекты при действиях в приложении: очистка данных, подтверждения и другие
-                  UI-события.
-                </p>
-              </div>
-
-              <div className="settings-row settings-row--solo">
-                <div className="settings-row__body">
-                  <p className="settings-row__label">Включить звуки</p>
-                  <p className="settings-row__hint">
-                    Сейчас: навигация, приветствие, подсказки, избранное и просмотренное, очистка данных
-                  </p>
+            <section className="settings-group" aria-labelledby="settings-sounds-title">
+              <h2 id="settings-sounds-title" className="settings-group__title">
+                Звуки
+              </h2>
+              <div className="settings-panel">
+                <div className="settings-row">
+                  <SettingsGlyph tone="pink">
+                    <WatchingIcon size={15} strokeWidth={1.9} />
+                  </SettingsGlyph>
+                  <div className="settings-row__body">
+                    <p className="settings-row__label">Звуки интерфейса</p>
+                    <p className="settings-row__hint">
+                      Навигация, приветствие, подсказки, избранное и просмотренное
+                    </p>
+                  </div>
+                  <SettingsSwitch
+                    checked={settings.uiSoundsEnabled}
+                    onChange={(checked) => void updateSettings({ uiSoundsEnabled: checked })}
+                    aria-label="Включить звуки"
+                  />
                 </div>
-
-                <button
-                  type="button"
-                  className={`settings-toggle ${settings.uiSoundsEnabled ? 'settings-toggle--on' : ''}`}
-                  role="switch"
-                  aria-checked={settings.uiSoundsEnabled}
-                  onClick={() => void updateSettings({ uiSoundsEnabled: !settings.uiSoundsEnabled })}
-                >
-                  <span className="settings-toggle__thumb" />
-                </button>
               </div>
             </section>
           </div>
@@ -578,16 +592,11 @@ export function SettingsView() {
         {activeTab === 'data' ? (
           <div className="settings-panels-grid">
             {canBackup ? (
-              <section className="settings-panel" aria-labelledby="settings-backup-title">
-                <div className="settings-panel__intro">
-                  <h2 id="settings-backup-title" className="settings-panel__title">
-                    Резервная копия
-                  </h2>
-                  <p className="settings-panel__description">
-                    Экспорт и импорт файла базы данных: настройки, избранное, просмотренное и история.
-                  </p>
-                </div>
-
+              <section className="settings-group" aria-labelledby="settings-backup-title">
+                <h2 id="settings-backup-title" className="settings-group__title">
+                  Резервная копия
+                </h2>
+                <div className="settings-panel">
                 <div className="settings-data-actions">
                   <button
                     type="button"
@@ -595,6 +604,9 @@ export function SettingsView() {
                     disabled={isExporting || isImporting}
                     onClick={() => void handleExportDatabase()}
                   >
+                    <SettingsGlyph tone="teal">
+                      <LayersIcon size={15} strokeWidth={1.9} />
+                    </SettingsGlyph>
                     {isExporting ? 'Экспорт…' : 'Экспорт базы'}
                   </button>
                   <button
@@ -603,34 +615,39 @@ export function SettingsView() {
                     disabled={isExporting || isImporting}
                     onClick={() => setImportConfirmOpen(true)}
                   >
+                    <SettingsGlyph tone="blue">
+                      <PuzzleIcon size={15} strokeWidth={1.9} />
+                    </SettingsGlyph>
                     Импорт базы
                   </button>
                 </div>
+                </div>
+                <p className="settings-group__footer">
+                  Настройки, избранное, просмотренное и история в одном файле.
+                </p>
               </section>
             ) : null}
 
-            <section
-              className="settings-panel settings-panel--danger"
-              aria-labelledby="settings-data-title"
-            >
-              <div className="settings-panel__intro">
-                <h2 id="settings-data-title" className="settings-panel__title">
-                  Данные приложения
-                </h2>
-                <p className="settings-panel__description">
-                  Полный сброс: настройки, избранное, просмотренное, история просмотров и скрытые секции
-                  вернутся к состоянию по умолчанию. База данных будет очищена.
-                </p>
+            <section className="settings-group" aria-labelledby="settings-data-title">
+              <h2 id="settings-data-title" className="settings-group__title">
+                Сброс
+              </h2>
+              <div className="settings-panel settings-panel--danger">
+                <button
+                  type="button"
+                  className="settings-reset-btn"
+                  onClick={() => setResetConfirmOpen(true)}
+                >
+                  <SettingsGlyph tone="red">
+                    <TrashIcon size={15} strokeWidth={1.9} />
+                  </SettingsGlyph>
+                  Сбросить все данные
+                </button>
               </div>
-
-              <button
-                type="button"
-                className="settings-reset-btn"
-                onClick={() => setResetConfirmOpen(true)}
-              >
-                <TrashIcon size={16} strokeWidth={1.75} />
-                Сбросить все данные
-              </button>
+              <p className="settings-group__footer">
+                Настройки, избранное, просмотренное, история и скрытые секции вернутся к состоянию
+                по умолчанию.
+              </p>
             </section>
           </div>
         ) : null}

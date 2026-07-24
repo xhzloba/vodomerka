@@ -590,7 +590,7 @@
 /*
  * Apple sidebar (expanded only): favorites/watched bleed under the panel.
  * Skip compilations (same .library-view class). Collapsed: no bleed over icons.
- * Use a flex spacer (not padding) so cards can actually scroll into the under-menu zone.
+ * Match home: padding-left on scroll (not ::before) so titles/posters share one inset.
  */
 .app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed) .library-view:not(.compilations-view) {
   margin-left: calc(-1 * var(--app-sidebar-width));
@@ -624,22 +624,10 @@
   .library-view__rows
   .content-row__scroll {
   padding: 8px 0 12px;
-  padding-left: 0;
+  padding-left: calc(var(--app-sidebar-width) + 18px);
   margin-right: 0;
   scroll-padding-left: calc(var(--app-sidebar-width) + 18px);
   scroll-padding-right: 0;
-}
-
-.app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed)
-  .library-view:not(.compilations-view)
-  .library-view__rows
-  .content-row__scroll::before {
-  content: '';
-  flex: 0 0 calc(var(--app-sidebar-width) + 18px);
-  width: calc(var(--app-sidebar-width) + 18px);
-  height: 1px;
-  pointer-events: none;
-  scroll-snap-align: none;
 }
 
 .app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed)
