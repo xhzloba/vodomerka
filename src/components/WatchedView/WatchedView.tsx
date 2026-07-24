@@ -51,14 +51,13 @@ export function WatchedView({ onMediaSelect, isActive = true }: WatchedViewProps
         emptyText="Отмечайте фильмы и сериалы в деталке — они появятся здесь"
         isActive={isActive}
       >
-        <ContentRow title="ВСЕ" items={watched} onMediaSelect={onMediaSelect} edgeFade />
+        <ContentRow title="ВСЕ" items={watched} onMediaSelect={onMediaSelect} />
         {movies.length > 0 ? (
           <ContentRow
             title="Фильмы"
             titleCount={movies.length}
             items={movies}
             onMediaSelect={onMediaSelect}
-            edgeFade
           />
         ) : null}
         {serials.length > 0 ? (
@@ -67,7 +66,6 @@ export function WatchedView({ onMediaSelect, isActive = true }: WatchedViewProps
             titleCount={serials.length}
             items={serials}
             onMediaSelect={onMediaSelect}
-            edgeFade
           />
         ) : null}
       </LibraryCollectionView>
