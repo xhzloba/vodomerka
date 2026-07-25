@@ -10,7 +10,6 @@ import { BrowseView } from '@/components/BrowseView/BrowseView';
 import { CompilationsView } from '@/components/CompilationsView/CompilationsView';
 import { HomeView } from '@/components/HomeView/HomeView';
 import { LibraryView } from '@/components/LibraryView/LibraryView';
-import { WatchedView } from '@/components/WatchedView/WatchedView';
 import { MediaDetail } from '@/components/MediaDetail/MediaDetail';
 import { SearchView } from '@/components/SearchView/SearchView';
 import { SearchOverlay } from '@/components/SearchView/SearchOverlay';
@@ -341,9 +340,9 @@ export function MainAppShell() {
         <main className="app__main">
           <div
             className={`app__view-layer${
-              activeNav === 'library' || activeNav === 'watched' ? ' app__view-layer--hidden' : ''
+              activeNav === 'library' ? ' app__view-layer--hidden' : ''
             }`}
-            aria-hidden={activeNav === 'library' || activeNav === 'watched'}
+            aria-hidden={activeNav === 'library'}
           >
             {renderPrimaryView()}
           </div>
@@ -355,17 +354,6 @@ export function MainAppShell() {
           >
             <LibraryView
               isActive={activeNav === 'library'}
-              onMediaSelect={handleMediaSelect}
-            />
-          </div>
-          <div
-            className={`app__view-layer${
-              activeNav === 'watched' ? '' : ' app__view-layer--hidden'
-            }`}
-            aria-hidden={activeNav !== 'watched'}
-          >
-            <WatchedView
-              isActive={activeNav === 'watched'}
               onMediaSelect={handleMediaSelect}
             />
           </div>

@@ -18,6 +18,20 @@
   padding: 0 0 28px;
 }
 
+.library-view:has(.library-view__scroll) {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.library-view__scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  padding: 0 0 28px;
+}
+
 .browse-view__header {
   position: relative;
   z-index: 2;
@@ -146,14 +160,42 @@
 }
 
 .library-view__header {
+  position: relative;
+  z-index: 2;
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 12px;
   flex-shrink: 0;
-  height: calc(var(--app-page-top) + var(--app-section-header-size));
+  min-height: calc(var(--app-page-top) + var(--app-section-header-size));
+  height: auto;
   margin-bottom: var(--library-header-bottom-gap);
   padding: var(--app-page-top) 18px 0;
   box-sizing: border-box;
+}
+
+.library-view__header-extra {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.library-view__header-extra::-webkit-scrollbar {
+  display: none;
+}
+
+.library-view__header-extra .ui-tabs--segmented {
+  flex-wrap: nowrap;
+  max-width: none;
+}
+
+.library-view__header-extra .ui-tabs--segmented .ui-tabs__tab {
+  padding: 6px 12px;
+  font-size: 0.8125rem;
 }
 
 .library-view__clear-btn {

@@ -11,7 +11,8 @@ import { copyText } from '@/shared/lib/copyText';
 import { HeroRating } from '@/shared/ui/HeroRating/HeroRating';
 import { MediaDescriptionDialog } from '@/shared/ui/MediaDescriptionDialog/MediaDescriptionDialog';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
-import { ClockIcon, CloseIcon, EyeIcon, EyeOffIcon, FavoritesIcon, InfoIcon, PlayIcon } from '@/shared/ui/icons';
+import { ClockIcon, CloseIcon, BanIcon, EyeIcon, FavoritesIcon, InfoIcon, PauseCircleIcon, PlayIcon, WatchingIcon } from '@/shared/ui/icons';
+import { WATCH_STATUS_LABELS, WATCH_STATUSES, type WatchStatus } from '@/shared/domain/watchStatus';
 import '../HeroBanner/HeroBanner.css';
 import './MediaDetail.css';
 
@@ -82,20 +83,25 @@ function renderDetailMetaPart(part: DetailMetaPart) {
 export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaDetailProps) {
   const detailItem = useOverriddenMediaItem(item);
   const { isFavorite, toggleFavorite } = useFavorites();
-  const { isWatched, toggleWatched } = useWatched();
+  const { getStatus, toggleStatus } = useWatched();
   const { trackView } = useRecentlyViewed();
   const { showToast } = useToast();
   const [isPendingFavorite, setIsPendingFavorite] = useState<boolean | null>(null);
-  const [isPendingWatched, setIsPendingWatched] = useState<boolean | null>(null);
+  const [pendingStatus, setPendingStatus] = useState<WatchStatus | 'none' | null>(null);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   const inFavorites = isPendingFavorite ?? isFavorite(detailItem.id);
-  const inWatched = isPendingWatched ?? isWatched(detailItem.id);
+  const watchStatus =
+    pendingStatus === null
+      ? getStatus(detailItem.id)
+      : pendingStatus === 'none'
+        ? null
+        : pendingStatus;
   const isWindow = variant === 'window';
   const metaParts = buildDetailMetaParts(detailItem);
 
   useEffect(() => {
     setIsPendingFavorite(null);
-    setIsPendingWatched(null);
+    setPendingStatus(null);
     setDescriptionOpen(false);
   }, [detailItem.id]);
 
@@ -157,24 +163,29 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
     }
   }, [detailItem, inFavorites, showToast, toggleFavorite]);
 
-  const handleToggleWatched = useCallback(async () => {
-    const nextState = !inWatched;
-    setIsPendingWatched(nextState);
+  const handleToggleStatus = useCallback(
+    async (status: WatchStatus) => {
+      const next = watchStatus === status ? 'none' : status;
+      setPendingStatus(next);
 
-    try {
-      const added = await toggleWatched(detailItem);
-      setIsPendingWatched(added);
-      showToast(
-        added ? `«${detailItem.title}» в просмотренном` : `«${detailItem.title}» убрано из просмотренного`,
-        {
-          kind: added ? 'restore' : 'hide',
-          title: added ? 'Просмотрено' : 'Убрано',
-        },
-      );
-    } catch {
-      setIsPendingWatched(null);
-    }
-  }, [detailItem, inWatched, showToast, toggleWatched]);
+      try {
+        const added = await toggleStatus(detailItem, status);
+        setPendingStatus(added ? status : 'none');
+        showToast(
+          added
+            ? `«${detailItem.title}» → ${WATCH_STATUS_LABELS[status]}`
+            : `«${detailItem.title}» убрано из «${WATCH_STATUS_LABELS[status]}»`,
+          {
+            kind: added ? 'restore' : 'hide',
+            title: added ? WATCH_STATUS_LABELS[status] : 'Убрано',
+          },
+        );
+      } catch {
+        setPendingStatus(null);
+      }
+    },
+    [detailItem, showToast, toggleStatus, watchStatus],
+  );
 
   const metaRow =
     metaParts.length > 0 ? (
@@ -237,7 +248,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
       </button>
       <button
         type="button"
-        className={`media-detail__icon-btn${
+        className={`media-detail__icon-btn media-detail__icon-btn--favorite${
           inFavorites ? ' media-detail__icon-btn--active' : ''
         }`}
         onClick={() => void handleToggleFavorite()}
@@ -247,18 +258,34 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
       >
         <FavoritesIcon size={18} filled={inFavorites} />
       </button>
-      <button
-        type="button"
-        className={`media-detail__icon-btn${
-          inWatched ? ' media-detail__icon-btn--active' : ''
-        }`}
-        onClick={() => void handleToggleWatched()}
-        aria-label={inWatched ? 'Убрать из просмотренного' : 'Отметить как просмотренное'}
-        aria-pressed={inWatched}
-        title={inWatched ? 'Просмотрено' : 'Отметить просмотренным'}
-      >
-        {inWatched ? <EyeOffIcon size={20} solid /> : <EyeIcon size={18} strokeWidth={1.75} />}
-      </button>
+      <div className="media-detail__status-group" role="group" aria-label="Статус просмотра">
+        {WATCH_STATUSES.map((status) => {
+          const active = watchStatus === status;
+          return (
+            <button
+              key={status}
+              type="button"
+              className={`media-detail__icon-btn media-detail__icon-btn--${status}${
+                active ? ' media-detail__icon-btn--active' : ''
+              }`}
+              onClick={() => void handleToggleStatus(status)}
+              aria-label={WATCH_STATUS_LABELS[status]}
+              aria-pressed={active}
+              title={WATCH_STATUS_LABELS[status]}
+            >
+              {status === 'watching' ? (
+                <WatchingIcon size={18} strokeWidth={active ? 2 : 1.75} />
+              ) : status === 'watched' ? (
+                <EyeIcon size={18} strokeWidth={active ? 2 : 1.75} />
+              ) : status === 'postponed' ? (
+                <PauseCircleIcon size={18} strokeWidth={active ? 2 : 1.75} />
+              ) : (
+                <BanIcon size={18} strokeWidth={active ? 2 : 1.75} />
+              )}
+            </button>
+          );
+        })}
+      </div>
       {detailItem.description ? (
         <button
           type="button"

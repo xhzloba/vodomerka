@@ -357,11 +357,90 @@ export function TrendingIcon(props: IconProps) {
   );
 }
 
-export function WatchingIcon(props: IconProps) {
+export function WatchingIcon({ solid = false, ...props }: IconProps) {
+  if (solid) {
+    const { size = 24, className, ...rest } = props;
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        width={size}
+        height={size}
+        fill="currentColor"
+        className={className ? `app-icon app-icon--filled ${className}` : 'app-icon app-icon--filled'}
+        aria-hidden={rest['aria-label'] ? undefined : true}
+        {...rest}
+      >
+        <path
+          fillRule="evenodd"
+          d="M12 5C7.27 5 3.2 7.94 1.5 12c1.7 4.06 5.77 7 10.5 7s8.8-2.94 10.5-7C20.8 7.94 16.73 5 12 5zm0 9.75a2.75 2.75 0 1 0 0-5.5 2.75 2.75 0 0 0 0 5.5z"
+        />
+      </svg>
+    );
+  }
+
   return (
     <StrokeIcon {...props}>
       <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z" />
       <circle cx="12" cy="12" r="2.25" />
+    </StrokeIcon>
+  );
+}
+
+export function PauseCircleIcon({ solid = false, ...props }: IconProps) {
+  if (solid) {
+    const { size = 24, className, ...rest } = props;
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        width={size}
+        height={size}
+        fill="currentColor"
+        className={className ? `app-icon app-icon--filled ${className}` : 'app-icon app-icon--filled'}
+        aria-hidden={rest['aria-label'] ? undefined : true}
+        {...rest}
+      >
+        <path
+          fillRule="evenodd"
+          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM9 8h2.25v8H9V8zm3.75 0H15v8h-2.25V8z"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <StrokeIcon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M10 9v6" />
+      <path d="M14 9v6" />
+    </StrokeIcon>
+  );
+}
+
+export function BanIcon({ solid = false, ...props }: IconProps) {
+  if (solid) {
+    const { size = 24, className, ...rest } = props;
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        width={size}
+        height={size}
+        fill="currentColor"
+        className={className ? `app-icon app-icon--filled ${className}` : 'app-icon app-icon--filled'}
+        aria-hidden={rest['aria-label'] ? undefined : true}
+        {...rest}
+      >
+        <path
+          fillRule="evenodd"
+          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4.93 7.76A7.96 7.96 0 0 0 4 12c0 4.42 3.58 8 8 8 1.54 0 2.98-.44 4.2-1.2L5.76 8.36A7.9 7.9 0 0 0 4.93 7.76zm2.87-2.4L15.64 18.2A7.9 7.9 0 0 0 20 12c0-4.42-3.58-8-8-8-1.54 0-2.98.44-4.2 1.2z"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <StrokeIcon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M6.5 6.5l11 11" />
     </StrokeIcon>
   );
 }

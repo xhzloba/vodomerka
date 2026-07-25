@@ -1,6 +1,7 @@
 export type { IconProps } from './Icon';
 export {
   AnimeIcon,
+  BanIcon,
   BookOpenIcon,
   CartoonIcon,
   CartoonSeriesIcon,
@@ -21,6 +22,7 @@ export {
   HistoryIcon,
   HomeIcon,
   InfoIcon,
+  PauseCircleIcon,
   PlayIcon,
   PlayOverlayIcon,
   SearchIcon,

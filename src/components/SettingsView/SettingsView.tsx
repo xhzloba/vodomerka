@@ -402,7 +402,7 @@ export function SettingsView() {
                 </div>
               </div>
               <p className="settings-group__footer">
-                Главная, каталог, подборки, избранное и просмотренное.
+                Главная, каталог, подборки, избранное и статусы просмотра.
               </p>
             </section>
 
@@ -575,7 +575,7 @@ export function SettingsView() {
                   <div className="settings-row__body">
                     <p className="settings-row__label">Звуки интерфейса</p>
                     <p className="settings-row__hint">
-                      Навигация, приветствие, подсказки, избранное и просмотренное
+                      Навигация, приветствие, подсказки, избранное и статусы просмотра
                     </p>
                   </div>
                   <SettingsSwitch
@@ -623,7 +623,7 @@ export function SettingsView() {
                 </div>
                 </div>
                 <p className="settings-group__footer">
-                  Настройки, избранное, просмотренное и история в одном файле.
+                  Настройки, избранное, статусы просмотра и история в одном файле.
                 </p>
               </section>
             ) : null}
@@ -645,7 +645,7 @@ export function SettingsView() {
                 </button>
               </div>
               <p className="settings-group__footer">
-                Настройки, избранное, просмотренное, история и скрытые секции вернутся к состоянию
+                Настройки, избранное, статусы просмотра, история и скрытые секции вернутся к состоянию
                 по умолчанию.
               </p>
             </section>
@@ -656,7 +656,7 @@ export function SettingsView() {
       <ConfirmDialog
         open={importConfirmOpen}
         title="Импортировать базу?"
-        description="Текущие настройки, избранное, просмотренное и история будут заменены данными из выбранного файла. Это действие нельзя отменить."
+        description="Текущие настройки, избранное, статусы просмотра и история будут заменены данными из выбранного файла. Это действие нельзя отменить."
         confirmLabel="Импортировать"
         cancelLabel="Отмена"
         confirmVariant="neutral"
@@ -672,7 +672,7 @@ export function SettingsView() {
       <ConfirmDialog
         open={resetConfirmOpen}
         title="Сбросить все данные?"
-        description="Настройки, избранное, просмотренное, история просмотров и скрытые секции будут удалены. База данных вернётся к чистому состоянию по умолчанию. Это действие нельзя отменить."
+        description="Настройки, избранное, статусы просмотра, история просмотров и скрытые секции будут удалены. База данных вернётся к чистому состоянию по умолчанию. Это действие нельзя отменить."
         confirmLabel="Сбросить"
         cancelLabel="Отмена"
         confirmVariant="danger"

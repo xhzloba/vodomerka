@@ -16,7 +16,7 @@ import { MediaDescriptionDialog } from '@/shared/ui/MediaDescriptionDialog/Media
 import { HeroRating } from '@/shared/ui/HeroRating/HeroRating';
 import { copyText } from '@/shared/lib/copyText';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
-import { EyeOffIcon, FavoritesIcon, PlayOverlayIcon } from '@/shared/ui/icons';
+import { BanIcon, EyeOffIcon, FavoritesIcon, PauseCircleIcon, PlayOverlayIcon, WatchingIcon } from '@/shared/ui/icons';
 import './MediaCard.css';
 
 interface MediaCardProps {
@@ -39,7 +39,7 @@ export function MediaCard({
 }: MediaCardProps) {
   const { settings } = useAppSettings();
   const { isFavorite, toggleFavorite } = useFavorites();
-  const { isWatched, toggleWatched } = useWatched();
+  const { getStatus, toggleStatus } = useWatched();
   const { beginMediaDrag, updatePointer, releasePointer } = useMediaDrag();
   const { showToast } = useToast();
   const cardRef = useRef<HTMLElement>(null);
@@ -51,7 +51,7 @@ export function MediaCard({
     active: boolean;
   } | null>(null);
   const inFavorites = isFavorite(item.id);
-  const watched = isWatched(item.id);
+  const watchStatus = getStatus(item.id);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -99,22 +99,38 @@ export function MediaCard({
             );
           });
           break;
-        case 'watched':
-          void toggleWatched(item).then((added) => {
-            showToast(
-              added ? `«${item.title}» в просмотренном` : `«${item.title}» убрано из просмотренного`,
-              {
-                kind: added ? 'restore' : 'hide',
-                title: added ? 'Просмотрено' : 'Убрано',
-              },
-            );
-          });
-          break;
         default:
+          if (menuItemId.startsWith('status:')) {
+            const status = menuItemId.slice('status:'.length);
+            if (
+              status === 'watching' ||
+              status === 'watched' ||
+              status === 'postponed' ||
+              status === 'dropped'
+            ) {
+              void toggleStatus(item, status).then((added) => {
+                const labels = {
+                  watching: 'Смотрю',
+                  watched: 'Просмотрено',
+                  postponed: 'Отложено',
+                  dropped: 'Брошено',
+                } as const;
+                showToast(
+                  added
+                    ? `«${item.title}» → ${labels[status]}`
+                    : `«${item.title}» убрано из «${labels[status]}»`,
+                  {
+                    kind: added ? 'restore' : 'hide',
+                    title: added ? labels[status] : 'Убрано',
+                  },
+                );
+              });
+            }
+          }
           break;
       }
     },
-    [copyMediaId, item, onSelect, showToast, toggleFavorite, toggleWatched],
+    [copyMediaId, item, onSelect, showToast, toggleFavorite, toggleStatus],
   );
 
   const handlePointerDown = useCallback(
@@ -303,15 +319,47 @@ export function MediaCard({
                 onError={onError}
               />
             ) : null}
-            {(watched || inFavorites) ? (
+            {(watchStatus || inFavorites) ? (
               <div className="media-card__status-badges">
-                {watched ? (
-                  <span className="media-card__status-badge" aria-label="Просмотрено" title="Просмотрено">
-                    <EyeOffIcon size={18} solid />
+                {watchStatus ? (
+                  <span
+                    className={`media-card__status-badge media-card__status-badge--${watchStatus}`}
+                    aria-label={
+                      watchStatus === 'watching'
+                        ? 'Смотрю'
+                        : watchStatus === 'watched'
+                          ? 'Просмотрено'
+                          : watchStatus === 'postponed'
+                            ? 'Отложено'
+                            : 'Брошено'
+                    }
+                    title={
+                      watchStatus === 'watching'
+                        ? 'Смотрю'
+                        : watchStatus === 'watched'
+                          ? 'Просмотрено'
+                          : watchStatus === 'postponed'
+                            ? 'Отложено'
+                            : 'Брошено'
+                    }
+                  >
+                    {watchStatus === 'watching' ? (
+                      <WatchingIcon size={18} solid />
+                    ) : watchStatus === 'watched' ? (
+                      <EyeOffIcon size={18} solid />
+                    ) : watchStatus === 'postponed' ? (
+                      <PauseCircleIcon size={18} solid />
+                    ) : (
+                      <BanIcon size={18} solid />
+                    )}
                   </span>
                 ) : null}
                 {inFavorites ? (
-                  <span className="media-card__status-badge" aria-label="В избранном" title="В избранном">
+                  <span
+                    className="media-card__status-badge media-card__status-badge--favorite"
+                    aria-label="В избранном"
+                    title="В избранном"
+                  >
                     <FavoritesIcon size={16} filled strokeWidth={2} />
                   </span>
                 ) : null}
@@ -351,7 +399,7 @@ export function MediaCard({
         header={<MediaContextMenuHeader item={item} posterUrl={showImage ? src : undefined} />}
         items={getMediaContextMenuItems(item, {
           isFavorite: inFavorites,
-          isWatched: watched,
+          watchStatus,
         })}
         onClose={closeContextMenu}
         onItemClick={handleContextMenuItem}

@@ -24,6 +24,7 @@ const LEGACY_SIDEBAR_COLLAPSED_KEY = 'tv-leonid-sidebar-collapsed';
 const FAVORITES_STORAGE_KEY = 'tv-leonid-favorites';
 const RECENTLY_VIEWED_STORAGE_KEY = 'tv-leonid-recently-viewed';
 const WATCHED_STORAGE_KEY = 'tv-leonid-watched';
+const WATCH_STATUSES_STORAGE_KEY = 'tv-leonid-watch-statuses';
 
 function readLocalSettings(): AppSettings {
   try {
@@ -190,6 +191,7 @@ export async function resetAppData(): Promise<AppSettings> {
   localStorage.removeItem(FAVORITES_STORAGE_KEY);
   localStorage.removeItem(RECENTLY_VIEWED_STORAGE_KEY);
   localStorage.removeItem(WATCHED_STORAGE_KEY);
+  localStorage.removeItem(WATCH_STATUSES_STORAGE_KEY);
   localStorage.removeItem(LEGACY_SIDEBAR_COLLAPSED_KEY);
 
   if (window.electronAPI?.settings?.reset) {

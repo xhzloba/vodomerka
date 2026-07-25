@@ -15,7 +15,7 @@ import type { MediaItem } from '@/shared/domain/media';
 import './MediaDragPreview.css';
 import { unlockUiSounds } from '@/shared/audio/uiSounds';
 
-export type MediaDragDropTarget = 'favorite' | 'watched' | null;
+export type MediaDragDropTarget = 'favorite' | 'watching' | 'watched' | null;
 export type MediaDragEndMode = 'absorb' | 'return';
 
 export interface MediaDragPreviewMeta {
@@ -91,7 +91,7 @@ function hitDropTarget(x: number, y: number): Exclude<MediaDragDropTarget, null>
   const el = document.elementFromPoint(x, y);
   const zone = el?.closest<HTMLElement>('[data-media-drop]');
   const value = zone?.dataset.mediaDrop;
-  if (value === 'favorite' || value === 'watched') {
+  if (value === 'favorite' || value === 'watching' || value === 'watched') {
     return value;
   }
   return null;

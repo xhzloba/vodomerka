@@ -1,82 +1,128 @@
 import type { MediaItem } from '@/shared/domain/media';
 import { hydrateMediaItems } from '@/shared/domain/overridesStore';
+import { isWatchStatus, type WatchStatus } from '@/shared/domain/watchStatus';
 
-const STORAGE_KEY = 'tv-leonid-watched';
-
-function hydrateWatched(items: MediaItem[]): MediaItem[] {
-  return hydrateMediaItems(items);
+export interface WatchStatusEntry {
+  item: MediaItem;
+  status: WatchStatus;
 }
 
-function readLocalWatched(): MediaItem[] {
+const STORAGE_KEY = 'tv-leonid-watch-statuses';
+
+function hydrateEntries(entries: WatchStatusEntry[]): WatchStatusEntry[] {
+  const items = hydrateMediaItems(entries.map((entry) => entry.item));
+  return entries.map((entry, index) => ({
+    item: items[index] ?? entry.item,
+    status: entry.status,
+  }));
+}
+
+function readLocalEntries(): WatchStatusEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      return [];
+      // Migrate legacy watched-only localStorage if present.
+      const legacy = localStorage.getItem('tv-leonid-watched');
+      if (!legacy) {
+        return [];
+      }
+      const parsed = JSON.parse(legacy) as MediaItem[];
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+      const migrated = parsed
+        .filter((item) => item && typeof item.id === 'string')
+        .map((item) => ({ item, status: 'watched' as const }));
+      writeLocalEntries(migrated);
+      localStorage.removeItem('tv-leonid-watched');
+      return hydrateEntries(migrated);
     }
 
-    const parsed = JSON.parse(raw) as MediaItem[];
+    const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) {
       return [];
     }
 
-    return hydrateWatched(parsed);
+    const entries: WatchStatusEntry[] = [];
+    for (const row of parsed) {
+      if (!row || typeof row !== 'object') {
+        continue;
+      }
+      const record = row as { item?: MediaItem; status?: unknown };
+      if (!record.item || typeof record.item.id !== 'string') {
+        continue;
+      }
+      if (!isWatchStatus(record.status)) {
+        continue;
+      }
+      entries.push({ item: record.item, status: record.status });
+    }
+
+    return hydrateEntries(entries);
   } catch {
     return [];
   }
 }
 
-function writeLocalWatched(items: MediaItem[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+function writeLocalEntries(entries: WatchStatusEntry[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 }
 
-export async function loadWatched(): Promise<MediaItem[]> {
-  if (window.electronAPI?.watched) {
-    return hydrateWatched(await window.electronAPI.watched.list());
-  }
-
-  return readLocalWatched();
+function fromApiRecords(
+  records: Array<{ item: MediaItem; status: WatchStatus }>,
+): WatchStatusEntry[] {
+  return hydrateEntries(records.map((record) => ({ item: record.item, status: record.status })));
 }
 
-export async function addWatchedItem(item: MediaItem): Promise<MediaItem[]> {
+export async function loadWatchStatuses(): Promise<WatchStatusEntry[]> {
   if (window.electronAPI?.watched) {
-    const next = await window.electronAPI.watched.add(item);
-    writeLocalWatched(next);
-    return hydrateWatched(next);
+    return fromApiRecords(await window.electronAPI.watched.list());
   }
 
-  const current = readLocalWatched();
-  const next = [item, ...current.filter((entry) => entry.id !== item.id)];
-  writeLocalWatched(next);
+  return readLocalEntries();
+}
+
+export async function setWatchStatusItem(
+  item: MediaItem,
+  status: WatchStatus,
+): Promise<WatchStatusEntry[]> {
+  if (window.electronAPI?.watched) {
+    const next = await window.electronAPI.watched.setStatus(item, status);
+    writeLocalEntries(next);
+    return fromApiRecords(next);
+  }
+
+  const current = readLocalEntries().filter((entry) => entry.item.id !== item.id);
+  const next = [{ item, status }, ...current];
+  writeLocalEntries(next);
   return next;
 }
 
-export async function removeWatchedItem(mediaId: string): Promise<MediaItem[]> {
+export async function removeWatchStatusItem(mediaId: string): Promise<WatchStatusEntry[]> {
   if (window.electronAPI?.watched) {
     const next = await window.electronAPI.watched.remove(mediaId);
-    writeLocalWatched(next);
-    return hydrateWatched(next);
+    writeLocalEntries(next);
+    return fromApiRecords(next);
   }
 
-  const next = readLocalWatched().filter((entry) => entry.id !== mediaId);
-  writeLocalWatched(next);
+  const next = readLocalEntries().filter((entry) => entry.item.id !== mediaId);
+  writeLocalEntries(next);
   return next;
 }
 
-export async function hasWatchedItem(mediaId: string): Promise<boolean> {
+export async function clearWatchStatusBucket(status?: WatchStatus): Promise<WatchStatusEntry[]> {
   if (window.electronAPI?.watched) {
-    return window.electronAPI.watched.has(mediaId);
+    const next = await window.electronAPI.watched.clear(status);
+    writeLocalEntries(next);
+    return fromApiRecords(next);
   }
 
-  return readLocalWatched().some((entry) => entry.id === mediaId);
-}
-
-export async function clearAllWatched(): Promise<MediaItem[]> {
-  if (window.electronAPI?.watched) {
-    const next = await window.electronAPI.watched.clear();
-    writeLocalWatched(next);
-    return hydrateWatched(next);
+  if (!status) {
+    writeLocalEntries([]);
+    return [];
   }
 
-  writeLocalWatched([]);
-  return [];
+  const next = readLocalEntries().filter((entry) => entry.status !== status);
+  writeLocalEntries(next);
+  return next;
 }

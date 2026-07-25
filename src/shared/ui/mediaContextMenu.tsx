@@ -1,18 +1,26 @@
 import type { MediaItem } from '@/shared/domain/media';
 import { getMediaTypeLabel } from '@/shared/domain/media';
+import {
+  WATCH_STATUS_LABELS,
+  WATCH_STATUSES,
+  type WatchStatus,
+} from '@/shared/domain/watchStatus';
 import type { ContextMenuItem } from '@/shared/ui/ContextMenu/ContextMenu';
 import {
+  BanIcon,
   BookOpenIcon,
   CopyIcon,
   EyeIcon,
   FavoritesIcon,
   InfoIcon,
+  PauseCircleIcon,
+  WatchingIcon,
 } from '@/shared/ui/icons';
 import './MediaContextMenu.css';
 
 interface MediaContextMenuState {
   isFavorite: boolean;
-  isWatched: boolean;
+  watchStatus: WatchStatus | null;
 }
 
 interface MediaContextMenuHeaderProps {
@@ -44,9 +52,23 @@ export function MediaContextMenuHeader({ item, posterUrl }: MediaContextMenuHead
   );
 }
 
+function statusIcon(status: WatchStatus, active: boolean) {
+  const stroke = active ? 2.1 : 1.75;
+  switch (status) {
+    case 'watching':
+      return <WatchingIcon size={15} strokeWidth={stroke} />;
+    case 'watched':
+      return <EyeIcon size={15} strokeWidth={stroke} />;
+    case 'postponed':
+      return <PauseCircleIcon size={15} strokeWidth={stroke} />;
+    case 'dropped':
+      return <BanIcon size={15} strokeWidth={stroke} />;
+  }
+}
+
 export function getMediaContextMenuItems(
   item: MediaItem,
-  { isFavorite, isWatched }: MediaContextMenuState,
+  { isFavorite, watchStatus }: MediaContextMenuState,
 ): ContextMenuItem[] {
   return [
     {
@@ -73,11 +95,12 @@ export function getMediaContextMenuItems(
       active: isFavorite,
       separatorBefore: true,
     },
-    {
-      id: 'watched',
-      label: 'Просмотрено',
-      icon: <EyeIcon size={15} strokeWidth={isWatched ? 2.1 : 1.75} />,
-      active: isWatched,
-    },
+    ...WATCH_STATUSES.map((status, index) => ({
+      id: `status:${status}`,
+      label: WATCH_STATUS_LABELS[status],
+      icon: statusIcon(status, watchStatus === status),
+      active: watchStatus === status,
+      separatorBefore: index === 0,
+    })),
   ];
 }

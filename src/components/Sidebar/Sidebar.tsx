@@ -20,12 +20,11 @@ import {
   CartoonSeriesIcon,
   CheckIcon,
   CompilationsIcon,
-  EyeIcon,
-  FavoritesIcon,
+  CoverSpacingIcon,
   FilmIcon,
   GridIcon,
   HomeIcon,
-  CoverSpacingIcon,
+  LayersIcon,
   PuzzleIcon,
   SearchIcon,
   SettingsIcon,
@@ -56,8 +55,7 @@ const primaryNavItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
   { id: 'home', label: 'Главная', icon: <HomeIcon size={20} /> },
   { id: 'browse', label: 'Каталог', icon: <GridIcon size={20} /> },
   { id: 'compilations', label: 'Подборки', icon: <CompilationsIcon size={20} /> },
-  { id: 'library', label: 'Избранное', icon: <FavoritesIcon size={20} /> },
-  { id: 'watched', label: 'Просмотренное', icon: <EyeIcon size={20} /> },
+  { id: 'library', label: 'Коллекция', icon: <LayersIcon size={20} /> },
 ];
 
 const searchNavItem: { id: NavItem; label: string; icon: JSX.Element } = {
@@ -313,7 +311,9 @@ export function Sidebar({
         aria-label={
           item.id === 'library' && favoritesCount > 0
             ? `${item.label}, ${favoritesCount} в избранном`
-            : item.label
+            : item.id === 'library'
+              ? 'Коллекция: избранное и статусы просмотра'
+              : item.label
         }
         title={collapsed ? item.label : undefined}
       >

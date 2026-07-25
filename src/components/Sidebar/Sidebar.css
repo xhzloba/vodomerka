@@ -110,6 +110,10 @@
   margin-top: 6px;
 }
 
+.sidebar__section--collection {
+  margin: 8px 0 4px;
+}
+
 .sidebar__section-header {
   display: flex;
   align-items: baseline;
@@ -446,6 +450,12 @@
   animation: sidebar-icon-watched 0.95s ease-in-out 1 both;
 }
 
+.sidebar__item--nav-watching.sidebar__item--active .sidebar__item-icon,
+.sidebar__item--nav-postponed.sidebar__item--active .sidebar__item-icon,
+.sidebar__item--nav-dropped.sidebar__item--active .sidebar__item-icon {
+  animation: sidebar-icon-watched 0.95s ease-in-out 1 both;
+}
+
 .sidebar__item--nav-search.sidebar__item--active .sidebar__item-icon {
   animation: sidebar-icon-search 1.05s cubic-bezier(0.4, 0, 0.2, 1) 1 both;
 }
@@ -463,6 +473,9 @@
 .sidebar__item--nav-compilations.sidebar__item--active .sidebar__item-icon svg,
 .sidebar__item--nav-library.sidebar__item--active .sidebar__item-icon svg,
 .sidebar__item--nav-watched.sidebar__item--active .sidebar__item-icon svg,
+.sidebar__item--nav-watching.sidebar__item--active .sidebar__item-icon svg,
+.sidebar__item--nav-postponed.sidebar__item--active .sidebar__item-icon svg,
+.sidebar__item--nav-dropped.sidebar__item--active .sidebar__item-icon svg,
 .sidebar__item--nav-search.sidebar__item--active .sidebar__item-icon svg,
 .sidebar__item--nav-plugins.sidebar__item--active .sidebar__item-icon svg,
 .sidebar__item--nav-settings.sidebar__item--active .sidebar__item-icon svg {

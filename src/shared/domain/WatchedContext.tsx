@@ -10,39 +10,50 @@ import {
 import type { MediaItem } from '@/shared/domain/media';
 import { ensureMediaOverridesLoaded } from '@/shared/domain/overridesStore';
 import {
-  addWatchedItem,
-  clearAllWatched as clearAllWatchedStorage,
-  loadWatched,
-  removeWatchedItem,
+  clearWatchStatusBucket,
+  loadWatchStatuses,
+  removeWatchStatusItem,
+  setWatchStatusItem,
+  type WatchStatusEntry,
 } from '@/shared/domain/watchedStorage';
+import { WATCH_STATUS_LABELS, type WatchStatus } from '@/shared/domain/watchStatus';
 import { playLikeSound } from '@/shared/audio/uiSounds';
 
 interface WatchedContextValue {
+  entries: WatchStatusEntry[];
+  isLoading: boolean;
+  getStatus: (mediaId: string) => WatchStatus | null;
+  listByStatus: (status: WatchStatus) => MediaItem[];
+  setStatus: (item: MediaItem, status: WatchStatus, options?: { silent?: boolean }) => Promise<void>;
+  clearStatus: (mediaId: string) => Promise<void>;
+  clearBucket: (status: WatchStatus) => Promise<void>;
+  reloadWatchStatuses: () => Promise<void>;
+  /** Compat: true when status === 'watched' */
+  isWatched: (mediaId: string) => boolean;
   watched: MediaItem[];
   watchedIds: Set<string>;
-  isLoading: boolean;
-  isWatched: (mediaId: string) => boolean;
   addWatched: (item: MediaItem, options?: { silent?: boolean }) => Promise<void>;
   removeWatched: (mediaId: string) => Promise<void>;
   clearAllWatched: () => Promise<void>;
   reloadWatched: () => Promise<void>;
   toggleWatched: (item: MediaItem) => Promise<boolean>;
+  toggleStatus: (item: MediaItem, status: WatchStatus) => Promise<boolean>;
 }
 
 const WatchedContext = createContext<WatchedContextValue | null>(null);
 
 export function WatchedProvider({ children }: { children: ReactNode }) {
-  const [watched, setWatched] = useState<MediaItem[]>([]);
+  const [entries, setEntries] = useState<WatchStatusEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
     void ensureMediaOverridesLoaded()
-      .then(() => loadWatched())
+      .then(() => loadWatchStatuses())
       .then((loaded) => {
         if (!cancelled) {
-          setWatched(loaded);
+          setEntries(loaded);
         }
       })
       .finally(() => {
@@ -59,9 +70,9 @@ export function WatchedProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = window.electronAPI?.watched?.onChanged?.(() => {
       void ensureMediaOverridesLoaded()
-        .then(() => loadWatched())
+        .then(() => loadWatchStatuses())
         .then((loaded) => {
-          setWatched(loaded);
+          setEntries(loaded);
         });
     });
 
@@ -70,75 +81,145 @@ export function WatchedProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const watchedIds = useMemo(() => new Set(watched.map((item) => item.id)), [watched]);
-
-  const isWatched = useCallback((mediaId: string) => watchedIds.has(mediaId), [watchedIds]);
-
-  const addWatched = useCallback(async (item: MediaItem, options?: { silent?: boolean }) => {
-    if (!options?.silent) {
-      playLikeSound();
+  const statusById = useMemo(() => {
+    const map = new Map<string, WatchStatus>();
+    for (const entry of entries) {
+      map.set(entry.item.id, entry.status);
     }
-    const next = await addWatchedItem(item);
-    setWatched(next);
-  }, []);
+    return map;
+  }, [entries]);
 
-  const removeWatched = useCallback(async (mediaId: string) => {
+  const getStatus = useCallback(
+    (mediaId: string) => statusById.get(mediaId) ?? null,
+    [statusById],
+  );
+
+  const listByStatus = useCallback(
+    (status: WatchStatus) =>
+      entries.filter((entry) => entry.status === status).map((entry) => entry.item),
+    [entries],
+  );
+
+  const setStatus = useCallback(
+    async (item: MediaItem, status: WatchStatus, options?: { silent?: boolean }) => {
+      if (!options?.silent) {
+        playLikeSound();
+      }
+      const next = await setWatchStatusItem(item, status);
+      setEntries(next);
+    },
+    [],
+  );
+
+  const clearStatus = useCallback(async (mediaId: string) => {
     playLikeSound();
-    const next = await removeWatchedItem(mediaId);
-    setWatched(next);
+    const next = await removeWatchStatusItem(mediaId);
+    setEntries(next);
   }, []);
 
-  const clearAllWatched = useCallback(async () => {
-    const next = await clearAllWatchedStorage();
-    setWatched(next);
+  const clearBucket = useCallback(async (status: WatchStatus) => {
+    const next = await clearWatchStatusBucket(status);
+    setEntries(next);
   }, []);
 
-  const reloadWatched = useCallback(async () => {
+  const reloadWatchStatuses = useCallback(async () => {
     setIsLoading(true);
-
     try {
       await ensureMediaOverridesLoaded();
-      setWatched(await loadWatched());
+      setEntries(await loadWatchStatuses());
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  const watched = useMemo(() => listByStatus('watched'), [listByStatus]);
+  const watchedIds = useMemo(() => new Set(watched.map((item) => item.id)), [watched]);
+  const isWatched = useCallback(
+    (mediaId: string) => getStatus(mediaId) === 'watched',
+    [getStatus],
+  );
+
+  const addWatched = useCallback(
+    async (item: MediaItem, options?: { silent?: boolean }) => {
+      await setStatus(item, 'watched', options);
+    },
+    [setStatus],
+  );
+
+  const removeWatched = useCallback(
+    async (mediaId: string) => {
+      if (getStatus(mediaId) === 'watched') {
+        await clearStatus(mediaId);
+      }
+    },
+    [clearStatus, getStatus],
+  );
+
+  const clearAllWatched = useCallback(async () => {
+    await clearBucket('watched');
+  }, [clearBucket]);
+
   const toggleWatched = useCallback(
     async (item: MediaItem) => {
-      if (watchedIds.has(item.id)) {
-        await removeWatched(item.id);
+      if (getStatus(item.id) === 'watched') {
+        await clearStatus(item.id);
         return false;
       }
-
-      await addWatched(item);
+      await setStatus(item, 'watched');
       return true;
     },
-    [addWatched, removeWatched, watchedIds],
+    [clearStatus, getStatus, setStatus],
+  );
+
+  const toggleStatus = useCallback(
+    async (item: MediaItem, status: WatchStatus) => {
+      if (getStatus(item.id) === status) {
+        await clearStatus(item.id);
+        return false;
+      }
+      await setStatus(item, status);
+      return true;
+    },
+    [clearStatus, getStatus, setStatus],
   );
 
   const value = useMemo(
     () => ({
+      entries,
+      isLoading,
+      getStatus,
+      listByStatus,
+      setStatus,
+      clearStatus,
+      clearBucket,
+      reloadWatchStatuses,
+      isWatched,
       watched,
       watchedIds,
-      isLoading,
-      isWatched,
       addWatched,
       removeWatched,
       clearAllWatched,
-      reloadWatched,
+      reloadWatched: reloadWatchStatuses,
       toggleWatched,
+      toggleStatus,
     }),
     [
-      addWatched,
-      clearAllWatched,
+      entries,
       isLoading,
+      getStatus,
+      listByStatus,
+      setStatus,
+      clearStatus,
+      clearBucket,
+      reloadWatchStatuses,
       isWatched,
-      reloadWatched,
-      removeWatched,
-      toggleWatched,
       watched,
       watchedIds,
+      addWatched,
+      removeWatched,
+      clearAllWatched,
+      toggleWatched,
+      toggleStatus,
     ],
   );
 
@@ -147,10 +228,22 @@ export function WatchedProvider({ children }: { children: ReactNode }) {
 
 export function useWatched() {
   const context = useContext(WatchedContext);
-
   if (!context) {
     throw new Error('useWatched must be used within WatchedProvider');
   }
-
   return context;
+}
+
+export function getWatchStatusToastCopy(status: WatchStatus, added: boolean, title: string) {
+  const label = WATCH_STATUS_LABELS[status];
+  if (added) {
+    return {
+      title: label,
+      message: `«${title}» → ${label}`,
+    };
+  }
+  return {
+    title: 'Убрано',
+    message: `«${title}» убрано из «${label}»`,
+  };
 }

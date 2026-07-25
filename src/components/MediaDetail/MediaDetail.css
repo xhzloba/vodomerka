@@ -296,6 +296,21 @@
   margin-bottom: 18px;
 }
 
+.media-detail__status-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: calc(var(--radius-sm) + 2px);
+  border: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--app-surface) 80%, transparent);
+}
+
+.media-detail__status-group .media-detail__icon-btn {
+  width: 40px;
+  height: 40px;
+}
+
 .media-detail__play-btn {
   min-height: 48px;
   padding-inline: 28px;

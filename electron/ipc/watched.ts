@@ -1,12 +1,11 @@
 import { BrowserWindow, ipcMain } from 'electron';
-import { IPC_CHANNELS } from '../../contracts/ipc';
+import { IPC_CHANNELS, type StoredMediaItem, type WatchStatus } from '../../contracts/ipc';
 import {
-  addWatched,
-  clearAllWatched,
-  hasWatched,
-  listWatched,
-  removeWatched,
-  type StoredMediaItem,
+  clearWatchStatuses,
+  getWatchStatus,
+  listWatchStatuses,
+  removeWatchStatus,
+  setWatchStatus,
 } from '../db/watched';
 
 function broadcastWatchedChanged(): void {
@@ -18,24 +17,29 @@ function broadcastWatchedChanged(): void {
 }
 
 export function registerWatchedIpc() {
-  ipcMain.handle(IPC_CHANNELS.watched.list, (): StoredMediaItem[] => listWatched());
+  ipcMain.handle(IPC_CHANNELS.watched.list, () => listWatchStatuses());
 
-  ipcMain.handle(IPC_CHANNELS.watched.add, (_event, item: StoredMediaItem): StoredMediaItem[] => {
-    const next = addWatched(item);
+  ipcMain.handle(
+    IPC_CHANNELS.watched.setStatus,
+    (_event, item: StoredMediaItem, status: WatchStatus) => {
+      const next = setWatchStatus(item, status);
+      broadcastWatchedChanged();
+      return next;
+    },
+  );
+
+  ipcMain.handle(IPC_CHANNELS.watched.remove, (_event, mediaId: string) => {
+    const next = removeWatchStatus(mediaId);
     broadcastWatchedChanged();
     return next;
   });
 
-  ipcMain.handle(IPC_CHANNELS.watched.remove, (_event, mediaId: string): StoredMediaItem[] => {
-    const next = removeWatched(mediaId);
-    broadcastWatchedChanged();
-    return next;
-  });
+  ipcMain.handle(IPC_CHANNELS.watched.getStatus, (_event, mediaId: string) =>
+    getWatchStatus(mediaId),
+  );
 
-  ipcMain.handle(IPC_CHANNELS.watched.has, (_event, mediaId: string): boolean => hasWatched(mediaId));
-
-  ipcMain.handle(IPC_CHANNELS.watched.clear, (): StoredMediaItem[] => {
-    const next = clearAllWatched();
+  ipcMain.handle(IPC_CHANNELS.watched.clear, (_event, status?: WatchStatus) => {
+    const next = clearWatchStatuses(status);
     broadcastWatchedChanged();
     return next;
   });

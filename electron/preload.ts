@@ -11,6 +11,8 @@ import {
   type PluginResult,
   type StoredMediaItem,
   type ThemeCatalog,
+  type WatchStatus,
+  type WatchStatusRecord,
 } from '../contracts/ipc';
 
 const electronApi: ElectronApi = {
@@ -97,13 +99,15 @@ const electronApi: ElectronApi = {
     },
   },
   watched: {
-    list: (): Promise<StoredMediaItem[]> => ipcRenderer.invoke(IPC_CHANNELS.watched.list),
-    add: (item: StoredMediaItem): Promise<StoredMediaItem[]> =>
-      ipcRenderer.invoke(IPC_CHANNELS.watched.add, item),
-    remove: (mediaId: string): Promise<StoredMediaItem[]> =>
+    list: (): Promise<WatchStatusRecord[]> => ipcRenderer.invoke(IPC_CHANNELS.watched.list),
+    setStatus: (item: StoredMediaItem, status: WatchStatus): Promise<WatchStatusRecord[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.watched.setStatus, item, status),
+    remove: (mediaId: string): Promise<WatchStatusRecord[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.watched.remove, mediaId),
-    has: (mediaId: string): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.watched.has, mediaId),
-    clear: (): Promise<StoredMediaItem[]> => ipcRenderer.invoke(IPC_CHANNELS.watched.clear),
+    getStatus: (mediaId: string): Promise<WatchStatus | null> =>
+      ipcRenderer.invoke(IPC_CHANNELS.watched.getStatus, mediaId),
+    clear: (status?: WatchStatus): Promise<WatchStatusRecord[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.watched.clear, status),
     onChanged: (callback: () => void) => {
       const listener = () => callback();
       ipcRenderer.on(IPC_CHANNELS.watched.changed, listener);

@@ -37,6 +37,9 @@ export type CatalogRowGapPreset = 'compact' | 'normal' | 'relaxed' | 'spacious';
 
 export type PosterSizePreset = 'small' | 'medium' | 'large';
 
+/** Mutually exclusive watch statuses (favorites stay separate). */
+export type WatchStatus = 'watching' | 'watched' | 'postponed' | 'dropped';
+
 export type HomeSectionMode = 'auto' | 'on' | 'off';
 
 export type ApiServerId = '1' | '2';
@@ -91,6 +94,11 @@ export interface StoredMediaItem {
   country?: string;
   director?: string;
   age?: number;
+}
+
+export interface WatchStatusRecord {
+  item: StoredMediaItem;
+  status: WatchStatus;
 }
 
 export interface MediaOverride {
@@ -150,9 +158,9 @@ export const IPC_CHANNELS = {
   },
   watched: {
     list: 'watched:list',
-    add: 'watched:add',
+    setStatus: 'watched:setStatus',
     remove: 'watched:remove',
-    has: 'watched:has',
+    getStatus: 'watched:getStatus',
     clear: 'watched:clear',
     changed: 'watched:changed',
   },
@@ -241,11 +249,11 @@ export interface ElectronApi {
     onChanged: (callback: () => void) => Unsubscribe;
   };
   watched: {
-    list: () => Promise<StoredMediaItem[]>;
-    add: (item: StoredMediaItem) => Promise<StoredMediaItem[]>;
-    remove: (mediaId: string) => Promise<StoredMediaItem[]>;
-    has: (mediaId: string) => Promise<boolean>;
-    clear: () => Promise<StoredMediaItem[]>;
+    list: () => Promise<WatchStatusRecord[]>;
+    setStatus: (item: StoredMediaItem, status: WatchStatus) => Promise<WatchStatusRecord[]>;
+    remove: (mediaId: string) => Promise<WatchStatusRecord[]>;
+    getStatus: (mediaId: string) => Promise<WatchStatus | null>;
+    clear: (status?: WatchStatus) => Promise<WatchStatusRecord[]>;
     onChanged: (callback: () => void) => Unsubscribe;
   };
   sidebar: {

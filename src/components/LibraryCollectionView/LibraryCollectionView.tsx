@@ -7,6 +7,9 @@ import '../BrowseView/BrowseView.css';
 
 interface LibraryCollectionViewProps {
   title: string;
+  headerExtra?: ReactNode;
+  /** Reset scroll when this value changes (e.g. collection tab). */
+  scrollKey?: string;
   isLoading: boolean;
   loadingTitle: string;
   hasItems: boolean;
@@ -21,6 +24,8 @@ interface LibraryCollectionViewProps {
 
 export function LibraryCollectionView({
   title,
+  headerExtra,
+  scrollKey,
   isLoading,
   loadingTitle,
   hasItems,
@@ -39,10 +44,10 @@ export function LibraryCollectionView({
     }
 
     scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' });
-  }, [isActive, scrollRef]);
+  }, [isActive, scrollKey, scrollRef]);
 
   return (
-    <div ref={scrollRef} className="library-view scroll-overlay">
+    <div className="library-view">
       <div className="library-view__header">
         <div className="library-view__title-group">
           <h1 className="library-view__title">{title}</h1>
@@ -58,18 +63,21 @@ export function LibraryCollectionView({
             <TrashIcon size={18} strokeWidth={1.75} />
           </button>
         </div>
+        {headerExtra ? <div className="library-view__header-extra">{headerExtra}</div> : null}
       </div>
 
-      {isLoading ? (
-        <PageLoading title={loadingTitle} centered />
-      ) : hasItems ? (
-        <div className="library-view__rows">{children}</div>
-      ) : (
-        <div className="library-view__empty">
-          <div className="library-view__empty-icon">{emptyIcon}</div>
-          <p className="library-view__empty-text">{emptyText}</p>
-        </div>
-      )}
+      <div ref={scrollRef} className="library-view__scroll scroll-overlay">
+        {isLoading ? (
+          <PageLoading title={loadingTitle} centered />
+        ) : hasItems ? (
+          <div className="library-view__rows">{children}</div>
+        ) : (
+          <div className="library-view__empty">
+            <div className="library-view__empty-icon">{emptyIcon}</div>
+            <p className="library-view__empty-text">{emptyText}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

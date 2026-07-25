@@ -37,9 +37,16 @@ export function getDatabase(): Database.Database {
     CREATE TABLE IF NOT EXISTS watched (
       media_id TEXT PRIMARY KEY NOT NULL,
       payload TEXT NOT NULL,
-      watched_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      watched_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+      status TEXT NOT NULL DEFAULT 'watched'
     );
   `);
+
+  // Legacy DBs created before status column.
+  const watchedColumns = db.prepare('PRAGMA table_info(watched)').all() as Array<{ name: string }>;
+  if (!watchedColumns.some((column) => column.name === 'status')) {
+    db.exec(`ALTER TABLE watched ADD COLUMN status TEXT NOT NULL DEFAULT 'watched'`);
+  }
 
   return db;
 }

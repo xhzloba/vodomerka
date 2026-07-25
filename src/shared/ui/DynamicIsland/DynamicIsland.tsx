@@ -7,7 +7,8 @@ import type { MediaItem } from '@/shared/domain/media';
 import { useWatched } from '@/shared/domain/WatchedContext';
 import { playLikeSound } from '@/shared/audio/uiSounds';
 import { useAppTopProgressIslandState } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
-import { EyeIcon, FavoritesIcon } from '@/shared/ui/icons';
+import { EyeIcon, FavoritesIcon, WatchingIcon } from '@/shared/ui/icons';
+import { WATCH_STATUS_LABELS } from '@/shared/domain/watchStatus';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { resolveThemeColorScheme } from '@/shared/settings/themes';
 import {
@@ -68,7 +69,7 @@ export function DynamicIsland() {
   const progress = useAppTopProgressIslandState();
   const { draggingItem, dropTarget, endMediaDrag, setDropAction } = useMediaDrag();
   const { isFavorite, addFavorite } = useFavorites();
-  const { isWatched, addWatched } = useWatched();
+  const { getStatus, setStatus } = useWatched();
 
   const [shellMode, setShellMode] = useState<ShellMode>('idle');
   const [heldToast, setHeldToast] = useState<ToastState | null>(null);
@@ -262,23 +263,24 @@ export function DynamicIsland() {
         return;
       }
 
-      if (isWatched(item.id)) {
-        showToast(`«${item.title}» уже в просмотренном`, {
+      const status = target === 'watching' ? 'watching' : 'watched';
+      if (getStatus(item.id) === status) {
+        showToast(`«${item.title}» уже в «${WATCH_STATUS_LABELS[status]}»`, {
           kind: 'restore',
-          title: 'Просмотрено',
+          title: WATCH_STATUS_LABELS[status],
         });
         return;
       }
 
       playLikeSound();
-      void addWatched(item, { silent: true }).then(() => {
-        showToast(`«${item.title}» в просмотренном`, {
+      void setStatus(item, status, { silent: true }).then(() => {
+        showToast(`«${item.title}» → ${WATCH_STATUS_LABELS[status]}`, {
           kind: 'restore',
-          title: 'Просмотрено',
+          title: WATCH_STATUS_LABELS[status],
         });
       });
     },
-    [addFavorite, addWatched, endMediaDrag, isFavorite, isWatched, showToast],
+    [addFavorite, endMediaDrag, getStatus, isFavorite, setStatus, showToast],
   );
 
   useEffect(() => {
@@ -444,11 +446,25 @@ export function DynamicIsland() {
             <span className="dynamic-island__drop-divider" aria-hidden="true" />
             <button
               type="button"
+              data-media-drop="watching"
+              className={`dynamic-island__drop-zone dynamic-island__drop-zone--watching${
+                dropTarget === 'watching' ? ' dynamic-island__drop-zone--active' : ''
+              }`}
+              aria-label="Смотрю"
+            >
+              <span className="dynamic-island__drop-zone__icon" aria-hidden="true">
+                <WatchingIcon size={18} strokeWidth={1.9} />
+              </span>
+              <span className="dynamic-island__drop-zone__label">Смотрю</span>
+            </button>
+            <span className="dynamic-island__drop-divider" aria-hidden="true" />
+            <button
+              type="button"
               data-media-drop="watched"
               className={`dynamic-island__drop-zone dynamic-island__drop-zone--watched${
                 dropTarget === 'watched' ? ' dynamic-island__drop-zone--active' : ''
               }`}
-              aria-label="В просмотренное"
+              aria-label="Просмотрено"
             >
               <span className="dynamic-island__drop-zone__icon" aria-hidden="true">
                 <EyeIcon size={18} strokeWidth={1.9} />
