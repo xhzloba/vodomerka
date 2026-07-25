@@ -49,9 +49,9 @@ export type SidebarAnimationBehavior =
   | 'edge-pulse'
   | 'highlight';
 
-export const DEFAULT_SIDEBAR_ANIMATION_ID = 'magnetic-water';
+export const DEFAULT_SIDEBAR_ANIMATION_ID = 'highlight';
 
-export const BUILTIN_SIDEBAR_ANIMATION_IDS = ['magnetic-water', 'highlight'] as const;
+export const BUILTIN_SIDEBAR_ANIMATION_IDS = ['highlight', 'magnetic-water'] as const;
 
 export type BuiltinSidebarAnimationId = (typeof BUILTIN_SIDEBAR_ANIMATION_IDS)[number];
 

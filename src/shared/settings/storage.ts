@@ -83,23 +83,37 @@ function readSidebarCollapsed(value: Partial<AppSettings>): boolean {
   return DEFAULT_APP_SETTINGS.sidebarCollapsed;
 }
 
+const SIDEBAR_MENU_ANIMATION_HIGHLIGHT_MIGRATE_KEY =
+  'tv-leonid-migrate-sidebar-menu-animation-highlight-v1';
+
 function applySettingsMigrations(settings: AppSettings): {
   settings: AppSettings;
   changed: boolean;
 } {
-  const migrated = migrateBuiltinHiddenHomeSections(settings);
+  let next = settings;
+  let changed = false;
 
-  if (!migrated.changed) {
-    return { settings, changed: false };
+  const migrated = migrateBuiltinHiddenHomeSections(next);
+  if (migrated.changed) {
+    next = {
+      ...next,
+      hiddenHomeSections: migrated.hiddenHomeSections,
+    };
+    changed = true;
   }
 
-  return {
-    settings: {
-      ...settings,
-      hiddenHomeSections: migrated.hiddenHomeSections,
-    },
-    changed: true,
-  };
+  if (!localStorage.getItem(SIDEBAR_MENU_ANIMATION_HIGHLIGHT_MIGRATE_KEY)) {
+    if (next.sidebarMenuAnimation === 'magnetic-water') {
+      next = {
+        ...next,
+        sidebarMenuAnimation: 'highlight',
+      };
+      changed = true;
+    }
+    localStorage.setItem(SIDEBAR_MENU_ANIMATION_HIGHLIGHT_MIGRATE_KEY, '1');
+  }
+
+  return { settings: next, changed };
 }
 
 function normalizeSettings(value: Partial<AppSettings>): AppSettings {

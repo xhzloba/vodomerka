@@ -2,6 +2,7 @@ import type { CSSProperties, PointerEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { NavItem } from '@/types';
 import type { BrowseSidebarEntry } from '@/app/navigation/browseTarget';
+import { DEFAULT_SIDEBAR_ANIMATION_ID } from '../../../contracts/ipc';
 import type { SidebarMenuAnimation, SidebarStyle } from '@/shared/settings/types';
 import { getSearchShortcutLabel } from '@/features/onboarding/tips/platformShortcut';
 import { playMenuSound, playSubmenuSound } from '@/shared/audio/uiSounds';
@@ -87,7 +88,7 @@ function MediatekaIcon({ item }: { item: MediatekaMenuItem }) {
 export function Sidebar({
   activeNav,
   collapsed,
-  menuAnimation = 'magnetic-water',
+  menuAnimation = DEFAULT_SIDEBAR_ANIMATION_ID,
   sidebarStyle = 'apple',
   macSidebarChrome = false,
   browseCategoryType = null,

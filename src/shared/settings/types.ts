@@ -8,6 +8,7 @@ import type {
   SidebarMenuAnimation,
   SidebarStyle,
 } from '../../../contracts/ipc';
+import { DEFAULT_SIDEBAR_ANIMATION_ID } from '../../../contracts/ipc';
 
 export type {
   ApiServerId,
@@ -59,7 +60,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   catalogRowGap: 'normal',
   posterSize: 'medium',
   sidebarCollapsed: false,
-  sidebarMenuAnimation: 'magnetic-water',
+  sidebarMenuAnimation: DEFAULT_SIDEBAR_ANIMATION_ID,
   sidebarStyle: 'apple',
   hiddenHomeSections: [
     { id: '__home_serial_updates__', title: 'Обновление сериалов' },

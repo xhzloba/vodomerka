@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { app } from 'electron';
 import type { AppSettings, AppTheme } from '../../contracts/ipc';
-import { BUILTIN_THEME_IDS, DEFAULT_THEME_ID } from '../../contracts/themes';
+import { BUILTIN_THEME_IDS, DEFAULT_SIDEBAR_ANIMATION_ID, DEFAULT_THEME_ID } from '../../contracts/themes';
 import { getDatabase } from './database';
 
 export type { AppSettings, AppTheme } from '../../contracts/ipc';
@@ -18,7 +18,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   catalogRowGap: 'normal',
   posterSize: 'medium',
   sidebarCollapsed: false,
-  sidebarMenuAnimation: 'magnetic-water',
+  sidebarMenuAnimation: DEFAULT_SIDEBAR_ANIMATION_ID,
   sidebarStyle: 'apple',
   hiddenHomeSections: [
     { id: '__home_serial_updates__', title: 'Обновление сериалов' },
@@ -84,6 +84,7 @@ function openDatabase() {
 function seedDefaults(database: Database.Database) {
   migrateSetupWelcomeDismissed(database);
   migrateSidebarStyleDefaultToApple(database);
+  migrateSidebarMenuAnimationDefaultToHighlight(database);
 
   const insert = database.prepare(`
     INSERT OR IGNORE INTO settings (key, value) VALUES (@key, @value)
@@ -131,6 +132,34 @@ function migrateSidebarStyleDefaultToApple(database: Database.Database): void {
           updated_at = excluded.updated_at
       `)
       .run({ key: SETTING_KEYS.sidebarStyle, value: 'apple' });
+  }
+
+  database
+    .prepare(`
+      INSERT INTO settings (key, value, updated_at)
+      VALUES (@key, '1', strftime('%s', 'now'))
+    `)
+    .run({ key: flagKey });
+}
+
+/** One-shot: previous product default was magnetic-water; switch to highlight. */
+function migrateSidebarMenuAnimationDefaultToHighlight(database: Database.Database): void {
+  const flagKey = 'migrate_sidebar_menu_animation_highlight_default_v1';
+  if (readSetting(database, flagKey) !== undefined) {
+    return;
+  }
+
+  const current = readSetting(database, SETTING_KEYS.sidebarMenuAnimation);
+  if (current === undefined || current === 'magnetic-water') {
+    database
+      .prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES (@key, @value, strftime('%s', 'now'))
+        ON CONFLICT(key) DO UPDATE SET
+          value = excluded.value,
+          updated_at = excluded.updated_at
+      `)
+      .run({ key: SETTING_KEYS.sidebarMenuAnimation, value: DEFAULT_SIDEBAR_ANIMATION_ID });
   }
 
   database

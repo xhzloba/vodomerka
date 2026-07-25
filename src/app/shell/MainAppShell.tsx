@@ -23,6 +23,7 @@ import { isMacOS } from '@/shared/platform/runtime';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { playWelcomeSound } from '@/shared/audio/uiSounds';
 import { resolveSidebarMenuBehavior } from '@/shared/plugins/sidebarPlugins';
+import { DEFAULT_SIDEBAR_ANIMATION_ID } from '../../../contracts/ipc';
 import { PageLoading } from '@/shared/ui/PageState';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
@@ -32,7 +33,7 @@ const SETUP_WELCOME_SHOW_DELAY_MS = 5_000;
 export function MainAppShell() {
   const { settings, isLoading, setupWelcomeEpoch, updateSettings } = useAppSettings();
   const { showToast } = useToast();
-  const [sidebarMenuBehavior, setSidebarMenuBehavior] = useState(settings.sidebarMenuAnimation);
+  const [sidebarMenuBehavior, setSidebarMenuBehavior] = useState(DEFAULT_SIDEBAR_ANIMATION_ID);
   const {
     activeNav,
     searchQuery,
