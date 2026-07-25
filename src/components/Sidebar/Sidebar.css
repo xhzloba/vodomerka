@@ -106,6 +106,10 @@
   margin-bottom: 4px;
 }
 
+.sidebar__section--primary > .sidebar__section-header {
+  margin-top: 6px;
+}
+
 .sidebar__section-header {
   display: flex;
   align-items: baseline;

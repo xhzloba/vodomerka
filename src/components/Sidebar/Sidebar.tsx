@@ -58,8 +58,13 @@ const primaryNavItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
   { id: 'compilations', label: 'Подборки', icon: <CompilationsIcon size={20} /> },
   { id: 'library', label: 'Избранное', icon: <FavoritesIcon size={20} /> },
   { id: 'watched', label: 'Просмотренное', icon: <EyeIcon size={20} /> },
-  { id: 'search', label: 'Поиск', icon: <SearchIcon size={20} /> },
 ];
+
+const searchNavItem: { id: NavItem; label: string; icon: JSX.Element } = {
+  id: 'search',
+  label: 'Поиск',
+  icon: <SearchIcon size={20} />,
+};
 
 const footerNavItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
   { id: 'plugins', label: 'Плагины', icon: <PuzzleIcon size={20} /> },
@@ -462,6 +467,7 @@ export function Sidebar({
 
   const primarySection = (
     <div className="sidebar__section sidebar__section--primary">
+      {renderNavItem(searchNavItem)}
       {!collapsed ? (
         <div className="sidebar__section-header">
           <span className="sidebar__section-title">Меню</span>
