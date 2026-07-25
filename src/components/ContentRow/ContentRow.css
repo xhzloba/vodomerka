@@ -1,5 +1,5 @@
 .content-row {
-  margin-bottom: 36px;
+  margin-bottom: 28px;
   padding-left: 18px;
   content-visibility: auto;
   contain-intrinsic-size: auto calc(var(--media-card-width, 180px) * 1.55 + 88px);

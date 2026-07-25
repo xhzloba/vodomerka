@@ -229,11 +229,11 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
 
         <div className="hero__actions">
           <button className="hero__btn hero__btn--primary" onClick={() => onPlay(item)}>
-            <PlayIcon size={22} />
+            <PlayIcon size={18} />
             Смотреть
           </button>
           <button className="hero__btn hero__btn--ghost" onClick={() => onInfo(item)}>
-            <InfoIcon size={22} />
+            <InfoIcon size={18} />
             Подробнее
           </button>
         </div>

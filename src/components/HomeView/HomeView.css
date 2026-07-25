@@ -1,11 +1,28 @@
 .home-view {
+  /*
+   * Hero grows with viewport height, but the first content row freezes at
+   * --home-rows-top once the hero would push it lower.
+   */
+  --home-hero-height: max(480px, min(74vh, 680px));
+  --home-rows-top: 540px;
+  --home-hero-overlap: max(0px, calc(var(--home-hero-height) - var(--home-rows-top)));
+
   height: 100%;
   overflow-anchor: none;
   background: transparent;
 }
 
+.home-view .hero {
+  height: var(--home-hero-height);
+  min-height: 0;
+}
+
+.home-view .hero__dots {
+  bottom: max(28px, calc(var(--home-hero-overlap) + 16px));
+}
+
 .home-view__content {
-  margin-top: -92px;
+  margin-top: calc(-1 * var(--home-hero-overlap));
   position: relative;
   z-index: 1;
   padding-bottom: 48px;

@@ -13,7 +13,7 @@
 
 .library-view {
   --library-header-bottom-gap: 24px;
-  --library-row-gap: 36px;
+  --library-row-gap: 28px;
   --library-row-header-gap: 12px;
   padding: 0 0 28px;
 }

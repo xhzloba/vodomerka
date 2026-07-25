@@ -243,7 +243,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
         className="hero__btn hero__btn--primary media-detail__play-btn"
         onClick={() => onPlay(detailItem)}
       >
-        <PlayIcon size={22} />
+        <PlayIcon size={18} />
         Смотреть
       </button>
       <button
@@ -292,7 +292,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
           className="hero__btn hero__btn--ghost media-detail__info-btn"
           onClick={() => setDescriptionOpen(true)}
         >
-          <InfoIcon size={22} />
+          <InfoIcon size={18} />
           Описание
         </button>
       ) : null}
