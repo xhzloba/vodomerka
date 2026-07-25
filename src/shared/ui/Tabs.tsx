@@ -15,21 +15,27 @@ interface TabsProps {
 }
 
 export function Tabs({ items, activeId, onChange, ariaLabel, variant = 'default' }: TabsProps) {
+  const isSegmented = variant === 'segmented';
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const [tabIndicator, setTabIndicator] = useState<{
     x: number;
     width: number;
+    height: number;
+    y: number;
     ready: boolean;
   }>({
     x: 0,
     width: 0,
+    height: 0,
+    y: 0,
     ready: false,
   });
 
   const syncTabIndicator = useCallback(() => {
     const tabs = tabsRef.current;
-    const targetTab = hoveredTab ?? activeId;
+    // Segmented pill follows selection only; underline tabs also follow hover/focus.
+    const targetTab = isSegmented ? activeId : (hoveredTab ?? activeId);
     const button = tabs?.querySelector<HTMLElement>(`[data-ui-tab="${targetTab}"]`);
 
     if (!tabs || !button || !targetTab) {
@@ -37,15 +43,16 @@ export function Tabs({ items, activeId, onChange, ariaLabel, variant = 'default'
       return;
     }
 
-    const tabsRect = tabs.getBoundingClientRect();
-    const buttonRect = button.getBoundingClientRect();
-
+    // Prefer offset* — relative to padding box (absolute children live there).
+    // getBoundingClientRect includes border, which shifts the pill down/right by 1px.
     setTabIndicator({
-      x: buttonRect.left - tabsRect.left,
-      width: buttonRect.width,
+      x: button.offsetLeft,
+      y: button.offsetTop,
+      width: button.offsetWidth,
+      height: button.offsetHeight,
       ready: true,
     });
-  }, [activeId, hoveredTab]);
+  }, [activeId, hoveredTab, isSegmented]);
 
   useLayoutEffect(() => {
     syncTabIndicator();
@@ -69,8 +76,11 @@ export function Tabs({ items, activeId, onChange, ariaLabel, variant = 'default'
 
   const tabIndicatorStyle = tabIndicator.ready
     ? ({
-        transform: `translateX(${tabIndicator.x}px)`,
+        transform: isSegmented
+          ? `translate(${tabIndicator.x}px, ${tabIndicator.y}px)`
+          : `translateX(${tabIndicator.x}px)`,
         width: `${tabIndicator.width}px`,
+        ...(isSegmented ? { height: `${tabIndicator.height}px` } : null),
       } as CSSProperties)
     : undefined;
 
@@ -86,8 +96,12 @@ export function Tabs({ items, activeId, onChange, ariaLabel, variant = 'default'
       aria-label={ariaLabel}
       onMouseLeave={() => setHoveredTab(null)}
     >
-      {variant !== 'segmented' && tabIndicator.ready ? (
-        <span className="ui-tabs__indicator" aria-hidden="true" style={tabIndicatorStyle} />
+      {tabIndicator.ready ? (
+        <span
+          className={`ui-tabs__indicator${isSegmented ? ' ui-tabs__indicator--segmented' : ''}`}
+          aria-hidden="true"
+          style={tabIndicatorStyle}
+        />
       ) : null}
 
       {items.map((item) => {
@@ -102,9 +116,20 @@ export function Tabs({ items, activeId, onChange, ariaLabel, variant = 'default'
             aria-selected={isActive}
             className={`ui-tabs__tab${isActive ? ' ui-tabs__tab--active' : ''}`}
             onClick={() => onChange(item.id)}
-            onMouseEnter={() => setHoveredTab(item.id)}
-            onFocus={() => setHoveredTab(item.id)}
+            onMouseEnter={() => {
+              if (!isSegmented) {
+                setHoveredTab(item.id);
+              }
+            }}
+            onFocus={() => {
+              if (!isSegmented) {
+                setHoveredTab(item.id);
+              }
+            }}
             onBlur={(event) => {
+              if (isSegmented) {
+                return;
+              }
               if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node | null)) {
                 setHoveredTab(null);
               }

@@ -454,6 +454,7 @@ export function BrowseView({
               activeId={activeTab?.id ?? null}
               onChange={handleTabSelect}
               ariaLabel="Сортировка каталога"
+              variant="segmented"
             />
           ) : null}
         </div>
@@ -463,9 +464,9 @@ export function BrowseView({
             {filtersAvailable ? (
               <button
                 type="button"
-                className={`browse-view__filters-trigger${
-                  isFiltersMenuOpen ? ' browse-view__filters-trigger--open' : ''
-                }${activeCount > 0 ? ' browse-view__filters-trigger--active' : ''}`}
+                className={`browse-view__action-btn browse-view__filters-trigger${
+                  isFiltersMenuOpen ? ' browse-view__action-btn--open' : ''
+                }${activeCount > 0 ? ' browse-view__action-btn--active' : ''}`}
                 onClick={openFiltersMenu}
                 disabled={!filtersReady}
                 aria-haspopup="dialog"
@@ -475,7 +476,8 @@ export function BrowseView({
                 }
                 title="Фильтры"
               >
-                <FilterIcon size={22} strokeWidth={1.85} />
+                <FilterIcon size={18} strokeWidth={2} />
+                <span className="browse-view__action-btn-label">Фильтры</span>
                 {activeCount > 0 ? (
                   <span className="browse-view__filters-badge" aria-hidden="true">
                     {activeCount}
@@ -486,8 +488,8 @@ export function BrowseView({
 
             <button
               type="button"
-              className={`browse-view__category-trigger${
-                isCategoryMenuOpen ? ' browse-view__category-trigger--open' : ''
+              className={`browse-view__action-btn browse-view__category-trigger${
+                isCategoryMenuOpen ? ' browse-view__action-btn--open' : ''
               }${isCategoryHintActive ? ' browse-view__category-trigger--hint' : ''}`}
               onClick={openCategoryMenu}
               aria-haspopup="dialog"
@@ -504,11 +506,9 @@ export function BrowseView({
                   </span>
                 </span>
               ) : null}
-              <LayersIcon size={22} strokeWidth={1.85} />
-              <span className="browse-view__category-trigger-label" aria-hidden="true">
-                <span className="browse-view__category-trigger-label-text">
-                  {selectedCategory?.title ?? 'Категория'}
-                </span>
+              <LayersIcon size={18} strokeWidth={2} />
+              <span className="browse-view__action-btn-label">
+                {selectedCategory?.title ?? 'Категория'}
               </span>
             </button>
           </div>

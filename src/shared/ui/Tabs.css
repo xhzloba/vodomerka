@@ -70,39 +70,50 @@
 
 /* Apple-like segmented control */
 .ui-tabs--segmented {
+  --ui-segmented-pad: 3px;
+  --ui-segmented-radius: 12px;
+  --ui-segmented-pill-radius: 9px;
+
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 2px;
+  gap: 0;
   width: max-content;
   max-width: 100%;
-  padding: 3px;
-  border-radius: 12px;
+  padding: var(--ui-segmented-pad);
+  border-radius: var(--ui-segmented-radius);
   border: 1px solid var(--ui-segmented-border);
   background: var(--ui-segmented-bg);
 }
 
-.settings-view__header .ui-tabs--segmented {
-  background: var(--ui-segmented-bg);
-}
-
-.settings-view__header .ui-tabs--segmented .ui-tabs__tab {
-  padding: 6px 12px;
-  font-size: 0.875rem;
+.ui-tabs__indicator--segmented {
+  top: 0;
+  bottom: auto;
+  left: 0;
+  height: auto;
+  border-radius: var(--ui-segmented-pill-radius);
+  background: var(--ui-segmented-active-bg);
+  box-shadow: var(--ui-segmented-active-shadow);
+  transition:
+    transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease;
 }
 
 .ui-tabs--segmented .ui-tabs__tab {
-  padding: 7px 14px;
-  border-radius: 9px;
+  box-sizing: border-box;
+  min-height: 34px;
+  padding: 8px 16px;
+  border-radius: var(--ui-segmented-pill-radius);
   font-size: 0.9375rem;
-  font-weight: 510;
+  font-weight: 590;
   letter-spacing: -0.015em;
   line-height: 1.2;
   color: var(--app-text-muted);
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast),
-    box-shadow var(--transition-fast);
+  background: transparent;
+  box-shadow: none;
+  transition: color 140ms ease, background 140ms ease;
 }
 
 .ui-tabs--segmented .ui-tabs__tab:hover {
@@ -110,20 +121,16 @@
   background: var(--ui-segmented-hover-bg);
 }
 
-.ui-tabs--segmented .ui-tabs__tab--active {
-  color: var(--ui-segmented-active-color);
-  font-weight: 590;
-  background: var(--ui-segmented-active-bg);
-  box-shadow: var(--ui-segmented-active-shadow);
-}
-
+.ui-tabs--segmented .ui-tabs__tab--active,
 .ui-tabs--segmented .ui-tabs__tab--active:hover {
   color: var(--ui-segmented-active-color);
-  background: var(--ui-segmented-active-bg);
+  background: transparent;
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ui-tabs__indicator {
+  .ui-tabs__indicator,
+  .ui-tabs__indicator--segmented {
     transition: none;
   }
 }

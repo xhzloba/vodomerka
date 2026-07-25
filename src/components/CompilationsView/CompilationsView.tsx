@@ -239,16 +239,17 @@ export function CompilationsView({
             <div className="compilations-view__header-actions">
               <button
                 type="button"
-                className={`browse-view__filters-trigger${
-                  isFiltersMenuOpen ? ' browse-view__filters-trigger--open' : ''
-                }${hasActiveFilters ? ' browse-view__filters-trigger--active' : ''}`}
+                className={`browse-view__action-btn browse-view__filters-trigger${
+                  isFiltersMenuOpen ? ' browse-view__action-btn--open' : ''
+                }${hasActiveFilters ? ' browse-view__action-btn--active' : ''}`}
                 onClick={() => setIsFiltersMenuOpen(true)}
                 aria-haspopup="dialog"
                 aria-expanded={isFiltersMenuOpen}
                 aria-label={hasActiveFilters ? `Фильтры, активно: ${activeCount}` : 'Фильтры'}
                 title="Фильтры"
               >
-                <FilterIcon size={22} strokeWidth={1.85} />
+                <FilterIcon size={18} strokeWidth={2} />
+                <span className="browse-view__action-btn-label">Фильтры</span>
                 {hasActiveFilters ? (
                   <span className="browse-view__filters-badge" aria-hidden="true">
                     {activeCount}
