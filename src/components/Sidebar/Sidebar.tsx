@@ -229,13 +229,26 @@ export function Sidebar({
 
   const handleNavPointerDown = useCallback(
     (event: PointerEvent<HTMLButtonElement>, nav: NavItem) => {
-      if (event.button !== 0 || activeNav === nav) {
+      if (event.button !== 0) {
+        return;
+      }
+
+      // Catalog always jumps to Фильмы — play sound even if already on another browse tab.
+      if (nav === 'browse') {
+        if (activeNav === 'browse' && browseCategoryType === 'movie') {
+          return;
+        }
+        playMenuSound();
+        return;
+      }
+
+      if (activeNav === nav) {
         return;
       }
 
       playMenuSound();
     },
-    [activeNav],
+    [activeNav, browseCategoryType],
   );
 
   const handleNavClick = useCallback(
@@ -266,9 +279,16 @@ export function Sidebar({
     : undefined;
 
   const renderNavItem = (item: (typeof primaryNavItems)[number]) => {
-    const isActive = activeNav === item.id;
+    const isActive =
+      item.id === 'browse'
+        ? activeNav === 'browse' && browseCategoryType == null
+        : activeNav === item.id;
     const settingsAction = itemSettingsActions?.[item.id];
-    const showItemSettings = isActive && !collapsed && settingsAction;
+    // Catalog settings stay available on any browse category (Фильмы/Сериалы/…).
+    const showItemSettings =
+      Boolean(settingsAction) &&
+      !collapsed &&
+      (item.id === 'browse' ? activeNav === 'browse' : isActive);
 
     const itemButton = (
       <button

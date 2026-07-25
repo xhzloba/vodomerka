@@ -314,7 +314,13 @@ export function MainAppShell() {
           sidebarStyle={settings.sidebarStyle}
           macSidebarChrome={macSidebarChrome}
           browseCategoryType={browseCategoryType}
-          onNavChange={navigate}
+          onNavChange={(nav) => {
+            if (nav === 'browse') {
+              openBrowse({ categoryType: 'movie' });
+              return;
+            }
+            navigate(nav);
+          }}
           onOpenBrowseCategory={(categoryType) => openBrowse({ categoryType })}
           itemSettingsActions={{
             home: {
