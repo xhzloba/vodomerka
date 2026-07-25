@@ -150,7 +150,10 @@ export function BrowseView({
 
   const filterFields = useMemo(() => createBrowseFilterFields(), []);
 
-  const filtersSupported = Boolean(
+  const filtersAvailable = Boolean(
+    selectedCategory && extractBrowseType(selectedCategory),
+  );
+  const filtersReady = Boolean(
     selectedCategory && activeTab && buildBrowseScope(selectedCategory, activeTab),
   );
 
@@ -381,6 +384,10 @@ export function BrowseView({
   };
 
   const openFiltersMenu = () => {
+    if (!filtersReady) {
+      return;
+    }
+
     playSubmenuSound();
     dismissCategoryHint();
     onSettingsMenuOpenChange(false);
@@ -453,27 +460,29 @@ export function BrowseView({
 
         {categories.length > 0 ? (
           <div className="browse-view__header-actions">
-            <button
-              type="button"
-              className={`browse-view__filters-trigger${
-                isFiltersMenuOpen ? ' browse-view__filters-trigger--open' : ''
-              }${activeCount > 0 ? ' browse-view__filters-trigger--active' : ''}`}
-              onClick={openFiltersMenu}
-              disabled={!filtersSupported}
-              aria-haspopup="dialog"
-              aria-expanded={isFiltersMenuOpen}
-              aria-label={
-                activeCount > 0 ? `Фильтры, активно: ${activeCount}` : 'Фильтры'
-              }
-              title="Фильтры"
-            >
-              <FilterIcon size={22} strokeWidth={1.85} />
-              {activeCount > 0 ? (
-                <span className="browse-view__filters-badge" aria-hidden="true">
-                  {activeCount}
-                </span>
-              ) : null}
-            </button>
+            {filtersAvailable ? (
+              <button
+                type="button"
+                className={`browse-view__filters-trigger${
+                  isFiltersMenuOpen ? ' browse-view__filters-trigger--open' : ''
+                }${activeCount > 0 ? ' browse-view__filters-trigger--active' : ''}`}
+                onClick={openFiltersMenu}
+                disabled={!filtersReady}
+                aria-haspopup="dialog"
+                aria-expanded={isFiltersMenuOpen}
+                aria-label={
+                  activeCount > 0 ? `Фильтры, активно: ${activeCount}` : 'Фильтры'
+                }
+                title="Фильтры"
+              >
+                <FilterIcon size={22} strokeWidth={1.85} />
+                {activeCount > 0 ? (
+                  <span className="browse-view__filters-badge" aria-hidden="true">
+                    {activeCount}
+                  </span>
+                ) : null}
+              </button>
+            ) : null}
 
             <button
               type="button"
@@ -533,7 +542,7 @@ export function BrowseView({
       </SlideMenu>
 
       <SlideMenu
-        open={isFiltersMenuOpen}
+        open={isFiltersMenuOpen && filtersReady}
         title="Фильтры"
         size="xlarge"
         onClose={() => setIsFiltersMenuOpen(false)}

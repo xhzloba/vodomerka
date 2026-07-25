@@ -9,8 +9,11 @@
 }
 
 .compilations-view--detail .compilations-view__header {
-  margin-bottom: var(--library-header-bottom-gap);
+  flex-direction: row;
+  align-items: center;
   justify-content: space-between;
+  gap: 20px;
+  margin-bottom: var(--library-header-bottom-gap);
 }
 
 .compilations-view__header-actions {

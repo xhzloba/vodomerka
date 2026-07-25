@@ -215,6 +215,7 @@ export function CompilationsView({
 
   if (selectedCompilation) {
     const hasActiveFilters = activeCount > 0;
+    const filtersSupported = !isDetailLoading && detailItems.length > 0;
     const showFilteredEmpty =
       !isDetailLoading && detailItems.length > 0 && filteredDetailItems.length === 0;
 
@@ -234,31 +235,32 @@ export function CompilationsView({
             <h1 className="compilations-view__detail-title">{selectedCompilation.details.name}</h1>
           </nav>
 
-          <div className="compilations-view__header-actions">
-            <button
-              type="button"
-              className={`browse-view__filters-trigger${
-                isFiltersMenuOpen ? ' browse-view__filters-trigger--open' : ''
-              }${hasActiveFilters ? ' browse-view__filters-trigger--active' : ''}`}
-              onClick={() => setIsFiltersMenuOpen(true)}
-              disabled={isDetailLoading || detailItems.length === 0}
-              aria-haspopup="dialog"
-              aria-expanded={isFiltersMenuOpen}
-              aria-label={hasActiveFilters ? `Фильтры, активно: ${activeCount}` : 'Фильтры'}
-              title="Фильтры"
-            >
-              <FilterIcon size={22} strokeWidth={1.85} />
-              {hasActiveFilters ? (
-                <span className="browse-view__filters-badge" aria-hidden="true">
-                  {activeCount}
-                </span>
-              ) : null}
-            </button>
-          </div>
+          {filtersSupported ? (
+            <div className="compilations-view__header-actions">
+              <button
+                type="button"
+                className={`browse-view__filters-trigger${
+                  isFiltersMenuOpen ? ' browse-view__filters-trigger--open' : ''
+                }${hasActiveFilters ? ' browse-view__filters-trigger--active' : ''}`}
+                onClick={() => setIsFiltersMenuOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={isFiltersMenuOpen}
+                aria-label={hasActiveFilters ? `Фильтры, активно: ${activeCount}` : 'Фильтры'}
+                title="Фильтры"
+              >
+                <FilterIcon size={22} strokeWidth={1.85} />
+                {hasActiveFilters ? (
+                  <span className="browse-view__filters-badge" aria-hidden="true">
+                    {activeCount}
+                  </span>
+                ) : null}
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <SlideMenu
-          open={isFiltersMenuOpen}
+          open={isFiltersMenuOpen && filtersSupported}
           title="Фильтры"
           size="xlarge"
           onClose={() => setIsFiltersMenuOpen(false)}
