@@ -13,6 +13,7 @@ import {
 } from '@/shared/ui/mediaContextMenu';
 import { MediaCoverPlaceholder } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
 import { MediaDescriptionDialog } from '@/shared/ui/MediaDescriptionDialog/MediaDescriptionDialog';
+import { HeroRating } from '@/shared/ui/HeroRating/HeroRating';
 import { copyText } from '@/shared/lib/copyText';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import { EyeOffIcon, FavoritesIcon, PlayOverlayIcon } from '@/shared/ui/icons';
@@ -249,11 +250,6 @@ export function MediaCard({
   const isLoading = hasImageSource && !failed && !ready;
   const isEmptyCard = !hasImageSource || failed;
 
-  const metaParts = [
-    item.year,
-    item.rating != null ? `★ ${item.rating.toFixed(1)}` : null,
-  ].filter(Boolean);
-
   return (
     <>
       <article
@@ -331,7 +327,18 @@ export function MediaCard({
         {settings.cardShowInfo && (
           <div className="media-card__info">
             <h3 className="media-card__title">{item.title}</h3>
-            {metaParts.length > 0 ? <p className="media-card__meta">{metaParts.join(' · ')}</p> : null}
+            {item.year != null || item.rating != null ? (
+              <div className="media-card__meta">
+                {item.year != null ? (
+                  <span className="media-card__year">{item.year}</span>
+                ) : null}
+                {item.rating != null ? (
+                  <span className="media-card__rating" aria-label={`Рейтинг ${item.rating.toFixed(1)}`}>
+                    <HeroRating rating={item.rating} />
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         )}
       </article>

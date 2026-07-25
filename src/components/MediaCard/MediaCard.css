@@ -258,31 +258,96 @@
 }
 
 .media-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
   padding: 10px 2px 0;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
 }
 
 .media-card__title {
-  display: block;
-  max-width: 100%;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
+  margin: 0;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 590;
+  letter-spacing: -0.022em;
+  line-height: 1.25;
+  color: var(--app-text);
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 2px;
-  background: var(--media-pearl-text-gradient);
-  background-size: 170% 100%;
-  background-position: 8% 50%;
+  white-space: nowrap;
+}
+
+.media-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.6875rem;
+  font-weight: 510;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.media-card__year {
+  flex-shrink: 0;
+  color: var(--app-text-muted);
+  opacity: 0.78;
+}
+
+.media-card__rating {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: 1;
+  background: linear-gradient(165deg, #ffd25e 16%, #c9a24a 72%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
 }
 
-.media-card__meta {
-  font-size: 12px;
-  color: var(--text-tertiary);
+.media-card__rating:has(.hero-rating) {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  -webkit-text-fill-color: unset;
+  color: unset;
+}
+
+.media-card__rating .hero-rating {
+  gap: 2px;
+}
+
+.media-card__rating .hero-rating--top {
+  margin-right: 0;
+}
+
+.media-card__rating .hero-rating__laurel {
+  height: 0.95em;
+}
+
+.media-card:hover .media-card__title,
+.media-card--focused .media-card__title {
+  color: var(--app-text);
+}
+
+.media-card:hover .media-card__year,
+.media-card--focused .media-card__year {
+  opacity: 0.92;
+}
+
+.media-card--wide .media-card__title {
+  font-size: 0.875rem;
+  letter-spacing: -0.02em;
+}
+
+.media-card--wide .media-card__meta {
+  font-size: 0.75rem;
 }
 
 .media-card--wide {
