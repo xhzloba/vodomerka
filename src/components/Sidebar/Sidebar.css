@@ -1045,7 +1045,7 @@
   color: var(--app-text);
 }
 
-/* Simple Apple-like selection pill — works on all themes */
+/* Simple Apple-like selection pill — neutrals from theme tokens */
 .sidebar.sidebar--menu-highlight .sidebar__item-surface {
   border-radius: 10px;
 }
