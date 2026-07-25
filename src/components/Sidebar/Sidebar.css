@@ -1021,21 +1021,6 @@
   color: var(--app-text);
 }
 
-/* Медиатека: своя спокойная подсветка, без магнитной капсулы */
-.sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item--mediateka.sidebar__item--active .sidebar__item-surface,
-.sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__item--mediateka.sidebar__item--active .sidebar__item-surface,
-.sidebar.sidebar--menu-edge-pulse .sidebar__item--mediateka.sidebar__item--active .sidebar__item-surface {
-  background: color-mix(in srgb, var(--app-text) 10%, transparent);
-  box-shadow: none;
-  color: var(--app-text);
-}
-
-[data-color-scheme='light'] .sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item--mediateka.sidebar__item--active .sidebar__item-surface,
-[data-color-scheme='light'] .sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__item--mediateka.sidebar__item--active .sidebar__item-surface,
-[data-color-scheme='light'] .sidebar.sidebar--menu-edge-pulse .sidebar__item--mediateka.sidebar__item--active .sidebar__item-surface {
-  background: color-mix(in srgb, var(--app-text) 8%, transparent);
-}
-
 .sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-icon,
 .sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-icon {
   color: var(--app-accent);

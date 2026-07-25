@@ -149,9 +149,8 @@ export function Sidebar({
     }
 
     const nav = navRef.current;
-    // Magnetic pill only follows main nav (Главная / Каталог / …), not Медиатека.
     const surface = nav?.querySelector<HTMLElement>(
-      '.sidebar__item--active:not(.sidebar__item--mediateka) .sidebar__item-surface',
+      '.sidebar__item--active .sidebar__item-surface',
     );
 
     if (!nav || !surface) {
@@ -177,7 +176,7 @@ export function Sidebar({
 
     const sidebar = sidebarRef.current;
     const surface = navRef.current?.querySelector<HTMLElement>(
-      '.sidebar__item--active:not(.sidebar__item--mediateka) .sidebar__item-surface',
+      '.sidebar__item--active .sidebar__item-surface',
     );
 
     if (!sidebar || !surface) {
@@ -289,6 +288,31 @@ export function Sidebar({
       } as CSSProperties)
     : undefined;
 
+  const renderActiveMenuFx = (activeKey: string) => (
+    <>
+      {menuAnimation === 'liquid' && !collapsed ? (
+        <>
+          <span
+            key={`liquid-glow-${activeKey}`}
+            className="sidebar__liquid-glow"
+            aria-hidden="true"
+          />
+          <span
+            key={`liquid-bubbles-${activeKey}`}
+            className="sidebar__liquid-bubbles"
+            aria-hidden="true"
+          />
+        </>
+      ) : null}
+      {menuAnimation === 'snake' && !collapsed ? (
+        <span className="sidebar__snake-ring" aria-hidden="true">
+          <span className="sidebar__snake-beam sidebar__snake-beam--trail" />
+          <span className="sidebar__snake-beam sidebar__snake-beam--core" />
+        </span>
+      ) : null}
+    </>
+  );
+
   const renderNavItem = (item: (typeof primaryNavItems)[number]) => {
     const isActive =
       item.id === 'browse'
@@ -319,26 +343,7 @@ export function Sidebar({
         title={collapsed ? item.label : undefined}
       >
         <span className="sidebar__item-surface">
-          {menuAnimation === 'liquid' && isActive && !collapsed ? (
-            <>
-              <span
-                key={`liquid-glow-${activeNav}`}
-                className="sidebar__liquid-glow"
-                aria-hidden="true"
-              />
-              <span
-                key={`liquid-bubbles-${activeNav}`}
-                className="sidebar__liquid-bubbles"
-                aria-hidden="true"
-              />
-            </>
-          ) : null}
-          {menuAnimation === 'snake' && isActive && !collapsed ? (
-            <span className="sidebar__snake-ring" aria-hidden="true">
-              <span className="sidebar__snake-beam sidebar__snake-beam--trail" />
-              <span className="sidebar__snake-beam sidebar__snake-beam--core" />
-            </span>
-          ) : null}
+          {isActive ? renderActiveMenuFx(item.id) : null}
           <span className="sidebar__item-icon">{item.icon}</span>
           <span className="sidebar__item-label">{item.label}</span>
           {item.id === 'library' && favoritesCount > 0 ? (
@@ -431,6 +436,7 @@ export function Sidebar({
           aria-label={item.title}
         >
           <span className="sidebar__item-surface">
+            {isActive ? renderActiveMenuFx(`mediateka-${item.id}`) : null}
             <span className="sidebar__item-icon">
               <MediatekaIcon item={item} />
             </span>
