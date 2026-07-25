@@ -55,13 +55,13 @@ interface SidebarProps {
 const primaryNavItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
   { id: 'home', label: 'Главная', icon: <HomeIcon size={20} /> },
   { id: 'browse', label: 'Каталог', icon: <GridIcon size={20} /> },
-];
-
-const secondaryNavItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
   { id: 'compilations', label: 'Подборки', icon: <CompilationsIcon size={20} /> },
   { id: 'library', label: 'Избранное', icon: <FavoritesIcon size={20} /> },
   { id: 'watched', label: 'Просмотренное', icon: <EyeIcon size={20} /> },
   { id: 'search', label: 'Поиск', icon: <SearchIcon size={20} /> },
+];
+
+const footerNavItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
   { id: 'plugins', label: 'Плагины', icon: <PuzzleIcon size={20} /> },
   { id: 'settings', label: 'Настройки', icon: <SettingsIcon size={20} /> },
 ];
@@ -145,7 +145,10 @@ export function Sidebar({
     }
 
     const nav = navRef.current;
-    const surface = nav?.querySelector<HTMLElement>('.sidebar__item--active .sidebar__item-surface');
+    // Magnetic pill only follows main nav (Главная / Каталог / …), not Медиатека.
+    const surface = nav?.querySelector<HTMLElement>(
+      '.sidebar__item--active:not(.sidebar__item--mediateka) .sidebar__item-surface',
+    );
 
     if (!nav || !surface) {
       setMagneticIndicator((state) => (state.ready ? { ...state, ready: false } : state));
@@ -170,7 +173,7 @@ export function Sidebar({
 
     const sidebar = sidebarRef.current;
     const surface = navRef.current?.querySelector<HTMLElement>(
-      '.sidebar__item--active .sidebar__item-surface',
+      '.sidebar__item--active:not(.sidebar__item--mediateka) .sidebar__item-surface',
     );
 
     if (!sidebar || !surface) {
@@ -422,18 +425,6 @@ export function Sidebar({
           aria-label={item.title}
         >
           <span className="sidebar__item-surface">
-            {menuAnimation === 'liquid' && isActive && !collapsed ? (
-              <>
-                <span className="sidebar__liquid-glow" aria-hidden="true" />
-                <span className="sidebar__liquid-bubbles" aria-hidden="true" />
-              </>
-            ) : null}
-            {menuAnimation === 'snake' && isActive && !collapsed ? (
-              <span className="sidebar__snake-ring" aria-hidden="true">
-                <span className="sidebar__snake-beam sidebar__snake-beam--trail" />
-                <span className="sidebar__snake-beam sidebar__snake-beam--core" />
-              </span>
-            ) : null}
             <span className="sidebar__item-icon">
               <MediatekaIcon item={item} />
             </span>
@@ -450,10 +441,10 @@ export function Sidebar({
       editingMediateka && !collapsed ? MEDIATEKA_MENU_ITEMS : visibleMediatekaItems;
 
     mediatekaSection = (
-      <div className={`sidebar__mediateka${editingMediateka ? ' sidebar__mediateka--editing' : ''}`}>
+      <div className={`sidebar__section sidebar__mediateka${editingMediateka ? ' sidebar__mediateka--editing' : ''}`}>
         {!collapsed ? (
-          <div className="sidebar__mediateka-header">
-            <span className="sidebar__mediateka-title">Медиатека</span>
+          <div className="sidebar__section-header">
+            <span className="sidebar__section-title">Медиатека</span>
             <button
               type="button"
               className="sidebar__mediateka-edit"
@@ -468,6 +459,17 @@ export function Sidebar({
       </div>
     );
   }
+
+  const primarySection = (
+    <div className="sidebar__section sidebar__section--primary">
+      {!collapsed ? (
+        <div className="sidebar__section-header">
+          <span className="sidebar__section-title">Меню</span>
+        </div>
+      ) : null}
+      {primaryNavItems.map(renderNavItem)}
+    </div>
+  );
 
   return (
     <aside
@@ -491,9 +493,9 @@ export function Sidebar({
               style={magneticIndicatorStyle}
             />
           ) : null}
-          {primaryNavItems.map(renderNavItem)}
+          {primarySection}
           {mediatekaSection}
-          {secondaryNavItems.map(renderNavItem)}
+          {footerNavItems.map(renderNavItem)}
         </nav>
       </div>
     </aside>

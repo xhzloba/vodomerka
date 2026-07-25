@@ -96,14 +96,17 @@
   -webkit-app-region: no-drag;
 }
 
-.sidebar__mediateka {
+.sidebar__section {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin: 8px 0 4px;
 }
 
-.sidebar__mediateka-header {
+.sidebar__section--primary {
+  margin-bottom: 4px;
+}
+
+.sidebar__section-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -111,12 +114,16 @@
   padding: 6px 10px 4px;
 }
 
-.sidebar__mediateka-title {
+.sidebar__section-title {
   font-family: var(--font-system);
   font-size: 0.75rem;
   font-weight: 510;
   letter-spacing: -0.01em;
   color: var(--app-text-muted);
+}
+
+.sidebar__mediateka {
+  margin: 8px 0 4px;
 }
 
 .sidebar__mediateka-edit {
@@ -995,6 +1002,21 @@
   background: transparent;
   box-shadow: none;
   color: var(--app-text);
+}
+
+/* Медиатека: своя спокойная подсветка, без магнитной капсулы */
+.sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item--mediateka.sidebar__item--active .sidebar__item-surface,
+.sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__item--mediateka.sidebar__item--active .sidebar__item-surface,
+.sidebar.sidebar--menu-edge-pulse .sidebar__item--mediateka.sidebar__item--active .sidebar__item-surface {
+  background: color-mix(in srgb, var(--app-text) 10%, transparent);
+  box-shadow: none;
+  color: var(--app-text);
+}
+
+[data-color-scheme='light'] .sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item--mediateka.sidebar__item--active .sidebar__item-surface,
+[data-color-scheme='light'] .sidebar.sidebar--menu-magnetic-water:not(.sidebar--collapsed) .sidebar__item--mediateka.sidebar__item--active .sidebar__item-surface,
+[data-color-scheme='light'] .sidebar.sidebar--menu-edge-pulse .sidebar__item--mediateka.sidebar__item--active .sidebar__item-surface {
+  background: color-mix(in srgb, var(--app-text) 8%, transparent);
 }
 
 .sidebar.sidebar--menu-magnetic:not(.sidebar--collapsed) .sidebar__item--active .sidebar__item-icon,
