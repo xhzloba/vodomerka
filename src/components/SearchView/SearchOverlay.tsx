@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { MediaItem } from '@/shared/domain/media';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
@@ -21,24 +21,6 @@ export function SearchOverlay({
   onClose,
 }: SearchOverlayProps) {
   const scrollRef = useOverlayScroll<HTMLDivElement>();
-  const [hasStartedTyping, setHasStartedTyping] = useState(false);
-  const [snakeVisible, setSnakeVisible] = useState(false);
-
-  useEffect(() => {
-    if (!open) {
-      setHasStartedTyping(false);
-      setSnakeVisible(false);
-      return;
-    }
-
-    const frameId = window.requestAnimationFrame(() => {
-      setSnakeVisible(true);
-    });
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-    };
-  }, [open]);
 
   useEffect(() => {
     if (!open) {
@@ -68,17 +50,6 @@ export function SearchOverlay({
     onMediaSelect(item);
   };
 
-  const hideSnake = hasStartedTyping;
-  const showSnake = snakeVisible && !hideSnake;
-
-  const handleQueryChange = (value: string) => {
-    if (value.trim().length > 0) {
-      setHasStartedTyping(true);
-    }
-
-    onQueryChange(value);
-  };
-
   return createPortal(
     <div className="search-overlay" role="presentation">
       <button
@@ -88,33 +59,21 @@ export function SearchOverlay({
         onClick={onClose}
       />
 
-      <div className="search-overlay__frame">
-        <div
-          className={`search-overlay__snake-ring${showSnake ? ' search-overlay__snake-ring--visible' : ''}${
-            hideSnake ? ' search-overlay__snake-ring--hidden' : ''
-          }`}
-          aria-hidden="true"
-        >
-          <div className="search-overlay__snake-beam search-overlay__snake-beam--trail" />
-          <div className="search-overlay__snake-beam search-overlay__snake-beam--core" />
-        </div>
-
-        <div
-          className="search-overlay__panel scroll-overlay"
-          ref={scrollRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Поиск"
-        >
-          <SearchPanel
-            query={query}
-            onQueryChange={handleQueryChange}
-            onMediaSelect={handleMediaSelect}
-            autoFocus
-            variant="overlay"
-            inputId="search-overlay-input"
-          />
-        </div>
+      <div
+        className="search-overlay__panel scroll-overlay"
+        ref={scrollRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Быстрый поиск"
+      >
+        <SearchPanel
+          query={query}
+          onQueryChange={onQueryChange}
+          onMediaSelect={handleMediaSelect}
+          autoFocus
+          variant="overlay"
+          inputId="search-overlay-input"
+        />
       </div>
     </div>,
     document.body,
