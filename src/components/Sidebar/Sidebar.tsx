@@ -1,6 +1,7 @@
 import type { CSSProperties, PointerEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { NavItem } from '@/types';
+import type { BrowseSidebarEntry } from '@/app/navigation/browseTarget';
 import type { SidebarMenuAnimation, SidebarStyle } from '@/shared/settings/types';
 import { getSearchShortcutLabel } from '@/features/onboarding/tips/platformShortcut';
 import { playMenuSound, playSubmenuSound } from '@/shared/audio/uiSounds';
@@ -45,6 +46,7 @@ interface SidebarProps {
   sidebarStyle?: SidebarStyle;
   macSidebarChrome?: boolean;
   browseCategoryType?: string | null;
+  browseSidebarEntry?: BrowseSidebarEntry | null;
   onNavChange: (nav: NavItem) => void;
   onOpenBrowseCategory: (categoryType: string) => void;
   itemSettingsActions?: Partial<Record<NavItem, SidebarItemSettingsAction>>;
@@ -86,6 +88,7 @@ export function Sidebar({
   sidebarStyle = 'apple',
   macSidebarChrome = false,
   browseCategoryType = null,
+  browseSidebarEntry = null,
   onNavChange,
   onOpenBrowseCategory,
   itemSettingsActions,
@@ -192,6 +195,7 @@ export function Sidebar({
   }, [
     activeNav,
     browseCategoryType,
+    browseSidebarEntry,
     collapsed,
     editingMediateka,
     favoritesCount,
@@ -235,7 +239,7 @@ export function Sidebar({
 
       // Catalog always jumps to Фильмы — play sound even if already on another browse tab.
       if (nav === 'browse') {
-        if (activeNav === 'browse' && browseCategoryType === 'movie') {
+        if (activeNav === 'browse' && browseSidebarEntry === 'catalog') {
           return;
         }
         playMenuSound();
@@ -248,7 +252,7 @@ export function Sidebar({
 
       playMenuSound();
     },
-    [activeNav, browseCategoryType],
+    [activeNav, browseSidebarEntry],
   );
 
   const handleNavClick = useCallback(
@@ -281,7 +285,7 @@ export function Sidebar({
   const renderNavItem = (item: (typeof primaryNavItems)[number]) => {
     const isActive =
       item.id === 'browse'
-        ? activeNav === 'browse' && browseCategoryType == null
+        ? activeNav === 'browse' && browseSidebarEntry === 'catalog'
         : activeNav === item.id;
     const settingsAction = itemSettingsActions?.[item.id];
     // Catalog settings stay available on any browse category (Фильмы/Сериалы/…).
@@ -372,7 +376,10 @@ export function Sidebar({
   const renderMediatekaItem = (item: MediatekaMenuItem) => {
     const isChecked = !hiddenMediatekaIdSet.has(item.id);
     const isActive =
-      !editingMediateka && activeNav === 'browse' && browseCategoryType === item.categoryType;
+      !editingMediateka &&
+      activeNav === 'browse' &&
+      browseSidebarEntry === 'mediateka' &&
+      browseCategoryType === item.categoryType;
 
     if (editingMediateka && !collapsed) {
       return (

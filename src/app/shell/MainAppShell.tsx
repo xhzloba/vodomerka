@@ -43,6 +43,7 @@ export function MainAppShell() {
     openCompilation,
     browseTarget,
     browseCategoryType,
+    browseSidebarEntry,
     compilationTarget,
     clearBrowseTarget,
     clearCompilationTarget,
@@ -314,14 +315,17 @@ export function MainAppShell() {
           sidebarStyle={settings.sidebarStyle}
           macSidebarChrome={macSidebarChrome}
           browseCategoryType={browseCategoryType}
+          browseSidebarEntry={browseSidebarEntry}
           onNavChange={(nav) => {
             if (nav === 'browse') {
-              openBrowse({ categoryType: 'movie' });
+              openBrowse({ categoryType: 'movie', entry: 'catalog' });
               return;
             }
             navigate(nav);
           }}
-          onOpenBrowseCategory={(categoryType) => openBrowse({ categoryType })}
+          onOpenBrowseCategory={(categoryType) =>
+            openBrowse({ categoryType, entry: 'mediateka' })
+          }
           itemSettingsActions={{
             home: {
               ariaLabel: 'Настройки главной',

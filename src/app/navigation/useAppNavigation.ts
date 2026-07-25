@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { NavItem } from '@/types';
-import type { BrowseNavigationTarget } from '@/app/navigation/browseTarget';
+import type { BrowseNavigationTarget, BrowseSidebarEntry } from '@/app/navigation/browseTarget';
 import type { CompilationNavigationTarget } from '@/app/navigation/compilationTarget';
 
 export function useAppNavigation() {
@@ -8,12 +8,14 @@ export function useAppNavigation() {
   const [searchQuery, setSearchQuery] = useState('');
   const [browseTarget, setBrowseTarget] = useState<BrowseNavigationTarget | null>(null);
   const [browseCategoryType, setBrowseCategoryType] = useState<string | null>(null);
+  const [browseSidebarEntry, setBrowseSidebarEntry] = useState<BrowseSidebarEntry | null>(null);
   const [compilationTarget, setCompilationTarget] = useState<CompilationNavigationTarget | null>(null);
 
   const navigate = useCallback((nav: NavItem) => {
     setActiveNav(nav);
     setBrowseTarget(null);
     setBrowseCategoryType(null);
+    setBrowseSidebarEntry(null);
     setCompilationTarget(null);
     if (nav !== 'search') {
       setSearchQuery('');
@@ -23,6 +25,7 @@ export function useAppNavigation() {
   const openBrowse = useCallback((target: BrowseNavigationTarget) => {
     setBrowseTarget(target);
     setBrowseCategoryType(target.categoryType);
+    setBrowseSidebarEntry(target.entry ?? 'mediateka');
     setCompilationTarget(null);
     setActiveNav('browse');
     setSearchQuery('');
@@ -32,6 +35,7 @@ export function useAppNavigation() {
     setCompilationTarget(target);
     setBrowseTarget(null);
     setBrowseCategoryType(null);
+    setBrowseSidebarEntry(null);
     setActiveNav('compilations');
     setSearchQuery('');
   }, []);
@@ -53,6 +57,7 @@ export function useAppNavigation() {
     openCompilation,
     browseTarget,
     browseCategoryType,
+    browseSidebarEntry,
     compilationTarget,
     clearBrowseTarget,
     clearCompilationTarget,
