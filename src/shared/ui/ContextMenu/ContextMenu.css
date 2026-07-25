@@ -16,7 +16,8 @@
 }
 
 .context-menu--media {
-  min-width: 212px;
+  min-width: 280px;
+  max-width: min(340px, calc(100vw - 24px));
   padding: 5px;
 }
 
