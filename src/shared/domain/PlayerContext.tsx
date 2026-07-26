@@ -13,7 +13,10 @@ interface PlayerContextValue {
   session: MediaPlaybackSession | null;
   isPreparing: boolean;
   prepareError: string | null;
-  playTorrent: (torrentId: string) => Promise<boolean>;
+  playTorrent: (
+    torrentId: string,
+    filePath?: string,
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
   closePlayer: () => void;
 }
 
@@ -50,12 +53,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     });
   }, [closePlayer]);
 
-  const playTorrent = useCallback(async (torrentId: string) => {
+  const playTorrent = useCallback(async (torrentId: string, filePath?: string) => {
     if (!window.electronAPI?.media?.prepareTorrentPlayback) {
-      setPrepareError('Плеер доступен только в приложении');
+      const error = 'Плеер доступен только в приложении';
+      setPrepareError(error);
       setIsPreparing(false);
       setSession(null);
-      return false;
+      return { ok: false as const, error };
     }
 
     setIsPreparing(true);
@@ -63,19 +67,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setSession(null);
 
     try {
-      const result = await window.electronAPI.media.prepareTorrentPlayback(torrentId);
+      const result = await window.electronAPI.media.prepareTorrentPlayback(
+        torrentId,
+        filePath,
+      );
       if (!result.ok) {
         setPrepareError(result.error);
         setIsPreparing(false);
-        return false;
+        return { ok: false as const, error: result.error };
       }
       setSession(result.session);
       setIsPreparing(false);
-      return true;
+      return { ok: true as const };
     } catch (error) {
-      setPrepareError(error instanceof Error ? error.message : 'Ошибка плеера');
+      const message = error instanceof Error ? error.message : 'Ошибка плеера';
+      setPrepareError(message);
       setIsPreparing(false);
-      return false;
+      return { ok: false as const, error: message };
     }
   }, []);
 

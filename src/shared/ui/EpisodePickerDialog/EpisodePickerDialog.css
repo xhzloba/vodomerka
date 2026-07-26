@@ -1,0 +1,195 @@
+.episode-picker__frame {
+  width: min(100%, 420px);
+}
+
+.episode-picker__seasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+.episode-picker__season {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-text) 7%, transparent);
+  color: var(--app-text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 560;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.episode-picker__season:hover:not(:disabled) {
+  color: var(--app-text);
+  background: color-mix(in srgb, var(--app-text) 11%, transparent);
+}
+
+.episode-picker__season.is-active {
+  color: #fff;
+  background: var(--ui-control-accent, var(--app-accent));
+}
+
+.episode-picker__season:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.episode-picker__list {
+  display: flex;
+  flex-direction: column;
+  max-height: min(48vh, 360px);
+  overflow: auto;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--app-text) 4.5%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-text) 6%, transparent);
+  scrollbar-width: thin;
+}
+
+.episode-picker__item {
+  appearance: none;
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  margin: 0;
+  padding: 10px 12px 10px 14px;
+  border: 0;
+  box-sizing: border-box;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.episode-picker__item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 12px;
+  bottom: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--app-text) 8%, transparent);
+  pointer-events: none;
+}
+
+.episode-picker__item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--app-text) 5%, transparent);
+}
+
+.episode-picker__item.is-selected {
+  background: var(--app-accent-soft);
+}
+
+.episode-picker__item.is-selected:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--app-accent-soft) 80%, var(--app-text) 6%);
+}
+
+.episode-picker__item:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.episode-picker__item-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.episode-picker__item-topline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.episode-picker__item-label {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 560;
+  letter-spacing: -0.016em;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--app-text);
+}
+
+.episode-picker__item-progress {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--app-text-muted);
+}
+
+.episode-picker__item.is-downloading .episode-picker__item-progress {
+  color: var(--ui-control-accent, var(--app-accent));
+}
+
+.episode-picker__item.is-done .episode-picker__item-progress {
+  color: color-mix(in srgb, var(--app-text-muted) 70%, #34c759 30%);
+}
+
+.episode-picker__item-file {
+  display: block;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: -0.006em;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--app-text-muted);
+}
+
+.episode-picker__item-bar {
+  display: block;
+  height: 3px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-text) 10%, transparent);
+}
+
+.episode-picker__item-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ui-control-accent, var(--app-accent));
+}
+
+.episode-picker__item-check {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: var(--app-accent);
+}
+
+.episode-picker .player-picker__actions {
+  margin-top: 14px;
+}
+
+[data-theme='pearl'] .episode-picker__list {
+  background: color-mix(in srgb, var(--app-text) 3.5%, #fff);
+}

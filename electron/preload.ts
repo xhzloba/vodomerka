@@ -129,10 +129,14 @@ const electronApi: ElectronApi = {
       ipcRenderer.invoke(IPC_CHANNELS.torrents.add, payload),
     remove: (id: string, deleteFiles?: boolean): Promise<TorrentDownloadRecord[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.torrents.remove, id, deleteFiles),
-    openFile: (id: string): Promise<{ ok: boolean; error?: string }> =>
-      ipcRenderer.invoke(IPC_CHANNELS.torrents.openFile, id),
-    openInPlayer: (id: string, playerId: string): Promise<OpenInPlayerResult> =>
-      ipcRenderer.invoke(IPC_CHANNELS.torrents.openInPlayer, id, playerId),
+    openFile: (id: string, filePath?: string): Promise<{ ok: boolean; error?: string }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.torrents.openFile, id, filePath),
+    openInPlayer: (
+      id: string,
+      playerId: string,
+      filePath?: string,
+    ): Promise<OpenInPlayerResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.torrents.openInPlayer, id, playerId, filePath),
     openFolder: (): Promise<{ ok: boolean; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.torrents.openFolder),
     getFolderPath: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.torrents.getFolderPath),
@@ -147,8 +151,11 @@ const electronApi: ElectronApi = {
     },
   },
   media: {
-    prepareTorrentPlayback: (torrentId: string): Promise<MediaPreparePlaybackResult> =>
-      ipcRenderer.invoke(IPC_CHANNELS.media.prepareTorrentPlayback, torrentId),
+    prepareTorrentPlayback: (
+      torrentId: string,
+      filePath?: string,
+    ): Promise<MediaPreparePlaybackResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.media.prepareTorrentPlayback, torrentId, filePath),
     stopPlayback: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.media.stopPlayback),
   },
   sidebar: {

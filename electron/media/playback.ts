@@ -31,13 +31,48 @@ async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
-export async function prepareTorrentPlayback(torrentId: string): Promise<MediaPreparePlaybackResult> {
-  const source = getTorrentPlaybackSource(torrentId);
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+/** Wait until selected file has some bytes (play-while-download). */
+async function waitForFileBytes(
+  file: { progress: number; done: boolean; downloaded?: number; length: number },
+  timeoutMs = 12_000,
+): Promise<boolean> {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    try {
+      if (file.done || file.progress >= 0.002) {
+        return true;
+      }
+      if (typeof file.downloaded === 'number' && file.downloaded >= 256 * 1024) {
+        return true;
+      }
+    } catch {
+      // ignore transient webtorrent getter errors
+    }
+    await sleep(250);
+  }
+  try {
+    return file.done || file.progress > 0 || (file.downloaded ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+export async function prepareTorrentPlayback(
+  torrentId: string,
+  filePath?: string | null,
+): Promise<MediaPreparePlaybackResult> {
+  const source = getTorrentPlaybackSource(torrentId, filePath);
   if (!source.ok) {
     return source;
   }
 
-  const activeFile = prioritizeTorrentPlayback(torrentId);
+  const activeFile = prioritizeTorrentPlayback(torrentId, filePath);
   const activeTorrent = getActiveWebTorrent(torrentId);
 
   try {
@@ -110,49 +145,63 @@ export async function prepareTorrentPlayback(torrentId: string): Promise<MediaPr
       };
     }
 
-    // Still downloading + Chromium-native container → WebTorrent HTTP
-    if (activeTorrent && activeFile && canDirectPlay(activeFile.name)) {
-      const { port, pathname } = await ensureWebTorrentHttpServer();
-      return {
-        ok: true,
-        session: {
-          torrentId,
-          title: source.title,
-          posterUrl: source.posterUrl,
-          url: buildWebTorrentFileUrl(port, pathname, activeTorrent.infoHash, activeFile.path),
-          filePath: source.filePath,
-          sourcePath: source.filePath,
-          remuxed: false,
-          live: true,
-          seekable: true,
-        },
-      };
-    }
-
-    // Still downloading + mkv: prefer remux from disk if file already exists (more reliable than pipe)
-    if (await fileExists(source.filePath) && !canDirectPlay(source.filePath)) {
-      const { port } = await ensureMediaServer();
-      prioritizeTorrentPlayback(torrentId);
-      const token = randomUUID();
-      registerFileRemuxToken(token, source.filePath, source.fileName);
-      return {
-        ok: true,
-        session: {
-          torrentId,
-          title: source.title,
-          posterUrl: source.posterUrl,
-          url: buildMediaUrl(token, port),
-          filePath: source.filePath,
-          sourcePath: source.filePath,
-          remuxed: true,
-          live: true,
-          seekable: false,
-        },
-      };
-    }
-
-    // Fallback: live remux from WebTorrent stream
+    // Incomplete episode: prioritize selected file and wait for first pieces.
     if (activeTorrent && activeFile) {
+      const ready = await waitForFileBytes(activeFile);
+      if (!ready) {
+        const pct = Math.round(Math.min(1, Math.max(0, activeFile.progress || 0)) * 100);
+        return {
+          ok: false,
+          error:
+            pct > 0
+              ? `Серия ещё качается (${pct}%) — подожди немного и открой снова`
+              : 'Серия ещё не начала качаться — подожди появления пиров и открой снова',
+        };
+      }
+
+      // Chromium-native container → WebTorrent HTTP (progressive)
+      if (canDirectPlay(activeFile.name)) {
+        const { port, pathname } = await ensureWebTorrentHttpServer();
+        return {
+          ok: true,
+          session: {
+            torrentId,
+            title: source.title,
+            posterUrl: source.posterUrl,
+            url: buildWebTorrentFileUrl(port, pathname, activeTorrent.infoHash, activeFile.path),
+            filePath: source.filePath,
+            sourcePath: source.filePath,
+            remuxed: false,
+            live: true,
+            seekable: true,
+          },
+        };
+      }
+
+      // Enough on disk → remux from file; otherwise live pipe from WebTorrent
+      const onDisk = await fileExists(source.filePath);
+      const fileProgress = Math.min(1, Math.max(0, activeFile.progress || 0));
+      if (onDisk && fileProgress >= 0.05) {
+        const { port } = await ensureMediaServer();
+        prioritizeTorrentPlayback(torrentId, filePath);
+        const token = randomUUID();
+        registerFileRemuxToken(token, source.filePath, source.fileName);
+        return {
+          ok: true,
+          session: {
+            torrentId,
+            title: source.title,
+            posterUrl: source.posterUrl,
+            url: buildMediaUrl(token, port),
+            filePath: source.filePath,
+            sourcePath: source.filePath,
+            remuxed: true,
+            live: true,
+            seekable: false,
+          },
+        };
+      }
+
       const { port } = await ensureMediaServer();
       const token = randomUUID();
       registerLiveRemuxToken(

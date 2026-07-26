@@ -49,11 +49,18 @@ export function registerTorrentsIpc(): void {
     async (_event, id: string, deleteFiles?: boolean) => removeTorrent(id, Boolean(deleteFiles)),
   );
 
-  ipcMain.handle(IPC_CHANNELS.torrents.openFile, async (_event, id: string) => openTorrentFile(id));
+  ipcMain.handle(IPC_CHANNELS.torrents.openFile, async (_event, id: string, filePath?: string) =>
+    openTorrentFile(id, typeof filePath === 'string' ? filePath : undefined),
+  );
 
   ipcMain.handle(
     IPC_CHANNELS.torrents.openInPlayer,
-    async (_event, id: string, playerId: string) => openTorrentInPlayer(id, playerId),
+    async (_event, id: string, playerId: string, filePath?: string) =>
+      openTorrentInPlayer(
+        id,
+        playerId,
+        typeof filePath === 'string' && filePath.trim() ? filePath.trim() : undefined,
+      ),
   );
 
   ipcMain.handle(IPC_CHANNELS.torrents.openFolder, async () => openTorrentsFolder());

@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePlayer } from '@/shared/domain/PlayerContext';
 import { useTorrents } from '@/shared/domain/TorrentsContext';
+import { hasMultipleEpisodes } from '@/shared/domain/torrentEpisodes';
+import { EpisodePickerDialog } from '@/shared/ui/EpisodePickerDialog/EpisodePickerDialog';
 import {
   CaptionsIcon,
   CloseIcon,
   FullscreenExitIcon,
   FullscreenIcon,
+  LayersIcon,
   PauseBarsIcon,
   PictureInPictureIcon,
   PlayIcon,
@@ -31,8 +34,8 @@ function formatTime(seconds: number): string {
 }
 
 export function NativePlayer() {
-  const { session, isPreparing, prepareError, closePlayer } = usePlayer();
-  const { openTorrentFile } = useTorrents();
+  const { session, isPreparing, prepareError, playTorrent, closePlayer } = usePlayer();
+  const { torrents, openTorrentFile } = useTorrents();
   const rootRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hideTimerRef = useRef<number | null>(null);
@@ -48,6 +51,16 @@ export function NativePlayer() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [captionsOn, setCaptionsOn] = useState(false);
   const [hasTextTracks, setHasTextTracks] = useState(false);
+  const [episodePickerOpen, setEpisodePickerOpen] = useState(false);
+  const [switchingEpisode, setSwitchingEpisode] = useState(false);
+
+  const sessionTorrent = useMemo(
+    () => torrents.find((item) => item.id === session?.torrentId) ?? null,
+    [torrents, session?.torrentId],
+  );
+  const canPickEpisode = Boolean(
+    sessionTorrent && hasMultipleEpisodes(sessionTorrent.files),
+  );
 
   const visible = Boolean(session) || isPreparing || Boolean(prepareError);
   const canSeek = session?.seekable !== false;
@@ -286,6 +299,7 @@ export function NativePlayer() {
     : formatTime(currentTime);
 
   return (
+    <>
     <div
       ref={rootRef}
       className={`vp ${controlsVisible ? 'vp--controls' : ''} ${isFullscreen ? 'vp--fs' : ''}`}
@@ -527,6 +541,20 @@ export function NativePlayer() {
                 </div>
 
                 <div className="vp__bar-right">
+                  {canPickEpisode ? (
+                    <button
+                      type="button"
+                      className="vp__btn"
+                      aria-label="Сезоны и серии"
+                      title="Сезоны и серии"
+                      onClick={() => {
+                        setEpisodePickerOpen(true);
+                        bumpControls();
+                      }}
+                    >
+                      <LayersIcon size={21} strokeWidth={1.9} />
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="vp__btn"
@@ -566,5 +594,33 @@ export function NativePlayer() {
         </div>
       </div>
     </div>
+    <EpisodePickerDialog
+      open={episodePickerOpen && sessionTorrent != null}
+      title={sessionTorrent?.mediaTitle || sessionTorrent?.title || 'Выбор серии'}
+      files={sessionTorrent?.files ?? []}
+      currentFilePath={session?.sourcePath ?? session?.filePath}
+      isOpening={switchingEpisode}
+      onCancel={() => {
+        if (!switchingEpisode) {
+          setEpisodePickerOpen(false);
+        }
+      }}
+      onConfirm={(filePath) => {
+        if (!session?.torrentId) {
+          return;
+        }
+        setSwitchingEpisode(true);
+        void playTorrent(session.torrentId, filePath)
+          .then((result) => {
+            if (result.ok) {
+              setEpisodePickerOpen(false);
+            }
+          })
+          .finally(() => {
+            setSwitchingEpisode(false);
+          });
+      }}
+    />
+    </>
   );
 }

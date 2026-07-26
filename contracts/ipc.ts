@@ -237,6 +237,8 @@ export interface TorrentDownloadFile {
   name: string;
   path: string;
   length: number;
+  /** 0..1 per-file download progress (WebTorrent). */
+  progress?: number;
 }
 
 export interface TorrentDownloadRecord {
@@ -367,14 +369,21 @@ export interface ElectronApi {
     list: () => Promise<TorrentDownloadRecord[]>;
     add: (payload: TorrentAddPayload) => Promise<TorrentAddResult>;
     remove: (id: string, deleteFiles?: boolean) => Promise<TorrentDownloadRecord[]>;
-    openFile: (id: string) => Promise<{ ok: boolean; error?: string }>;
-    openInPlayer: (id: string, playerId: string) => Promise<OpenInPlayerResult>;
+    openFile: (id: string, filePath?: string) => Promise<{ ok: boolean; error?: string }>;
+    openInPlayer: (
+      id: string,
+      playerId: string,
+      filePath?: string,
+    ) => Promise<OpenInPlayerResult>;
     openFolder: () => Promise<{ ok: boolean; error?: string }>;
     getFolderPath: () => Promise<string>;
     onChanged: (callback: (items: TorrentDownloadRecord[]) => void) => Unsubscribe;
   };
   media: {
-    prepareTorrentPlayback: (torrentId: string) => Promise<MediaPreparePlaybackResult>;
+    prepareTorrentPlayback: (
+      torrentId: string,
+      filePath?: string,
+    ) => Promise<MediaPreparePlaybackResult>;
     stopPlayback: () => Promise<void>;
   };
   sidebar: {

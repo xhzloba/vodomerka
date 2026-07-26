@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { TorrentDownloadRecord } from '../../../contracts/ipc';
 import { useTorrents } from '@/shared/domain/TorrentsContext';
 import { usePlayer } from '@/shared/domain/PlayerContext';
+import { hasMultipleEpisodes, listVideoTorrentFiles } from '@/shared/domain/torrentEpisodes';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { formatTorrentQuality } from '@/shared/api/vokino/torrents';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
+import { EpisodePickerDialog } from '@/shared/ui/EpisodePickerDialog/EpisodePickerDialog';
 import { PlayerPickerDialog } from '@/shared/ui/PlayerPickerDialog/PlayerPickerDialog';
 import { DownloadIcon, FolderIcon, PlayIcon, TrashIcon } from '@/shared/ui/icons';
 import { PageLoading } from '@/shared/ui/PageState';
@@ -56,12 +58,19 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
   const { settings, updateSettings } = useAppSettings();
   const { showToast } = useToast();
   const scrollRef = useOverlayScroll<HTMLDivElement>();
+  const [episodeTorrentId, setEpisodeTorrentId] = useState<string | null>(null);
   const [pickerTorrentId, setPickerTorrentId] = useState<string | null>(null);
+  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
   const [isOpening, setIsOpening] = useState(false);
 
   const sorted = useMemo(
     () => [...torrents].sort((a, b) => b.addedAt - a.addedAt),
     [torrents],
+  );
+
+  const episodeTorrent = useMemo(
+    () => torrents.find((item) => item.id === episodeTorrentId) ?? null,
+    [torrents, episodeTorrentId],
   );
 
   useEffect(() => {
@@ -81,8 +90,22 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
     }
   };
 
-  const handlePlayClick = (id: string) => {
-    setPickerTorrentId(id);
+  const handlePlayClick = (item: TorrentDownloadRecord) => {
+    setSelectedFilePath(null);
+    if (hasMultipleEpisodes(item.files)) {
+      setEpisodeTorrentId(item.id);
+      return;
+    }
+    setPickerTorrentId(item.id);
+  };
+
+  const handleEpisodeConfirm = (filePath: string) => {
+    if (!episodeTorrentId) {
+      return;
+    }
+    setSelectedFilePath(filePath);
+    setEpisodeTorrentId(null);
+    setPickerTorrentId(episodeTorrentId);
   };
 
   const handlePickerConfirm = useCallback(
@@ -98,14 +121,23 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
         }
 
         if (playerId === 'vodomerka') {
-          await playTorrent(pickerTorrentId);
+          const played = await playTorrent(pickerTorrentId, selectedFilePath ?? undefined);
+          if (!played.ok) {
+            showToast(played.error, {
+              kind: 'hide',
+              title: 'Плеер',
+            });
+            return;
+          }
           setPickerTorrentId(null);
+          setSelectedFilePath(null);
           return;
         }
 
         const result = await window.electronAPI?.torrents?.openInPlayer?.(
           pickerTorrentId,
           playerId,
+          selectedFilePath ?? undefined,
         );
         if (!result?.ok) {
           showToast(result?.error ?? 'Не удалось открыть в плеере', {
@@ -116,6 +148,7 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
         }
 
         setPickerTorrentId(null);
+        setSelectedFilePath(null);
       } finally {
         setIsOpening(false);
       }
@@ -123,6 +156,7 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
     [
       pickerTorrentId,
       playTorrent,
+      selectedFilePath,
       settings.torrentPlaybackPlayerId,
       showToast,
       updateSettings,
@@ -168,6 +202,9 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
                 item.trackerName,
                 statusLabel(item),
                 item.status === 'downloading' ? formatSpeed(item.downloadSpeed) : null,
+                hasMultipleEpisodes(item.files)
+                  ? `${listVideoTorrentFiles(item.files).length} серий`
+                  : null,
               ].filter(Boolean);
 
               return (
@@ -205,7 +242,7 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
                         item.status === 'queued' ||
                         item.files.length === 0
                       }
-                      onClick={() => handlePlayClick(item.id)}
+                      onClick={() => handlePlayClick(item)}
                     >
                       <PlayIcon size={15} />
                     </button>
@@ -226,6 +263,14 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
         )}
       </div>
 
+      <EpisodePickerDialog
+        open={episodeTorrent != null}
+        title={episodeTorrent?.mediaTitle || episodeTorrent?.title || 'Выбор серии'}
+        files={episodeTorrent?.files ?? []}
+        onCancel={() => setEpisodeTorrentId(null)}
+        onConfirm={handleEpisodeConfirm}
+      />
+
       <PlayerPickerDialog
         open={pickerTorrentId != null}
         defaultPlayerId={settings.torrentPlaybackPlayerId || 'vodomerka'}
@@ -233,6 +278,7 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
         onCancel={() => {
           if (!isOpening) {
             setPickerTorrentId(null);
+            setSelectedFilePath(null);
           }
         }}
         onConfirm={(playerId, remember) => {

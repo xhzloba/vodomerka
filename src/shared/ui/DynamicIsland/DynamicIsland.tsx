@@ -9,10 +9,12 @@ import { useWatched } from '@/shared/domain/WatchedContext';
 import { playLikeSound } from '@/shared/audio/uiSounds';
 import { useAppTopProgressIslandState } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
 import { usePlayer } from '@/shared/domain/PlayerContext';
+import { hasMultipleEpisodes } from '@/shared/domain/torrentEpisodes';
 import { EyeIcon, FavoritesIcon, PlayIcon, WatchingIcon } from '@/shared/ui/icons';
 import { WATCH_STATUS_LABELS } from '@/shared/domain/watchStatus';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { resolveThemeColorScheme } from '@/shared/settings/themes';
+import { EpisodePickerDialog } from '@/shared/ui/EpisodePickerDialog/EpisodePickerDialog';
 import {
   ToastIconView,
   useToast,
@@ -104,6 +106,7 @@ export function DynamicIsland() {
   const [tipExpanded, setTipExpanded] = useState(false);
   const [downloadExpanded, setDownloadExpanded] = useState(false);
   const [isPlayingDownload, setIsPlayingDownload] = useState(false);
+  const [episodePickerOpen, setEpisodePickerOpen] = useState(false);
 
   const toastTimers = useRef<number[]>([]);
   const loadingTimers = useRef<number[]>([]);
@@ -155,19 +158,25 @@ export function DynamicIsland() {
       clearDownloadCollapseTimer();
       setDownloadExpanded(false);
       setIsPlayingDownload(false);
+      setEpisodePickerOpen(false);
     }
   }, [isDownloadActive, toast, isProgressActive, isDropMode, clearDownloadCollapseTimer]);
 
   useEffect(() => {
-    if (!downloadExpanded) {
-      clearDownloadCollapseTimer();
+    if (!downloadExpanded || episodePickerOpen) {
+      if (!downloadExpanded) {
+        clearDownloadCollapseTimer();
+      }
       return;
     }
 
     const onPointerDown = (event: PointerEvent) => {
       const root = islandRootRef.current;
-      const target = event.target as Node | null;
+      const target = event.target as HTMLElement | null;
       if (root && target && root.contains(target)) {
+        return;
+      }
+      if (target?.closest('.player-picker, .episode-picker')) {
         return;
       }
       clearDownloadCollapseTimer();
@@ -178,7 +187,7 @@ export function DynamicIsland() {
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true);
     };
-  }, [downloadExpanded, clearDownloadCollapseTimer]);
+  }, [downloadExpanded, episodePickerOpen, clearDownloadCollapseTimer]);
 
   useEffect(() => {
     if (isLoadingTorrents) {
@@ -532,26 +541,43 @@ export function DynamicIsland() {
     }
   };
 
-  const handleDownloadPlay = async (event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
+  const downloadTorrent = torrents.find((item) => item.id === downloadActivity?.id) ?? null;
+
+  const playDownloadFile = async (filePath?: string) => {
     if (!downloadActivity?.canPlay || isPlayingDownload) {
       return;
     }
 
     setIsPlayingDownload(true);
     try {
-      const ok = await playTorrent(downloadActivity.id);
-      if (!ok) {
-        showToast('Не удалось открыть в плеере', {
+      const result = await playTorrent(downloadActivity.id, filePath);
+      if (!result.ok) {
+        showToast(result.error, {
           kind: 'hide',
           title: 'Плеер',
         });
         return;
       }
       setDownloadExpanded(false);
+      setEpisodePickerOpen(false);
     } finally {
       setIsPlayingDownload(false);
     }
+  };
+
+  const handleDownloadPlay = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (!downloadActivity?.canPlay || isPlayingDownload) {
+      return;
+    }
+
+    if (downloadTorrent && hasMultipleEpisodes(downloadTorrent.files)) {
+      clearDownloadCollapseTimer();
+      setEpisodePickerOpen(true);
+      return;
+    }
+
+    void playDownloadFile();
   };
 
   const downloadPercent = downloadActivity?.percent ?? 0;
@@ -560,6 +586,7 @@ export function DynamicIsland() {
   const downloadTitle = downloadActivity?.title ?? 'Торрент';
 
   return createPortal(
+    <>
     <div
       ref={islandRootRef}
       className={`dynamic-island dynamic-island--${shellMode}${
@@ -785,7 +812,18 @@ export function DynamicIsland() {
           </div>
         </div>
       </div>
-    </div>,
+    </div>
+    <EpisodePickerDialog
+      open={episodePickerOpen && downloadTorrent != null}
+      title={downloadTitle}
+      files={downloadTorrent?.files ?? []}
+      isOpening={isPlayingDownload}
+      onCancel={() => setEpisodePickerOpen(false)}
+      onConfirm={(filePath) => {
+        void playDownloadFile(filePath);
+      }}
+    />
+    </>,
     document.body,
   );
 }

@@ -18,6 +18,7 @@ type WebTorrentFile = {
   path: string;
   length: number;
   progress: number;
+  downloaded?: number;
   done: boolean;
   type: string;
   select: (priority?: number) => void;
@@ -189,11 +190,23 @@ async function getClient(): Promise<WebTorrentClient> {
 }
 
 function mapFiles(torrent: WebTorrentTorrent): TorrentDownloadFile[] {
-  return (torrent.files ?? []).map((file) => ({
-    name: file.name,
-    path: path.isAbsolute(file.path) ? file.path : path.join(torrent.path, file.path),
-    length: file.length,
-  }));
+  return (torrent.files ?? []).map((file) => {
+    let progress = 0;
+    try {
+      progress = Math.min(1, Math.max(0, Number(file.progress) || 0));
+      if (file.done) {
+        progress = 1;
+      }
+    } catch {
+      progress = 0;
+    }
+    return {
+      name: file.name,
+      path: path.isAbsolute(file.path) ? file.path : path.join(torrent.path, file.path),
+      length: file.length,
+      progress,
+    };
+  });
 }
 
 function patchRecord(id: string, patch: Partial<TorrentDownloadRecord>) {
@@ -432,8 +445,49 @@ function pickVideoFile<T extends { name: string; length: number }>(files: T[]): 
   return files.find((file) => VIDEO_EXT.test(file.name)) ?? [...files].sort((a, b) => b.length - a.length)[0];
 }
 
+function resolveRecordVideoFile(
+  record: TorrentDownloadRecord,
+  filePath?: string | null,
+): TorrentDownloadFile | undefined {
+  if (filePath) {
+    const normalized = path.normalize(filePath);
+    return (
+      record.files.find((file) => path.normalize(file.path) === normalized) ??
+      record.files.find(
+        (file) => file.name === filePath || path.basename(file.path) === path.basename(filePath),
+      )
+    );
+  }
+  return pickVideoFile(record.files);
+}
+
+function resolveWebTorrentFile(
+  torrent: WebTorrentTorrent,
+  absolutePath?: string | null,
+  fileName?: string | null,
+): WebTorrentFile | undefined {
+  if (absolutePath || fileName) {
+    const normalized = absolutePath ? path.normalize(absolutePath) : null;
+    const match = torrent.files.find((file) => {
+      const diskPath = path.isAbsolute(file.path) ? file.path : path.join(torrent.path, file.path);
+      if (normalized && path.normalize(diskPath) === normalized) {
+        return true;
+      }
+      if (fileName && (file.name === fileName || path.basename(file.path) === path.basename(fileName))) {
+        return true;
+      }
+      return false;
+    });
+    if (match) {
+      return match;
+    }
+  }
+  return pickVideoFile(torrent.files);
+}
+
 export function getTorrentPlaybackSource(
   id: string,
+  filePath?: string | null,
 ):
   | {
       ok: true;
@@ -450,17 +504,26 @@ export function getTorrentPlaybackSource(
     return { ok: false, error: 'Торрент не найден' };
   }
 
-  const preferred = pickVideoFile(record.files);
-  const target = preferred?.path;
-  if (!target) {
-    return { ok: false, error: 'Метаданные ещё качаются — подожди пару секунд' };
+  const preferred = resolveRecordVideoFile(record, filePath);
+  if (!preferred?.path) {
+    return {
+      ok: false,
+      error: filePath
+        ? 'Выбранный файл не найден в торренте'
+        : 'Метаданные ещё качаются — подожди пару секунд',
+    };
   }
+  const target = preferred.path;
+
+  const baseTitle = record.mediaTitle || record.title || 'Видео';
+  const episodeTitle =
+    preferred.name && preferred.name !== baseTitle ? `${baseTitle} · ${preferred.name}` : baseTitle;
 
   return {
     ok: true,
     filePath: target,
-    fileName: preferred?.name || path.basename(target),
-    title: record.mediaTitle || record.title || preferred?.name || 'Видео',
+    fileName: preferred.name || path.basename(target),
+    title: episodeTitle,
     posterUrl: record.posterUrl,
     done: record.status === 'done' || record.progress >= 0.999,
     progress: record.progress,
@@ -468,13 +531,20 @@ export function getTorrentPlaybackSource(
 }
 
 /** Prioritize video file pieces from the start (play-while-download). */
-export function prioritizeTorrentPlayback(id: string): WebTorrentFile | null {
+export function prioritizeTorrentPlayback(
+  id: string,
+  filePath?: string | null,
+): WebTorrentFile | null {
   const torrent = activeTorrents.get(id);
   if (!torrent?.files?.length) {
     return null;
   }
 
-  const video = pickVideoFile(torrent.files);
+  const record = records.find((item) => item.id === id);
+  const preferredName = filePath
+    ? record?.files.find((file) => path.normalize(file.path) === path.normalize(filePath))?.name
+    : undefined;
+  const video = resolveWebTorrentFile(torrent, filePath, preferredName ?? filePath);
   if (!video) {
     return null;
   }
@@ -541,9 +611,10 @@ export function getActiveWebTorrent(id: string): WebTorrentTorrent | undefined {
 export async function openTorrentInPlayer(
   id: string,
   playerId: string,
+  filePath?: string | null,
 ): Promise<OpenInPlayerResult> {
   await initTorrentManager();
-  const source = getTorrentPlaybackSource(id);
+  const source = getTorrentPlaybackSource(id, filePath);
   if (!source.ok) {
     return source;
   }
@@ -565,8 +636,11 @@ export async function openTorrentInPlayer(
   return { ok: true, action: 'external' };
 }
 
-export async function openTorrentFile(id: string): Promise<{ ok: boolean; error?: string }> {
-  const source = getTorrentPlaybackSource(id);
+export async function openTorrentFile(
+  id: string,
+  filePath?: string | null,
+): Promise<{ ok: boolean; error?: string }> {
+  const source = getTorrentPlaybackSource(id, filePath);
   if (!source.ok) {
     return source;
   }
