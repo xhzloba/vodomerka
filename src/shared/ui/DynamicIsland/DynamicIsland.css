@@ -15,6 +15,9 @@
   --island-tip-expanded-w: 404px;
   --island-tip-expanded-h: 148px;
   --island-tip-expanded-r: 48px;
+  --island-download-expanded-w: 328px;
+  --island-download-expanded-h: 92px;
+  --island-download-expanded-r: 26px;
   --island-drop-w: 372px;
   --island-drop-h: 58px;
   --island-drop-r: 29px;
@@ -224,10 +227,32 @@
   box-shadow:
     0 10px 28px rgba(0, 0, 0, 0.45),
     inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+  transition:
+    width var(--island-morph),
+    height var(--island-morph),
+    border-radius var(--island-morph),
+    padding var(--island-morph),
+    background var(--island-morph),
+    box-shadow var(--island-morph);
 }
 
 .dynamic-island--download .dynamic-island__snake {
   border-radius: var(--island-idle-r);
+  transition: border-radius var(--island-morph);
+}
+
+.dynamic-island--download.dynamic-island--download-expanded .dynamic-island__shell {
+  width: min(var(--island-download-expanded-w), calc(100vw - 28px));
+  height: var(--island-download-expanded-h);
+  border-radius: var(--island-download-expanded-r);
+  /* padding на detail — absolute inset:0 иначе съедает padding shell */
+  padding: 0;
+  align-items: stretch;
+  max-width: min(404px, calc(100vw - 28px));
+}
+
+.dynamic-island--download.dynamic-island--download-expanded .dynamic-island__snake {
+  border-radius: var(--island-download-expanded-r);
 }
 
 .dynamic-island--drop .dynamic-island__shell {
@@ -506,9 +531,26 @@
 .dynamic-island--download-content-on .dynamic-island__download {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
   transition:
     opacity var(--island-content-in),
     visibility var(--island-content-in);
+}
+
+.dynamic-island__download-compact {
+  position: absolute;
+  inset: 0;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 180ms ease,
+    visibility 180ms ease;
+}
+
+.dynamic-island--download-expanded .dynamic-island__download-compact {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .dynamic-island__download-icon {
@@ -573,6 +615,164 @@
   color: rgba(255, 255, 255, 0.55);
   -webkit-font-smoothing: antialiased;
   transform: translateY(-50%);
+}
+
+.dynamic-island__download-detail {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px 12px 12px;
+  box-sizing: border-box;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 220ms ease 40ms,
+    visibility 220ms ease 40ms;
+}
+
+.dynamic-island--download-expanded .dynamic-island__download-detail {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.dynamic-island__download-poster {
+  flex-shrink: 0;
+  width: 44px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.dynamic-island__download-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dynamic-island__download-poster span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-system);
+  font-size: 0.9375rem;
+  font-weight: 620;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.dynamic-island__download-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.dynamic-island__download-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dynamic-island__download-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-system);
+  font-size: 0.8125rem;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.dynamic-island__download-detail-percent {
+  flex-shrink: 0;
+  font-family: var(--font-system);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.dynamic-island__download-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-system);
+  font-size: 0.6875rem;
+  font-weight: 510;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.dynamic-island__download-progress {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dynamic-island__download-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ui-control-accent, var(--app-accent));
+  transition: width 180ms ease;
+}
+
+.dynamic-island__download-play {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+.dynamic-island__download-play:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.dynamic-island__download-play:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.dynamic-island__download-play svg {
+  display: block;
+  flex-shrink: 0;
+  margin-left: 1px;
 }
 
 @keyframes dynamic-island-download-arrow {

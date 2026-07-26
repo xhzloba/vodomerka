@@ -21,6 +21,10 @@ interface TorrentsContextValue {
     count: number;
     percent: number;
     title: string;
+    id: string;
+    posterUrl?: string;
+    progress: number;
+    canPlay: boolean;
   } | null;
   folderPath: string | null;
   addTorrent: (payload: TorrentAddPayload) => Promise<TorrentAddResult>;
@@ -115,9 +119,9 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
   );
 
   const downloadActivity = useMemo(() => {
-    const active = torrents.filter(
-      (item) => item.status === 'downloading' || item.status === 'queued',
-    );
+    const active = torrents
+      .filter((item) => item.status === 'downloading' || item.status === 'queued')
+      .sort((a, b) => b.updatedAt - a.updatedAt);
     if (active.length === 0) {
       return null;
     }
@@ -132,10 +136,18 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
     }
 
     const ratio = weight > 0 ? weighted / weight : 0;
+    const primary = active[0];
     return {
       count: active.length,
       percent: Math.round(ratio * 100),
-      title: active[0]?.mediaTitle || active[0]?.title || 'Торрент',
+      title: primary.mediaTitle || primary.title || 'Торрент',
+      id: primary.id,
+      posterUrl: primary.posterUrl,
+      progress: Math.min(1, Math.max(0, primary.progress || 0)),
+      canPlay:
+        primary.status !== 'error' &&
+        primary.status !== 'queued' &&
+        primary.files.length > 0,
     };
   }, [torrents]);
 

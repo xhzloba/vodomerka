@@ -8,7 +8,8 @@ import { useTorrents } from '@/shared/domain/TorrentsContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
 import { playLikeSound } from '@/shared/audio/uiSounds';
 import { useAppTopProgressIslandState } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
-import { EyeIcon, FavoritesIcon, WatchingIcon } from '@/shared/ui/icons';
+import { usePlayer } from '@/shared/domain/PlayerContext';
+import { EyeIcon, FavoritesIcon, PlayIcon, WatchingIcon } from '@/shared/ui/icons';
 import { WATCH_STATUS_LABELS } from '@/shared/domain/watchStatus';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { resolveThemeColorScheme } from '@/shared/settings/themes';
@@ -88,6 +89,7 @@ export function DynamicIsland() {
   const { settings } = useAppSettings();
   const progress = useAppTopProgressIslandState();
   const { downloadActivity, torrents, isLoading: isLoadingTorrents } = useTorrents();
+  const { playTorrent } = usePlayer();
   const { draggingItem, dropTarget, endMediaDrag, setDropAction } = useMediaDrag();
   const { isFavorite, addFavorite } = useFavorites();
   const { getStatus, setStatus } = useWatched();
@@ -100,12 +102,16 @@ export function DynamicIsland() {
   const [dropContentOn, setDropContentOn] = useState(false);
   const [snakeOn, setSnakeOn] = useState(false);
   const [tipExpanded, setTipExpanded] = useState(false);
+  const [downloadExpanded, setDownloadExpanded] = useState(false);
+  const [isPlayingDownload, setIsPlayingDownload] = useState(false);
 
   const toastTimers = useRef<number[]>([]);
   const loadingTimers = useRef<number[]>([]);
   const downloadTimers = useRef<number[]>([]);
   const dropTimers = useRef<number[]>([]);
   const hoverAddTimer = useRef<number | null>(null);
+  const downloadCollapseTimer = useRef<number | null>(null);
+  const islandRootRef = useRef<HTMLDivElement | null>(null);
   const loadingActiveRef = useRef(false);
   const downloadActiveRef = useRef(false);
   const snakeStartedAtRef = useRef<number | null>(null);
@@ -119,7 +125,8 @@ export function DynamicIsland() {
   const snakeAllowed = resolveThemeColorScheme(settings.theme) === 'dark';
   /** Snake while dragging / download / top progress (not under toast). Light themes: off. */
   const snakeHold =
-    snakeAllowed && (isDropMode || isDownloadActive || (isProgressActive && !toast));
+    snakeAllowed &&
+    (isDropMode || (isDownloadActive && !downloadExpanded) || (isProgressActive && !toast));
 
   const clearHoverAddTimer = useCallback(() => {
     if (hoverAddTimer.current != null) {
@@ -127,6 +134,51 @@ export function DynamicIsland() {
       hoverAddTimer.current = null;
     }
   }, []);
+
+  const clearDownloadCollapseTimer = useCallback(() => {
+    if (downloadCollapseTimer.current != null) {
+      window.clearTimeout(downloadCollapseTimer.current);
+      downloadCollapseTimer.current = null;
+    }
+  }, []);
+
+  const scheduleDownloadCollapse = useCallback(() => {
+    clearDownloadCollapseTimer();
+    downloadCollapseTimer.current = window.setTimeout(() => {
+      downloadCollapseTimer.current = null;
+      setDownloadExpanded(false);
+    }, 2500);
+  }, [clearDownloadCollapseTimer]);
+
+  useEffect(() => {
+    if (!isDownloadActive || toast || isProgressActive || isDropMode) {
+      clearDownloadCollapseTimer();
+      setDownloadExpanded(false);
+      setIsPlayingDownload(false);
+    }
+  }, [isDownloadActive, toast, isProgressActive, isDropMode, clearDownloadCollapseTimer]);
+
+  useEffect(() => {
+    if (!downloadExpanded) {
+      clearDownloadCollapseTimer();
+      return;
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      const root = islandRootRef.current;
+      const target = event.target as Node | null;
+      if (root && target && root.contains(target)) {
+        return;
+      }
+      clearDownloadCollapseTimer();
+      setDownloadExpanded(false);
+    };
+
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true);
+    };
+  }, [downloadExpanded, clearDownloadCollapseTimer]);
 
   useEffect(() => {
     if (isLoadingTorrents) {
@@ -336,6 +388,15 @@ export function DynamicIsland() {
   const isTip = heldToast?.kind === 'tip';
   const hasIcon = Boolean(heldToast && heldToast.kind !== 'default');
   const tipInteractive = Boolean(isTip && toast && toastContentOn && shellMode === 'toast');
+  const downloadInteractive = Boolean(
+    shellMode === 'download' &&
+      downloadContentOn &&
+      isDownloadActive &&
+      !isDropMode &&
+      !toast &&
+      !isProgressActive,
+  );
+  const shellInteractive = tipInteractive || downloadInteractive || Boolean(toast?.dismissible);
 
   const applyDropTarget = useCallback(
     (item: MediaItem, target: Exclude<MediaDragDropTarget, null>) => {
@@ -422,61 +483,134 @@ export function DynamicIsland() {
     });
   };
 
+  const toggleDownloadExpanded = () => {
+    if (!downloadInteractive) {
+      return;
+    }
+    setDownloadExpanded((current) => {
+      const next = !current;
+      if (!next) {
+        clearDownloadCollapseTimer();
+      }
+      return next;
+    });
+  };
+
   const handleShellClick = (event: MouseEvent<HTMLDivElement>) => {
-    if (!tipInteractive) {
-      return;
-    }
-
     const target = event.target as HTMLElement | null;
-    if (target?.closest('.dynamic-island__close')) {
+    if (
+      target?.closest('.dynamic-island__close') ||
+      target?.closest('.dynamic-island__download-play')
+    ) {
       return;
     }
 
-    toggleTipExpanded();
+    if (tipInteractive) {
+      toggleTipExpanded();
+      return;
+    }
+
+    if (downloadInteractive) {
+      toggleDownloadExpanded();
+    }
   };
 
   const handleShellKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!tipInteractive) {
+    if (event.key !== 'Enter' && event.key !== ' ') {
       return;
     }
 
-    if (event.key === 'Enter' || event.key === ' ') {
+    if (tipInteractive) {
       event.preventDefault();
       toggleTipExpanded();
+      return;
+    }
+
+    if (downloadInteractive) {
+      event.preventDefault();
+      toggleDownloadExpanded();
+    }
+  };
+
+  const handleDownloadPlay = async (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (!downloadActivity?.canPlay || isPlayingDownload) {
+      return;
+    }
+
+    setIsPlayingDownload(true);
+    try {
+      const ok = await playTorrent(downloadActivity.id);
+      if (!ok) {
+        showToast('Не удалось открыть в плеере', {
+          kind: 'hide',
+          title: 'Плеер',
+        });
+        return;
+      }
+      setDownloadExpanded(false);
+    } finally {
+      setIsPlayingDownload(false);
     }
   };
 
   const downloadPercent = downloadActivity?.percent ?? 0;
   const downloadCount = downloadActivity?.count ?? 0;
+  const downloadItemPercent = Math.round((downloadActivity?.progress ?? 0) * 100);
+  const downloadTitle = downloadActivity?.title ?? 'Торрент';
 
   return createPortal(
     <div
+      ref={islandRootRef}
       className={`dynamic-island dynamic-island--${shellMode}${
         heldToast && !isDropMode ? ` dynamic-island--toast-${heldToast.kind}` : ''
       }${shellMode === 'toast' && compact ? ' dynamic-island--compact' : ''}${
         shellMode === 'toast' && !compact && !tipExpanded ? ' dynamic-island--roomy' : ''
       }${shellMode === 'toast' && tipExpanded ? ' dynamic-island--tip-expanded' : ''}${
-        snakeOn ? ' dynamic-island--snake' : ''
-      }${toast?.dismissible || tipInteractive || isDropMode ? ' dynamic-island--interactive' : ''}${
-        toastContentOn ? ' dynamic-island--toast-content-on' : ''
-      }${loadingContentOn ? ' dynamic-island--loading-content-on' : ''}${
-        downloadContentOn ? ' dynamic-island--download-content-on' : ''
-      }${dropContentOn ? ' dynamic-island--drop-content-on' : ''}${
-        dropTarget ? ` dynamic-island--drop-hover-${dropTarget}` : ''
-      }`}
+        shellMode === 'download' && downloadExpanded
+          ? ' dynamic-island--download-expanded'
+          : ''
+      }${snakeOn ? ' dynamic-island--snake' : ''}${
+        shellInteractive || isDropMode ? ' dynamic-island--interactive' : ''
+      }${toastContentOn ? ' dynamic-island--toast-content-on' : ''}${
+        loadingContentOn ? ' dynamic-island--loading-content-on' : ''
+      }${downloadContentOn ? ' dynamic-island--download-content-on' : ''}${
+        dropContentOn ? ' dynamic-island--drop-content-on' : ''
+      }${dropTarget ? ` dynamic-island--drop-hover-${dropTarget}` : ''}`}
+      onMouseEnter={() => {
+        if (downloadExpanded) {
+          clearDownloadCollapseTimer();
+        }
+      }}
+      onMouseLeave={() => {
+        if (downloadExpanded) {
+          scheduleDownloadCollapse();
+        }
+      }}
       role={shellMode === 'idle' ? 'presentation' : 'status'}
       aria-live={shellMode === 'toast' || shellMode === 'download' ? 'polite' : undefined}
       aria-busy={
-        (shellMode === 'loading' && isProgressActive) || shellMode === 'download' ? true : undefined
+        (shellMode === 'loading' && isProgressActive) ||
+        (shellMode === 'download' && !downloadExpanded)
+          ? true
+          : undefined
       }
-      aria-expanded={isTip ? tipExpanded : undefined}
+      aria-expanded={
+        isTip ? tipExpanded : downloadInteractive ? downloadExpanded : undefined
+      }
       aria-label={
         shellMode === 'drop'
           ? 'Перетащи на избранное или просмотренное'
           : shellMode === 'download' && downloadActivity
-            ? `Скачивание ${downloadPercent}%${
-                downloadCount > 1 ? `, ${downloadCount} файлов` : ''
-              }`
+            ? [
+                `Скачивание «${downloadTitle}» ${downloadPercent}%`,
+                downloadCount > 1 ? `${downloadCount} файлов` : null,
+                downloadExpanded
+                  ? 'Нажмите, чтобы свернуть'
+                  : 'Нажмите, чтобы показать детали',
+              ]
+                .filter(Boolean)
+                .join('. ')
             : shellMode === 'loading'
               ? 'Обновление'
               : shellMode === 'toast' && heldToast
@@ -504,8 +638,8 @@ export function DynamicIsland() {
           className="dynamic-island__shell"
           onClick={handleShellClick}
           onKeyDown={handleShellKeyDown}
-          role={tipInteractive ? 'button' : undefined}
-          tabIndex={tipInteractive ? 0 : undefined}
+          role={tipInteractive || downloadInteractive ? 'button' : undefined}
+          tabIndex={tipInteractive || downloadInteractive ? 0 : undefined}
         >
           <div className="dynamic-island__toast" aria-hidden={!toastContentOn || isDropMode}>
             {heldToast ? (
@@ -542,13 +676,61 @@ export function DynamicIsland() {
             className="dynamic-island__download"
             aria-hidden={!downloadContentOn || isDropMode || Boolean(toast) || isProgressActive}
           >
-            <span className="dynamic-island__download-icon" aria-hidden="true">
-              <DownloadIslandGlyph />
-            </span>
-            {downloadCount > 1 ? (
-              <span className="dynamic-island__download-count">{downloadCount}</span>
-            ) : null}
-            <span className="dynamic-island__download-percent">{downloadPercent}%</span>
+            <div
+              className="dynamic-island__download-compact"
+              aria-hidden={downloadExpanded}
+            >
+              <span className="dynamic-island__download-icon" aria-hidden="true">
+                <DownloadIslandGlyph />
+              </span>
+              {downloadCount > 1 ? (
+                <span className="dynamic-island__download-count">{downloadCount}</span>
+              ) : null}
+              <span className="dynamic-island__download-percent">{downloadPercent}%</span>
+            </div>
+
+            <div
+              className="dynamic-island__download-detail"
+              aria-hidden={!downloadExpanded}
+            >
+              <div className="dynamic-island__download-poster" aria-hidden="true">
+                {downloadActivity?.posterUrl ? (
+                  <img src={downloadActivity.posterUrl} alt="" loading="lazy" decoding="async" />
+                ) : (
+                  <span>{downloadTitle.slice(0, 1)}</span>
+                )}
+              </div>
+
+              <div className="dynamic-island__download-copy">
+                <span className="dynamic-island__download-title">{downloadTitle}</span>
+                <div className="dynamic-island__download-topline">
+                  <span className="dynamic-island__download-meta">
+                    {downloadCount > 1
+                      ? `Скачивается · ещё ${downloadCount - 1}`
+                      : 'Скачивается'}
+                  </span>
+                  <span className="dynamic-island__download-detail-percent">
+                    {downloadItemPercent}%
+                  </span>
+                </div>
+                <div className="dynamic-island__download-progress" aria-hidden="true">
+                  <span style={{ width: `${downloadItemPercent}%` }} />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="dynamic-island__download-play"
+                aria-label="Смотреть"
+                title="Смотреть"
+                disabled={!downloadActivity?.canPlay || isPlayingDownload}
+                onClick={(event) => {
+                  void handleDownloadPlay(event);
+                }}
+              >
+                <PlayIcon size={15} />
+              </button>
+            </div>
           </div>
 
           <div
