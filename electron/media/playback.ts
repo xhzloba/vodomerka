@@ -13,6 +13,7 @@ import {
 import {
   canDirectPlay,
   getExistingPlayableCache,
+  probeMediaDuration,
   startBackgroundPlayableCache,
 } from './remux';
 import {
@@ -68,18 +69,16 @@ export async function prepareTorrentPlayback(
   torrentId: string,
   filePath?: string | null,
 ): Promise<MediaPreparePlaybackResult> {
-  await ensureTorrentEngineForPlayback(torrentId);
+  // Skip swarm steal when the selected episode is already complete.
+  await ensureTorrentEngineForPlayback(torrentId, filePath);
 
   const source = getTorrentPlaybackSource(torrentId, filePath);
   if (!source.ok) {
     return source;
   }
 
-  const activeFile = prioritizeTorrentPlayback(torrentId, filePath);
-  const activeTorrent = getActiveWebTorrent(torrentId);
-
   try {
-    // Finished download
+    // Finished episode/file (even if the rest of the season is still downloading).
     if (source.done) {
       if (!(await fileExists(source.filePath))) {
         return { ok: false, error: 'Файл не найден на диске' };
@@ -107,7 +106,7 @@ export async function prepareTorrentPlayback(
         };
       }
 
-      // Seekable AAC cache already built
+      // Seekable cache already built (prefers this for finished episodes).
       const cached = await getExistingPlayableCache(source.filePath);
       if (cached) {
         const token = randomUUID();
@@ -128,8 +127,10 @@ export async function prepareTorrentPlayback(
         };
       }
 
-      // Instant play: stream remux from disk (no waiting for full 2GB AAC convert)
+      // Instant fMP4 remux + probed duration. Seek restarts stream at ?t= (serverSeek).
+      // Full seekable mp4 cache still builds in background for later opens.
       startBackgroundPlayableCache(source.filePath);
+      const durationSeconds = (await probeMediaDuration(source.filePath)) ?? undefined;
       const token = randomUUID();
       registerFileRemuxToken(token, source.filePath, source.fileName);
       return {
@@ -143,12 +144,17 @@ export async function prepareTorrentPlayback(
           sourcePath: source.filePath,
           remuxed: true,
           live: true,
-          seekable: false,
+          seekable: Boolean(durationSeconds && durationSeconds > 0),
+          durationSeconds,
+          serverSeek: Boolean(durationSeconds && durationSeconds > 0),
         },
       };
     }
 
     // Incomplete episode: prioritize selected file and wait for first pieces.
+    const activeFile = prioritizeTorrentPlayback(torrentId, filePath);
+    const activeTorrent = getActiveWebTorrent(torrentId);
+
     if (activeTorrent && activeFile) {
       const ready = await waitForFileBytes(activeFile);
       if (!ready) {

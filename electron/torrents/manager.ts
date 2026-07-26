@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { rm } from 'node:fs/promises';
+import { access, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { shell } from 'electron';
 import type {
@@ -434,6 +434,26 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
         applySequentialFileSelection(id);
       }
 
+      const nextFiles = mapFiles(torrent, current?.files ?? []);
+      // Prefetch seekable remux for episodes that just finished while season continues.
+      for (const file of nextFiles) {
+        const prev = current?.files.find(
+          (item) =>
+            path.normalize(item.path) === path.normalize(file.path) || item.name === file.name,
+        );
+        const wasDone = (prev?.progress ?? 0) >= 0.999;
+        const isDone = (file.progress ?? 0) >= 0.999;
+        if (isDone && !wasDone && file.path) {
+          void import('../media/remux')
+            .then((mod) => {
+              mod.startBackgroundPlayableCache(file.path);
+            })
+            .catch(() => {
+              // ignore
+            });
+        }
+      }
+
       patchRecord(id, {
         title: stats.name || current?.title || 'Торрент',
         // Never drop below last known % (resume re-check starts at 0 briefly).
@@ -445,7 +465,7 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
         downloaded: Math.max(current?.downloaded ?? 0, stats.downloaded || 0),
         length: stats.length > 0 ? stats.length : current?.length || 0,
         status: done ? 'done' : 'downloading',
-        files: mapFiles(torrent, current?.files ?? []),
+        files: nextFiles,
         savePath: torrent.path || current?.savePath || getTorrentsDownloadsDir(),
         error: undefined,
       });
@@ -729,12 +749,33 @@ export async function removeTorrent(id: string, deleteFiles = false): Promise<To
   return listTorrents();
 }
 
+function isDownloadFileComplete(file: TorrentDownloadFile | undefined): boolean {
+  if (!file) {
+    return false;
+  }
+  return Math.min(1, Math.max(0, file.progress ?? 0)) >= 0.999;
+}
+
 /** Bring a torrent online for play-while-download (may steal the single download slot). */
-export async function ensureTorrentEngineForPlayback(id: string): Promise<void> {
+export async function ensureTorrentEngineForPlayback(
+  id: string,
+  filePath?: string | null,
+): Promise<void> {
   await initTorrentManager();
   const record = records.find((item) => item.id === id);
   if (!record || record.status === 'done') {
     return;
+  }
+
+  // Finished episode on disk → play from file, don't yank the swarm off the next episode.
+  const preferred = resolveRecordVideoFile(record, filePath);
+  if (isDownloadFileComplete(preferred) && preferred?.path) {
+    try {
+      await access(preferred.path);
+      return;
+    } catch {
+      // Missing on disk — fall through and re-attach engine.
+    }
   }
 
   for (const item of records) {
@@ -840,14 +881,38 @@ export function getTorrentPlaybackSource(
   const episodeTitle =
     preferred.name && preferred.name !== baseTitle ? `${baseTitle} · ${preferred.name}` : baseTitle;
 
+  // Per-file completeness — series can be mid-season while S01E01 is already 100%.
+  const fileProgress = Math.min(1, Math.max(0, preferred.progress ?? 0));
+  const fileDone = fileProgress >= 0.999;
+  const torrentDone = record.status === 'done' || record.progress >= 0.999;
+
+  // Prefer live WebTorrent file progress when engine is up (more accurate than persisted).
+  const active = activeTorrents.get(id);
+  let liveDone = fileDone;
+  let liveProgress = fileProgress;
+  if (active) {
+    const live = resolveWebTorrentFile(active, target, preferred.name);
+    if (live) {
+      try {
+        liveProgress = Math.max(
+          fileProgress,
+          live.done ? 1 : Math.min(1, Math.max(0, Number(live.progress) || 0)),
+        );
+        liveDone = live.done || liveProgress >= 0.999;
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   return {
     ok: true,
     filePath: target,
     fileName: preferred.name || path.basename(target),
     title: episodeTitle,
     posterUrl: record.posterUrl,
-    done: record.status === 'done' || record.progress >= 0.999,
-    progress: record.progress,
+    done: torrentDone || liveDone,
+    progress: liveProgress,
   };
 }
 

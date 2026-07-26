@@ -59,6 +59,71 @@ async function pathExists(filePath: string): Promise<boolean> {
   }
 }
 
+/** Fast duration probe via `ffmpeg -i` stderr (no ffprobe required). */
+export function probeMediaDuration(filePath: string, timeoutMs = 8_000): Promise<number | null> {
+  const ffmpeg = resolveFfmpegPath();
+  if (!ffmpeg || !existsSync(filePath)) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    const child = spawn(ffmpeg, ['-hide_banner', '-i', filePath], {
+      stdio: ['ignore', 'ignore', 'pipe'],
+    });
+    let stderr = '';
+    let settled = false;
+    const finish = (value: number | null) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      try {
+        child.kill('SIGKILL');
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+
+    const timer = setTimeout(() => finish(null), timeoutMs);
+    child.stderr?.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString('utf8');
+      if (stderr.length > 12_000) {
+        stderr = stderr.slice(-8_000);
+      }
+      const match = stderr.match(/Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/);
+      if (match) {
+        clearTimeout(timer);
+        const hours = Number(match[1]);
+        const minutes = Number(match[2]);
+        const seconds = Number(match[3]);
+        const total = hours * 3600 + minutes * 60 + seconds;
+        finish(Number.isFinite(total) && total > 0 ? total : null);
+      }
+    });
+    child.on('error', () => {
+      clearTimeout(timer);
+      finish(null);
+    });
+    child.on('close', () => {
+      clearTimeout(timer);
+      if (settled) {
+        return;
+      }
+      const match = stderr.match(/Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/);
+      if (!match) {
+        finish(null);
+        return;
+      }
+      const hours = Number(match[1]);
+      const minutes = Number(match[2]);
+      const seconds = Number(match[3]);
+      const total = hours * 3600 + minutes * 60 + seconds;
+      finish(Number.isFinite(total) && total > 0 ? total : null);
+    });
+  });
+}
+
 export function getPlayableCachePath(sourcePath: string): string {
   // Include remux profile so AC3→AAC caches don't collide with old stream-copy caches.
   const hash = createHash('sha1').update(`v2-aac:${sourcePath}`).digest('hex').slice(0, 20);

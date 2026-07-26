@@ -292,6 +292,10 @@ export interface MediaPlaybackSession {
   /** True while torrent is still downloading / live remux stream. */
   live?: boolean;
   seekable?: boolean;
+  /** Probed duration for streams without native media duration (fMP4 remux). */
+  durationSeconds?: number;
+  /** Seek by restarting the remux at ?t=seconds (complete files on disk). */
+  serverSeek?: boolean;
 }
 
 export type MediaPreparePlaybackResult =

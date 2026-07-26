@@ -122,43 +122,46 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
         return;
       }
 
-      setIsOpening(true);
+      const torrentId = pickerTorrentId;
+      const filePath = selectedFilePath ?? undefined;
+
+      // Close picker immediately — prepare/remux must not leave a disabled modal on screen.
+      setPickerTorrentId(null);
+      setSelectedFilePath(null);
+      setIsOpening(false);
+
       try {
         if (remember && playerId !== settings.torrentPlaybackPlayerId) {
           await updateSettings({ torrentPlaybackPlayerId: playerId });
         }
 
         if (playerId === 'vodomerka') {
-          const played = await playTorrent(pickerTorrentId, selectedFilePath ?? undefined);
+          const played = await playTorrent(torrentId, filePath);
           if (!played.ok) {
             showToast(played.error, {
               kind: 'hide',
               title: 'Плеер',
             });
-            return;
           }
-          setPickerTorrentId(null);
-          setSelectedFilePath(null);
           return;
         }
 
         const result = await window.electronAPI?.torrents?.openInPlayer?.(
-          pickerTorrentId,
+          torrentId,
           playerId,
-          selectedFilePath ?? undefined,
+          filePath,
         );
         if (!result?.ok) {
           showToast(result?.error ?? 'Не удалось открыть в плеере', {
             kind: 'hide',
             title: 'Плеер',
           });
-          return;
         }
-
-        setPickerTorrentId(null);
-        setSelectedFilePath(null);
-      } finally {
-        setIsOpening(false);
+      } catch (error) {
+        showToast(error instanceof Error ? error.message : 'Не удалось открыть в плеере', {
+          kind: 'hide',
+          title: 'Плеер',
+        });
       }
     },
     [

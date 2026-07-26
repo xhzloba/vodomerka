@@ -33,12 +33,28 @@ function formatTime(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+function withSeekQuery(url: string, seconds: number): string {
+  try {
+    const parsed = new URL(url);
+    if (seconds > 0) {
+      parsed.searchParams.set('t', String(Math.floor(seconds)));
+    } else {
+      parsed.searchParams.delete('t');
+    }
+    return parsed.toString();
+  } catch {
+    const base = url.split('?')[0] ?? url;
+    return seconds > 0 ? `${base}?t=${Math.floor(seconds)}` : base;
+  }
+}
+
 export function NativePlayer() {
   const { session, isPreparing, prepareError, playTorrent, closePlayer } = usePlayer();
   const { torrents, openTorrentFile } = useTorrents();
   const rootRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hideTimerRef = useRef<number | null>(null);
+  const currentTimeRef = useRef(0);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -53,6 +69,8 @@ export function NativePlayer() {
   const [hasTextTracks, setHasTextTracks] = useState(false);
   const [episodePickerOpen, setEpisodePickerOpen] = useState(false);
   const [switchingEpisode, setSwitchingEpisode] = useState(false);
+  const [videoSrc, setVideoSrc] = useState('');
+  const [seekOrigin, setSeekOrigin] = useState(0);
 
   const sessionTorrent = useMemo(
     () => torrents.find((item) => item.id === session?.torrentId) ?? null,
@@ -63,7 +81,11 @@ export function NativePlayer() {
   );
 
   const visible = Boolean(session) || isPreparing || Boolean(prepareError);
-  const canSeek = session?.seekable !== false;
+  const knownDuration = session?.durationSeconds ?? 0;
+  const useServerSeek = Boolean(session?.serverSeek && knownDuration > 0);
+  const canSeek = Boolean(
+    session && session.seekable !== false && (!session.serverSeek || knownDuration > 0),
+  );
 
   const bumpControls = useCallback(() => {
     setControlsVisible(true);
@@ -92,12 +114,14 @@ export function NativePlayer() {
   useEffect(() => {
     setPlaybackError(null);
     setCurrentTime(0);
-    setDuration(0);
+    setSeekOrigin(0);
+    setVideoSrc(session?.url ?? '');
     setBuffered(0);
     setPlaying(false);
     setCaptionsOn(false);
     setHasTextTracks(false);
-  }, [session?.url]);
+    setDuration(session?.durationSeconds && session.durationSeconds > 0 ? session.durationSeconds : 0);
+  }, [session?.url, session?.durationSeconds]);
 
   const toggleFullscreen = useCallback(async () => {
     // Только Electron window fullscreen — не document.requestFullscreen (теряется окно на Mac).
@@ -131,29 +155,55 @@ export function NativePlayer() {
     bumpControls();
   }, [bumpControls]);
 
-  const seekBy = useCallback(
-    (deltaSeconds: number) => {
+  const seekToAbsolute = useCallback(
+    (seconds: number) => {
       const video = videoRef.current;
-      if (!video || !canSeek) {
+      if (!video || !session || !canSeek) {
         return;
       }
-      const next = Math.max(0, Math.min(video.duration || Infinity, video.currentTime + deltaSeconds));
-      video.currentTime = next;
+
+      const total = useServerSeek
+        ? knownDuration
+        : Number.isFinite(video.duration) && video.duration > 0
+          ? video.duration
+          : knownDuration;
+      if (!Number.isFinite(total) || total <= 0) {
+        return;
+      }
+
+      const target = Math.max(0, Math.min(total, seconds));
+
+      if (useServerSeek) {
+        setSeekOrigin(target);
+        setCurrentTime(target);
+        setBuffered(target);
+        setVideoSrc(withSeekQuery(session.url, target));
+        bumpControls();
+        return;
+      }
+
+      video.currentTime = target;
       bumpControls();
     },
-    [bumpControls, canSeek],
+    [bumpControls, canSeek, knownDuration, session, useServerSeek],
+  );
+
+  const seekBy = useCallback(
+    (deltaSeconds: number) => {
+      seekToAbsolute(currentTimeRef.current + deltaSeconds);
+    },
+    [seekToAbsolute],
   );
 
   const seekTo = useCallback(
     (ratio: number) => {
-      const video = videoRef.current;
-      if (!video || !canSeek || !Number.isFinite(video.duration) || video.duration <= 0) {
+      const total = useServerSeek ? knownDuration : duration;
+      if (!Number.isFinite(total) || total <= 0) {
         return;
       }
-      video.currentTime = Math.max(0, Math.min(1, ratio)) * video.duration;
-      bumpControls();
+      seekToAbsolute(Math.max(0, Math.min(1, ratio)) * total);
     },
-    [bumpControls, canSeek],
+    [duration, knownDuration, seekToAbsolute, useServerSeek],
   );
 
   const toggleMute = useCallback(() => {
@@ -291,12 +341,14 @@ export function NativePlayer() {
     return null;
   }
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-  const bufferedPct = duration > 0 ? (buffered / duration) * 100 : 0;
+  const effectiveDuration = duration > 0 ? duration : knownDuration;
+  const progress = effectiveDuration > 0 ? (currentTime / effectiveDuration) * 100 : 0;
+  const bufferedPct = effectiveDuration > 0 ? (buffered / effectiveDuration) * 100 : 0;
   const title = session?.title || 'Vodomerka Player';
-  const timeLabel = canSeek
-    ? `${formatTime(currentTime)} / ${formatTime(duration)}`
-    : formatTime(currentTime);
+  const timeLabel =
+    effectiveDuration > 0
+      ? `${formatTime(currentTime)} / ${formatTime(effectiveDuration)}`
+      : formatTime(currentTime);
 
   return (
     <>
@@ -319,21 +371,38 @@ export function NativePlayer() {
           <video
             ref={videoRef}
             className="vp__video"
-            src={session.url}
+            src={videoSrc || session.url}
             poster={session.posterUrl}
             autoPlay
             playsInline
             onLoadedMetadata={(event) => {
               setHasTextTracks(event.currentTarget.textTracks.length > 0);
+              if (useServerSeek && knownDuration > 0) {
+                setDuration(knownDuration);
+              }
+              void event.currentTarget.play().catch(() => undefined);
             }}
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
-            onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
-            onDurationChange={(event) => setDuration(event.currentTarget.duration || 0)}
+            onTimeUpdate={(event) => {
+              const next = seekOrigin + event.currentTarget.currentTime;
+              currentTimeRef.current = next;
+              setCurrentTime(next);
+            }}
+            onDurationChange={(event) => {
+              if (useServerSeek && knownDuration > 0) {
+                setDuration(knownDuration);
+                return;
+              }
+              const next = event.currentTarget.duration;
+              if (Number.isFinite(next) && next > 0) {
+                setDuration(next);
+              }
+            }}
             onProgress={(event) => {
               const media = event.currentTarget;
               if (media.buffered.length > 0) {
-                setBuffered(media.buffered.end(media.buffered.length - 1));
+                setBuffered(seekOrigin + media.buffered.end(media.buffered.length - 1));
               }
             }}
             onVolumeChange={(event) => {
@@ -454,7 +523,7 @@ export function NativePlayer() {
                 role="slider"
                 aria-label="Прогресс"
                 aria-valuemin={0}
-                aria-valuemax={Math.floor(duration || 0)}
+                aria-valuemax={Math.floor(effectiveDuration || 0)}
                 aria-valuenow={Math.floor(currentTime)}
                 tabIndex={canSeek ? 0 : -1}
                 onClick={(event) => {
@@ -465,7 +534,7 @@ export function NativePlayer() {
                   seekTo((event.clientX - rect.left) / rect.width);
                 }}
                 onKeyDown={(event) => {
-                  if (!canSeek || !videoRef.current) {
+                  if (!canSeek) {
                     return;
                   }
                   if (event.key === 'ArrowRight') {
