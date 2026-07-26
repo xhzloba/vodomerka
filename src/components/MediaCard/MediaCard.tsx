@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { useContinueWatching } from '@/shared/domain/ContinueWatchingContext';
+import { formatContinueEpisodeBadge } from '@/shared/domain/continueWatchingProgress';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { useMediaDrag } from '@/shared/domain/MediaDragContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
@@ -109,6 +110,7 @@ export function MediaCard({
       mediaId: record.mediaId,
       percent,
       timeLabel,
+      episodeBadge: formatContinueEpisodeBadge(record.filePath),
     };
   }, [findByMediaId, item.id]);
 
@@ -403,48 +405,60 @@ export function MediaCard({
                 onError={onError}
               />
             ) : null}
-            {(watchStatus || inFavorites) ? (
-              <div className="media-card__status-badges">
-                {watchStatus ? (
-                  <span
-                    className={`media-card__status-badge media-card__status-badge--${watchStatus}`}
-                    aria-label={
-                      watchStatus === 'watching'
-                        ? 'Смотрю'
-                        : watchStatus === 'watched'
-                          ? 'Просмотрено'
-                          : watchStatus === 'postponed'
-                            ? 'Отложено'
-                            : 'Брошено'
-                    }
-                    title={
-                      watchStatus === 'watching'
-                        ? 'Смотрю'
-                        : watchStatus === 'watched'
-                          ? 'Просмотрено'
-                          : watchStatus === 'postponed'
-                            ? 'Отложено'
-                            : 'Брошено'
-                    }
-                  >
-                    {watchStatus === 'watching' ? (
-                      <WatchingIcon size={18} solid />
-                    ) : watchStatus === 'watched' ? (
-                      <EyeOffIcon size={18} solid />
-                    ) : watchStatus === 'postponed' ? (
-                      <PauseCircleIcon size={18} solid />
-                    ) : (
-                      <BanIcon size={18} solid />
-                    )}
-                  </span>
+            {watchStatus || inFavorites || continueProgress?.episodeBadge ? (
+              <div className="media-card__badges">
+                {watchStatus || inFavorites ? (
+                  <div className="media-card__status-badges">
+                    {watchStatus ? (
+                      <span
+                        className={`media-card__status-badge media-card__status-badge--${watchStatus}`}
+                        aria-label={
+                          watchStatus === 'watching'
+                            ? 'Смотрю'
+                            : watchStatus === 'watched'
+                              ? 'Просмотрено'
+                              : watchStatus === 'postponed'
+                                ? 'Отложено'
+                                : 'Брошено'
+                        }
+                        title={
+                          watchStatus === 'watching'
+                            ? 'Смотрю'
+                            : watchStatus === 'watched'
+                              ? 'Просмотрено'
+                              : watchStatus === 'postponed'
+                                ? 'Отложено'
+                                : 'Брошено'
+                        }
+                      >
+                        {watchStatus === 'watching' ? (
+                          <WatchingIcon size={18} solid />
+                        ) : watchStatus === 'watched' ? (
+                          <EyeOffIcon size={18} solid />
+                        ) : watchStatus === 'postponed' ? (
+                          <PauseCircleIcon size={18} solid />
+                        ) : (
+                          <BanIcon size={18} solid />
+                        )}
+                      </span>
+                    ) : null}
+                    {inFavorites ? (
+                      <span
+                        className="media-card__status-badge media-card__status-badge--favorite"
+                        aria-label="В избранном"
+                        title="В избранном"
+                      >
+                        <FavoritesIcon size={16} filled strokeWidth={2} />
+                      </span>
+                    ) : null}
+                  </div>
                 ) : null}
-                {inFavorites ? (
+                {continueProgress?.episodeBadge ? (
                   <span
-                    className="media-card__status-badge media-card__status-badge--favorite"
-                    aria-label="В избранном"
-                    title="В избранном"
+                    className="media-card__episode-badge"
+                    title={continueProgress.episodeBadge}
                   >
-                    <FavoritesIcon size={16} filled strokeWidth={2} />
+                    {continueProgress.episodeBadge}
                   </span>
                 ) : null}
               </div>

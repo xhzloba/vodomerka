@@ -14,6 +14,65 @@
   padding-right: 28px;
 }
 
+.content-row__header-aside {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.content-row__header-extra {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* Match content-row slider nav height, with inset active pill. */
+.content-row__header-extra .ui-tabs--segmented {
+  --ui-segmented-pad: 3px;
+  --ui-segmented-radius: 999px;
+  --ui-segmented-pill-radius: 999px;
+
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  height: 36px;
+  padding: var(--ui-segmented-pad);
+  border-radius: 999px;
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-surface);
+  box-shadow: inset 0 1px 0 var(--chrome-inset);
+  overflow: hidden;
+}
+
+.content-row__header-extra .ui-tabs--segmented .ui-tabs__tab {
+  min-height: 0;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 510;
+  letter-spacing: -0.01em;
+  color: var(--chrome-muted);
+}
+
+.content-row__header-extra .ui-tabs--segmented .ui-tabs__tab:hover {
+  color: var(--chrome-strong);
+  background: transparent;
+}
+
+.content-row__header-extra .ui-tabs--segmented .ui-tabs__tab--active,
+.content-row__header-extra .ui-tabs--segmented .ui-tabs__tab--active:hover {
+  color: var(--chrome-strong);
+}
+
+.content-row__header-extra .ui-tabs__indicator--segmented {
+  border-radius: 999px;
+  background: var(--chrome-surface-hover);
+  box-shadow: inset 0 1px 0 var(--chrome-inset);
+}
+
 
 .content-row__hide-btn {
   display: inline-flex;

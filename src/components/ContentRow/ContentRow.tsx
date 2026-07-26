@@ -13,6 +13,7 @@ interface ContentRowProps {
   hideTitle?: boolean;
   icon?: ReactNode;
   titleCount?: number;
+  headerExtra?: ReactNode;
   onTitleClick?: () => void;
   onHide?: () => void;
   onMediaSelect: (item: MediaItem) => void;
@@ -30,6 +31,7 @@ export function ContentRow({
   hideTitle = false,
   icon,
   titleCount,
+  headerExtra,
   onTitleClick,
   onHide,
   onMediaSelect,
@@ -141,7 +143,7 @@ export function ContentRow({
     el.scrollBy({ left: direction === 'left' ? -400 : 400, behavior: 'smooth' });
   };
 
-  const showHeader = !hideTitle || canScroll;
+  const showHeader = !hideTitle || canScroll || Boolean(headerExtra);
 
   return (
     <section
@@ -181,27 +183,30 @@ export function ContentRow({
               ) : null}
             </h2>
           )}
-          {canScroll ? (
-            <div className="content-row__nav" role="group" aria-label="Прокрутка ряда">
-              <button
-                type="button"
-                className="content-row__nav-btn content-row__nav-btn--prev"
-                onClick={() => scroll('left')}
-                aria-label="Назад"
-              >
-                <ChevronLeftIcon size={16} strokeWidth={1.5} />
-              </button>
-              <span className="content-row__nav-divider" aria-hidden="true" />
-              <button
-                type="button"
-                className="content-row__nav-btn content-row__nav-btn--next"
-                onClick={() => scroll('right')}
-                aria-label="Вперёд"
-              >
-                <ChevronRightIcon size={16} strokeWidth={1.5} />
-              </button>
-            </div>
-          ) : null}
+          <div className="content-row__header-aside">
+            {headerExtra ? <div className="content-row__header-extra">{headerExtra}</div> : null}
+            {canScroll ? (
+              <div className="content-row__nav" role="group" aria-label="Прокрутка ряда">
+                <button
+                  type="button"
+                  className="content-row__nav-btn content-row__nav-btn--prev"
+                  onClick={() => scroll('left')}
+                  aria-label="Назад"
+                >
+                  <ChevronLeftIcon size={16} strokeWidth={1.5} />
+                </button>
+                <span className="content-row__nav-divider" aria-hidden="true" />
+                <button
+                  type="button"
+                  className="content-row__nav-btn content-row__nav-btn--next"
+                  onClick={() => scroll('right')}
+                  aria-label="Вперёд"
+                >
+                  <ChevronRightIcon size={16} strokeWidth={1.5} />
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : null}
 

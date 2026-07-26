@@ -187,15 +187,42 @@
   display: none;
 }
 
-.media-card__status-badges {
+.media-card__badges {
   position: absolute;
   top: 10px;
   left: 10px;
   z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  max-width: calc(100% - 48px);
+  pointer-events: none;
+}
+
+.media-card__status-badges {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  pointer-events: none;
+}
+
+.media-card__episode-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: var(--app-text);
+  color: var(--app-bg);
+  font-family: var(--font-system);
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.34);
 }
 
 .media-card__status-badge {
@@ -214,9 +241,14 @@
   display: block;
 }
 
-.media-card--wide .media-card__status-badges {
+.media-card--wide .media-card__badges {
   top: 12px;
   left: 12px;
+}
+
+.media-card--wide .media-card__episode-badge {
+  padding: 5px 8px;
+  font-size: 0.6875rem;
 }
 
 .media-card--wide .media-card__status-badge {

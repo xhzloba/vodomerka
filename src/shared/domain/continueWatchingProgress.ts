@@ -1,9 +1,15 @@
 import type {
+  ContinueWatchingRecord,
   ContinueWatchingUpsertPayload,
   MediaPlaybackSession,
   StoredMediaItem,
   TorrentDownloadRecord,
 } from '../../../contracts/ipc';
+import {
+  formatEpisodeLabel,
+  hasMultipleEpisodes,
+  parseEpisodeFromName,
+} from '@/shared/domain/torrentEpisodes';
 
 export const CONTINUE_MIN_SECONDS = 30;
 export const CONTINUE_MIN_RATIO = 0.02;
@@ -56,6 +62,47 @@ export function isContinueProgressComplete(
   return positionSeconds / durationSeconds >= CONTINUE_COMPLETE_RATIO;
 }
 
+function fileNameFromPath(filePath?: string | null): string {
+  if (!filePath) {
+    return '';
+  }
+  return filePath.split(/[/\\]/).pop() || filePath;
+}
+
+export function getContinueEpisodeInfo(filePath?: string | null): {
+  season: number | null;
+  episode: number | null;
+} {
+  return parseEpisodeFromName(fileNameFromPath(filePath));
+}
+
+export function formatContinueEpisodeBadge(filePath?: string | null): string | null {
+  const fileName = fileNameFromPath(filePath);
+  if (!fileName) {
+    return null;
+  }
+  const { season, episode } = parseEpisodeFromName(fileName);
+  if (season == null && episode == null) {
+    return null;
+  }
+  const parts: string[] = [];
+  if (season != null) {
+    parts.push(`Сезон ${season}`);
+  }
+  if (episode != null) {
+    parts.push(formatEpisodeLabel(season, episode, fileName));
+  }
+  return parts.join(' · ');
+}
+
+export function isContinueSerialRecord(record: ContinueWatchingRecord): boolean {
+  if (record.item.type === 'serial') {
+    return true;
+  }
+  const { season, episode } = getContinueEpisodeInfo(record.filePath);
+  return season != null || episode != null;
+}
+
 export function buildContinueMediaItem(
   session: MediaPlaybackSession,
   torrent?: TorrentDownloadRecord | null,
@@ -66,11 +113,17 @@ export function buildContinueMediaItem(
     (session.torrentId ? `torrent:${session.torrentId}` : 'unknown');
   const title = torrent?.mediaTitle || torrent?.title || session.title || 'Видео';
   const poster = session.posterUrl || torrent?.posterUrl || '';
+  const filePath = session.sourcePath || session.filePath;
+  const { season, episode } = getContinueEpisodeInfo(filePath);
+  const isSerial =
+    season != null ||
+    episode != null ||
+    Boolean(torrent && hasMultipleEpisodes(torrent.files));
 
   return {
     id: mediaId,
     title,
-    type: 'movie',
+    type: isSerial ? 'serial' : 'movie',
     genres: [],
     poster,
     backdrop: poster,
