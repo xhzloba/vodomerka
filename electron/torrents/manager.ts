@@ -59,8 +59,11 @@ type WebTorrentTorrent = {
   downloaded: number;
   length: number;
   done: boolean;
+  paused: boolean;
   files: WebTorrentFile[];
   path: string;
+  pause: () => void;
+  resume: () => void;
   destroy: (opts?: { destroyStore?: boolean }, cb?: (err?: Error | string) => void) => void;
   on: (event: string, listener: (...args: unknown[]) => void) => void;
 };
@@ -189,8 +192,16 @@ async function getClient(): Promise<WebTorrentClient> {
   return clientPromise;
 }
 
-function mapFiles(torrent: WebTorrentTorrent): TorrentDownloadFile[] {
-  return (torrent.files ?? []).map((file) => {
+function mapFiles(
+  torrent: WebTorrentTorrent,
+  previous: TorrentDownloadFile[] = [],
+): TorrentDownloadFile[] {
+  const mapped = (torrent.files ?? []).map((file) => {
+    const diskPath = path.isAbsolute(file.path) ? file.path : path.join(torrent.path, file.path);
+    const prev = previous.find(
+      (item) =>
+        path.normalize(item.path) === path.normalize(diskPath) || item.name === file.name,
+    );
     let progress = 0;
     try {
       progress = Math.min(1, Math.max(0, Number(file.progress) || 0));
@@ -200,13 +211,21 @@ function mapFiles(torrent: WebTorrentTorrent): TorrentDownloadFile[] {
     } catch {
       progress = 0;
     }
+    // Keep last known progress while WebTorrent re-verifies pieces after resume.
+    progress = Math.max(prev?.progress ?? 0, progress);
     return {
       name: file.name,
-      path: path.isAbsolute(file.path) ? file.path : path.join(torrent.path, file.path),
-      length: file.length,
+      path: diskPath,
+      length: file.length > 0 ? file.length : prev?.length || 0,
       progress,
     };
   });
+
+  // Never wipe a known file list (pause/resume can briefly report files=[]).
+  if (mapped.length === 0 && previous.length > 0) {
+    return previous;
+  }
+  return mapped;
 }
 
 function patchRecord(id: string, patch: Partial<TorrentDownloadRecord>) {
@@ -243,18 +262,43 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
 
   const syncProgress = () => {
     try {
+      const current = records.find((item) => item.id === id);
       const stats = readTorrentStats(torrent);
       const done = stats.done || stats.progress >= 0.999;
+      const paused = Boolean(torrent.paused) || current?.status === 'paused';
+
+      // Don't revive a user-paused torrent into "downloading".
+      if (paused && !done) {
+        patchRecord(id, {
+          title: stats.name || current?.title || 'Торрент',
+          progress: Math.max(current?.progress ?? 0, stats.progress || 0),
+          downloadSpeed: 0,
+          uploaded: Math.max(current?.uploaded ?? 0, stats.uploaded || 0),
+          downloaded: Math.max(current?.downloaded ?? 0, stats.downloaded || 0),
+          length: stats.length > 0 ? stats.length : current?.length || 0,
+          status: 'paused',
+          files: mapFiles(torrent, current?.files ?? []),
+          savePath: torrent.path || current?.savePath || getTorrentsDownloadsDir(),
+          error: undefined,
+        });
+        schedulePersist();
+        emit();
+        return;
+      }
+
       patchRecord(id, {
-        title: stats.name || records.find((item) => item.id === id)?.title || 'Торрент',
-        progress: stats.progress,
-        downloadSpeed: stats.downloadSpeed,
-        uploaded: stats.uploaded,
-        downloaded: stats.downloaded,
-        length: stats.length,
+        title: stats.name || current?.title || 'Торрент',
+        // Never drop below last known % (resume re-check starts at 0 briefly).
+        progress: done
+          ? Math.min(1, stats.progress || 1)
+          : Math.max(current?.progress ?? 0, Math.min(1, stats.progress || 0)),
+        downloadSpeed: done ? 0 : stats.downloadSpeed,
+        uploaded: Math.max(current?.uploaded ?? 0, stats.uploaded || 0),
+        downloaded: Math.max(current?.downloaded ?? 0, stats.downloaded || 0),
+        length: stats.length > 0 ? stats.length : current?.length || 0,
         status: done ? 'done' : 'downloading',
-        files: mapFiles(torrent),
-        savePath: torrent.path || getTorrentsDownloadsDir(),
+        files: mapFiles(torrent, current?.files ?? []),
+        savePath: torrent.path || current?.savePath || getTorrentsDownloadsDir(),
         error: undefined,
       });
       if (done) {
@@ -313,15 +357,12 @@ export async function initTorrentManager(): Promise<void> {
   ready = true;
   void persist();
 
-  // Resume unfinished downloads
+  // Resume unfinished downloads (keep user-paused ones paused)
   const pending = records.filter(
-    (item) => item.status === 'downloading' || item.status === 'queued' || item.status === 'error',
+    (item) => item.status === 'downloading' || item.status === 'queued',
   );
   for (const item of pending) {
-    if (item.status === 'error') {
-      continue;
-    }
-    void resumeTorrent(item.id).catch((error) => {
+    void startTorrentEngine(item.id).catch((error) => {
       markTorrentError(item.id, error instanceof Error ? error : 'Не удалось возобновить загрузку');
     });
   }
@@ -393,7 +434,22 @@ export async function addTorrent(payload: TorrentAddPayload): Promise<TorrentAdd
   }
 }
 
-async function resumeTorrent(id: string): Promise<void> {
+async function destroyActiveTorrent(id: string, deleteFiles = false): Promise<void> {
+  const active = activeTorrents.get(id);
+  if (!active) {
+    return;
+  }
+  await new Promise<void>((resolve) => {
+    try {
+      active.destroy({ destroyStore: deleteFiles }, () => resolve());
+    } catch {
+      resolve();
+    }
+  });
+  activeTorrents.delete(id);
+}
+
+async function startTorrentEngine(id: string): Promise<void> {
   const record = records.find((item) => item.id === id);
   if (!record || activeTorrents.has(id)) {
     return;
@@ -406,11 +462,99 @@ async function resumeTorrent(id: string): Promise<void> {
   try {
     const torrent = client.add(magnet, { path: record.savePath || getTorrentsDownloadsDir() });
     bindTorrent(id, torrent);
-    patchRecord(id, { status: 'downloading', error: undefined });
+    patchRecord(id, { status: 'downloading', error: undefined, downloadSpeed: 0 });
     await persist();
+    emit();
   } catch (error) {
     markTorrentError(id, error instanceof Error ? error : 'Не удалось возобновить загрузку');
   }
+}
+
+/** Pause download without wiping verified progress. */
+export async function pauseTorrent(id: string): Promise<TorrentDownloadRecord[]> {
+  await initTorrentManager();
+  const record = records.find((item) => item.id === id);
+  if (!record || record.status === 'done') {
+    return listTorrents();
+  }
+
+  const active = activeTorrents.get(id);
+  if (active) {
+    try {
+      active.pause();
+      for (const file of active.files ?? []) {
+        try {
+          file.deselect();
+        } catch {
+          // ignore
+        }
+      }
+    } catch {
+      // Fallback: drop swarm, keep files + saved progress.
+      await destroyActiveTorrent(id, false);
+    }
+  }
+
+  patchRecord(id, {
+    status: 'paused',
+    downloadSpeed: 0,
+    error: undefined,
+    // Keep progress/downloaded as-is.
+  });
+  await persist();
+  emit();
+  return listTorrents();
+}
+
+/**
+ * Resume download from last progress.
+ * If engine still alive → resume in-place; else re-attach to files on disk.
+ * If already downloading (stall kick) → reconnect swarm.
+ */
+export async function resumeTorrentDownload(id: string): Promise<TorrentDownloadRecord[]> {
+  await initTorrentManager();
+  const record = records.find((item) => item.id === id);
+  if (!record || record.status === 'done') {
+    return listTorrents();
+  }
+
+  const active = activeTorrents.get(id);
+
+  // Soft resume — keep piece bitfield / progress.
+  if (active && record.status === 'paused') {
+    try {
+      for (const file of active.files ?? []) {
+        try {
+          file.select();
+        } catch {
+          // ignore
+        }
+      }
+      active.resume();
+      patchRecord(id, {
+        status: 'downloading',
+        error: undefined,
+        downloadSpeed: 0,
+      });
+      await persist();
+      emit();
+      return listTorrents();
+    } catch {
+      await destroyActiveTorrent(id, false);
+    }
+  }
+
+  // Stall kick / cold start after app relaunch: reconnect, progress stays via monotonic sync.
+  if (active) {
+    await destroyActiveTorrent(id, false);
+  }
+
+  try {
+    await startTorrentEngine(id);
+  } catch (error) {
+    markTorrentError(id, error instanceof Error ? error : 'Не удалось продолжить загрузку');
+  }
+  return listTorrents();
 }
 
 export async function removeTorrent(id: string, deleteFiles = false): Promise<TorrentDownloadRecord[]> {
@@ -419,10 +563,7 @@ export async function removeTorrent(id: string, deleteFiles = false): Promise<To
   const active = activeTorrents.get(id);
 
   if (active) {
-    await new Promise<void>((resolve) => {
-      active.destroy({ destroyStore: deleteFiles }, () => resolve());
-    });
-    activeTorrents.delete(id);
+    await destroyActiveTorrent(id, deleteFiles);
   } else if (deleteFiles && record?.savePath) {
     // Best-effort cleanup of known files
     for (const file of record.files) {
@@ -559,6 +700,21 @@ export function prioritizeTorrentPlayback(
         // ignore
       }
     }
+  }
+
+  // Play-while-download: wake swarm even if user paused the download.
+  try {
+    if (torrent.paused) {
+      torrent.resume();
+    }
+  } catch {
+    // ignore
+  }
+
+  const recordStatus = records.find((item) => item.id === id);
+  if (recordStatus?.status === 'paused') {
+    patchRecord(id, { status: 'downloading', error: undefined });
+    emit();
   }
 
   return video;

@@ -129,6 +129,10 @@ const electronApi: ElectronApi = {
       ipcRenderer.invoke(IPC_CHANNELS.torrents.add, payload),
     remove: (id: string, deleteFiles?: boolean): Promise<TorrentDownloadRecord[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.torrents.remove, id, deleteFiles),
+    pause: (id: string): Promise<TorrentDownloadRecord[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.torrents.pause, id),
+    resume: (id: string): Promise<TorrentDownloadRecord[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.torrents.resume, id),
     openFile: (id: string, filePath?: string): Promise<{ ok: boolean; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.torrents.openFile, id, filePath),
     openInPlayer: (

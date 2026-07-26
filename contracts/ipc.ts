@@ -189,6 +189,8 @@ export const IPC_CHANNELS = {
     list: 'torrents:list',
     add: 'torrents:add',
     remove: 'torrents:remove',
+    pause: 'torrents:pause',
+    resume: 'torrents:resume',
     openFile: 'torrents:openFile',
     openInPlayer: 'torrents:openInPlayer',
     openFolder: 'torrents:openFolder',
@@ -369,6 +371,8 @@ export interface ElectronApi {
     list: () => Promise<TorrentDownloadRecord[]>;
     add: (payload: TorrentAddPayload) => Promise<TorrentAddResult>;
     remove: (id: string, deleteFiles?: boolean) => Promise<TorrentDownloadRecord[]>;
+    pause: (id: string) => Promise<TorrentDownloadRecord[]>;
+    resume: (id: string) => Promise<TorrentDownloadRecord[]>;
     openFile: (id: string, filePath?: string) => Promise<{ ok: boolean; error?: string }>;
     openInPlayer: (
       id: string,

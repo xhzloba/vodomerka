@@ -9,7 +9,13 @@ import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import { EpisodePickerDialog } from '@/shared/ui/EpisodePickerDialog/EpisodePickerDialog';
 import { PlayerPickerDialog } from '@/shared/ui/PlayerPickerDialog/PlayerPickerDialog';
-import { DownloadIcon, FolderIcon, PlayIcon, TrashIcon } from '@/shared/ui/icons';
+import {
+  DownloadIcon,
+  FolderIcon,
+  PauseBarsIcon,
+  PlayIcon,
+  TrashIcon,
+} from '@/shared/ui/icons';
 import { PageLoading } from '@/shared/ui/PageState';
 import '../BrowseView/BrowseView.css';
 import './TorrentsView.css';
@@ -52,6 +58,8 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
     isLoading,
     folderPath,
     removeTorrent,
+    pauseTorrent,
+    resumeTorrent,
     openTorrentsFolder,
   } = useTorrents();
   const { playTorrent } = usePlayer();
@@ -218,10 +226,7 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
                   </div>
 
                   <div className="torrents-view__body">
-                    <div className="torrents-view__topline">
-                      <h2 className="torrents-view__name">{item.mediaTitle || item.title}</h2>
-                      <span className="torrents-view__percent">{percent}%</span>
-                    </div>
+                    <h2 className="torrents-view__name">{item.mediaTitle || item.title}</h2>
                     {item.mediaTitle && item.title !== item.mediaTitle ? (
                       <p className="torrents-view__subtitle">{item.title}</p>
                     ) : null}
@@ -232,20 +237,42 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
                   </div>
 
                   <div className="torrents-view__actions">
+                    <span className="torrents-view__percent">{percent}%</span>
                     <button
                       type="button"
                       className="torrents-view__action torrents-view__action--primary"
                       aria-label="Смотреть"
                       title="Смотреть"
-                      disabled={
-                        item.status === 'error' ||
-                        item.status === 'queued' ||
-                        item.files.length === 0
-                      }
+                      disabled={item.status === 'error'}
                       onClick={() => handlePlayClick(item)}
                     >
                       <PlayIcon size={15} />
                     </button>
+                    {item.status === 'downloading' || item.status === 'queued' ? (
+                      <button
+                        type="button"
+                        className="torrents-view__action"
+                        aria-label="Пауза загрузки"
+                        title="Пауза загрузки"
+                        onClick={() => void pauseTorrent(item.id)}
+                      >
+                        <PauseBarsIcon size={15} />
+                      </button>
+                    ) : item.status === 'paused' || item.status === 'error' ? (
+                      <button
+                        type="button"
+                        className="torrents-view__action"
+                        aria-label="Продолжить загрузку"
+                        title={
+                          item.status === 'error'
+                            ? 'Повторить загрузку'
+                            : 'Продолжить загрузку'
+                        }
+                        onClick={() => void resumeTorrent(item.id)}
+                      >
+                        <DownloadIcon size={15} strokeWidth={2} />
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       className="torrents-view__action"

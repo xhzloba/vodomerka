@@ -59,13 +59,6 @@
   min-width: 0;
 }
 
-.torrents-view__topline {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .torrents-view__name {
   margin: 0;
   overflow: hidden;
@@ -79,9 +72,13 @@
 
 .torrents-view__percent {
   flex-shrink: 0;
+  min-width: 2.5em;
   font-size: 0.8125rem;
   font-weight: 620;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-align: right;
   color: var(--app-text-muted);
 }
 
@@ -114,8 +111,10 @@
 
 .torrents-view__actions {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .torrents-view__action {
@@ -128,7 +127,7 @@
   padding: 0;
   border: none;
   border-radius: 10px;
-  background: transparent;
+  background: color-mix(in srgb, var(--app-text) 6%, transparent);
   color: var(--app-text-muted);
   cursor: pointer;
   transition:

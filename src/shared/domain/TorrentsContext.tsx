@@ -29,6 +29,8 @@ interface TorrentsContextValue {
   folderPath: string | null;
   addTorrent: (payload: TorrentAddPayload) => Promise<TorrentAddResult>;
   removeTorrent: (id: string, deleteFiles?: boolean) => Promise<void>;
+  pauseTorrent: (id: string) => Promise<void>;
+  resumeTorrent: (id: string) => Promise<void>;
   openTorrentFile: (id: string) => Promise<{ ok: boolean; error?: string }>;
   openTorrentsFolder: () => Promise<{ ok: boolean; error?: string }>;
   reload: () => Promise<void>;
@@ -98,6 +100,22 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const pauseTorrent = useCallback(async (id: string) => {
+    if (!window.electronAPI?.torrents?.pause) {
+      return;
+    }
+    const next = await window.electronAPI.torrents.pause(id);
+    setTorrents(next);
+  }, []);
+
+  const resumeTorrent = useCallback(async (id: string) => {
+    if (!window.electronAPI?.torrents?.resume) {
+      return;
+    }
+    const next = await window.electronAPI.torrents.resume(id);
+    setTorrents(next);
+  }, []);
+
   const openTorrentFile = useCallback(async (id: string) => {
     if (!window.electronAPI?.torrents) {
       return { ok: false, error: 'Недоступно' };
@@ -144,10 +162,7 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
       id: primary.id,
       posterUrl: primary.posterUrl,
       progress: Math.min(1, Math.max(0, primary.progress || 0)),
-      canPlay:
-        primary.status !== 'error' &&
-        primary.status !== 'queued' &&
-        primary.files.length > 0,
+      canPlay: primary.status !== 'error',
     };
   }, [torrents]);
 
@@ -160,6 +175,8 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
       folderPath,
       addTorrent,
       removeTorrent,
+      pauseTorrent,
+      resumeTorrent,
       openTorrentFile,
       openTorrentsFolder,
       reload,
@@ -172,6 +189,8 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
       folderPath,
       addTorrent,
       removeTorrent,
+      pauseTorrent,
+      resumeTorrent,
       openTorrentFile,
       openTorrentsFolder,
       reload,

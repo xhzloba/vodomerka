@@ -14,7 +14,9 @@ import {
   openTorrentFile,
   openTorrentInPlayer,
   openTorrentsFolder,
+  pauseTorrent,
   removeTorrent,
+  resumeTorrentDownload,
 } from '../torrents/manager';
 import { ensureTorrentsDirs } from '../torrents/paths';
 
@@ -48,6 +50,20 @@ export function registerTorrentsIpc(): void {
     IPC_CHANNELS.torrents.remove,
     async (_event, id: string, deleteFiles?: boolean) => removeTorrent(id, Boolean(deleteFiles)),
   );
+
+  ipcMain.handle(IPC_CHANNELS.torrents.pause, async (_event, id: string) => {
+    if (typeof id !== 'string' || !id.trim()) {
+      return listTorrents();
+    }
+    return pauseTorrent(id.trim());
+  });
+
+  ipcMain.handle(IPC_CHANNELS.torrents.resume, async (_event, id: string) => {
+    if (typeof id !== 'string' || !id.trim()) {
+      return listTorrents();
+    }
+    return resumeTorrentDownload(id.trim());
+  });
 
   ipcMain.handle(IPC_CHANNELS.torrents.openFile, async (_event, id: string, filePath?: string) =>
     openTorrentFile(id, typeof filePath === 'string' ? filePath : undefined),
