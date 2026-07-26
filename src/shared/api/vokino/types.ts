@@ -69,13 +69,13 @@ export interface VokinoTorrentChannel {
   title: string;
   subtitle?: string;
   magnet: string;
-  quality?: number;
+  quality?: number | string;
   sizeName?: string;
-  size?: number;
+  size?: number | string;
   voice?: string;
   trackerName?: string;
-  sid?: number;
-  pir?: number;
+  sid?: number | string;
+  pir?: number | string;
   bitrate?: string;
   createTime?: string;
   seasons?: unknown[];

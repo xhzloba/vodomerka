@@ -17,6 +17,14 @@ export interface TorrentOffer {
   createTime?: string;
 }
 
+function parseQuality(value: unknown): number | null {
+  const numeric = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return null;
+  }
+  return numeric;
+}
+
 function formatQuality(quality: number | null | undefined): string | null {
   if (quality == null || !Number.isFinite(quality) || quality <= 0) {
     return null;
@@ -37,21 +45,28 @@ export function mapTorrentChannels(response: VokinoTorrentsResponse): TorrentOff
     .map((channel, index) => ({
       id: `${channel.magnet}-${channel.sid ?? index}-${channel.trackerName ?? 'tracker'}`,
       title: channel.title?.trim() || 'Без названия',
-      quality: typeof channel.quality === 'number' ? channel.quality : null,
+      quality: parseQuality(channel.quality),
       sizeName: channel.sizeName?.trim() || '—',
-      size: typeof channel.size === 'number' ? channel.size : 0,
+      size: typeof channel.size === 'number' ? channel.size : Number(channel.size) || 0,
       voice: channel.voice?.trim() || '',
       trackerName: channel.trackerName?.trim() || 'tracker',
-      seeds: typeof channel.sid === 'number' ? channel.sid : 0,
-      peers: typeof channel.pir === 'number' ? channel.pir : 0,
+      seeds: typeof channel.sid === 'number' ? channel.sid : Number(channel.sid) || 0,
+      peers: typeof channel.pir === 'number' ? channel.pir : Number(channel.pir) || 0,
       bitrate: channel.bitrate?.trim() || '',
       magnet: channel.magnet,
       createTime: channel.createTime,
     }));
 }
 
-export async function fetchTorrents(mediaId: string): Promise<TorrentOffer[]> {
-  const url = resolveVokinoUrl(`/torrents/${encodeURIComponent(mediaId)}?sort=seed_desc`);
+export async function fetchTorrents(
+  mediaId: string,
+  options?: { quality?: number },
+): Promise<TorrentOffer[]> {
+  const params = new URLSearchParams({ sort: 'seed_desc' });
+  if (options?.quality != null) {
+    params.set('quality', String(options.quality));
+  }
+  const url = resolveVokinoUrl(`/torrents/${encodeURIComponent(mediaId)}?${params.toString()}`);
   const response = await httpGet<VokinoTorrentsResponse>(url);
   return mapTorrentChannels(response);
 }

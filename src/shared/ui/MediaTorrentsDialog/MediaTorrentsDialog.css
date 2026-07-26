@@ -1,180 +1,57 @@
-.media-torrents-dialog {
-  position: fixed;
-  inset: 0;
-  z-index: 1300;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-.media-torrents-dialog__backdrop {
-  position: absolute;
-  inset: 0;
-  border: none;
-  background: rgba(0, 0, 0, 0.58);
-  cursor: pointer;
-}
-
-.media-torrents-dialog__snake {
-  position: relative;
-  z-index: 1;
-  width: min(100%, 580px);
-  max-height: min(82vh, 720px);
-  padding: 1.5px;
-  border-radius: calc(var(--radius-lg) + 1.5px);
-  overflow: hidden;
-  isolation: isolate;
-  animation: media-torrents-dialog-in 220ms cubic-bezier(0.25, 0.1, 0.25, 1);
-}
-
-.media-torrents-dialog__snake-ring {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-.media-torrents-dialog__snake-beam {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 0;
-  margin: 0;
-  transform: translate3d(-50%, -50%, 0);
-  will-change: transform;
-  backface-visibility: hidden;
-  pointer-events: none;
-}
-
-.media-torrents-dialog__snake-beam--trail {
-  --snake-trail-half: 30deg;
-  --snake-arc-mid: 310deg;
-
-  width: min(320%, 1200px);
-  height: min(320%, 1200px);
-  opacity: 0.88;
-  filter: blur(3px);
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    transparent calc(var(--snake-arc-mid) - var(--snake-trail-half) - 2deg),
-    var(--media-snake-1) calc(var(--snake-arc-mid) - var(--snake-trail-half)),
-    var(--media-snake-2) calc(var(--snake-arc-mid) - var(--snake-trail-half) * 0.45),
-    color-mix(in srgb, var(--media-snake-3) 55%, transparent) var(--snake-arc-mid),
-    var(--media-snake-2) calc(var(--snake-arc-mid) + var(--snake-trail-half) * 0.55),
-    var(--media-snake-4) calc(var(--snake-arc-mid) + var(--snake-trail-half)),
-    transparent calc(var(--snake-arc-mid) + var(--snake-trail-half) + 2deg),
-    transparent 360deg
-  );
-  animation: media-torrents-dialog-snake-spin 3.6s linear infinite;
-}
-
-.media-torrents-dialog__snake-beam--core {
-  --snake-arc-half: 28deg;
-  --snake-arc-mid: 310deg;
-
-  width: min(300%, 1100px);
-  height: min(300%, 1100px);
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    transparent calc(var(--snake-arc-mid) - var(--snake-arc-half)),
-    var(--media-snake-1) calc(var(--snake-arc-mid) - var(--snake-arc-half) + 2deg),
-    var(--media-snake-2) calc(var(--snake-arc-mid) - var(--snake-arc-half) * 0.38),
-    var(--media-snake-3) calc(var(--snake-arc-mid) - var(--snake-arc-half) * 0.1),
-    var(--media-snake-3) var(--snake-arc-mid),
-    var(--media-snake-4) calc(var(--snake-arc-mid) + var(--snake-arc-half) * 0.42),
-    var(--media-snake-4) calc(var(--snake-arc-mid) + var(--snake-arc-half)),
-    var(--media-snake-1) calc(var(--snake-arc-mid) + var(--snake-arc-half) + 2deg),
-    transparent calc(var(--snake-arc-mid) + var(--snake-arc-half) + 3deg),
-    transparent 360deg
-  );
-  animation: media-torrents-dialog-snake-spin 3.6s linear infinite;
-}
-
-.media-torrents-dialog__panel {
-  position: relative;
-  z-index: 1;
+.media-torrents-panel {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-height: min(82vh, 717px);
-  overflow: hidden;
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--app-modal-bg, var(--app-elevated)) 94%, transparent);
-  box-shadow: var(--app-card-shadow, 0 24px 64px rgba(0, 0, 0, 0.42));
-  backdrop-filter: blur(22px) saturate(140%);
+  gap: 14px;
+  height: 100%;
+  min-height: 0;
+  padding-right: 4px;
 }
 
-.media-torrents-dialog__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  flex-shrink: 0;
-  padding: 18px 18px 14px;
-  border-bottom: 1px solid var(--chrome-divider, color-mix(in srgb, var(--app-text) 8%, transparent));
-}
-
-.media-torrents-dialog__identity {
+.media-torrents-panel__identity {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: 52px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   min-width: 0;
+  padding: 2px 6px 2px 8px;
 }
 
-.media-torrents-dialog__poster {
-  width: 48px;
-  height: 68px;
+.media-torrents-panel__poster {
+  width: 52px;
+  height: 74px;
   overflow: hidden;
-  border-radius: 9px;
+  border-radius: 10px;
   background: color-mix(in srgb, var(--app-text) 6%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-text) 10%, transparent);
 }
 
-.media-torrents-dialog__poster img {
+.media-torrents-panel__poster img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.media-torrents-dialog__poster-fallback {
+.media-torrents-panel__poster-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: 1rem;
+  font-size: 1.0625rem;
   font-weight: 620;
   color: var(--app-text-muted);
 }
 
-.media-torrents-dialog__heading {
+.media-torrents-panel__heading {
   min-width: 0;
 }
 
-.media-torrents-dialog__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin: 0 0 3px;
-  font-size: 0.6875rem;
-  font-weight: 620;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--app-text-muted);
-}
-
-.media-torrents-dialog__title {
+.media-torrents-panel__title {
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--font-system);
   font-size: 1.0625rem;
   font-weight: 620;
   letter-spacing: -0.03em;
@@ -188,9 +65,9 @@
   color: transparent;
 }
 
-.media-torrents-dialog__original,
-.media-torrents-dialog__meta {
-  margin: 3px 0 0;
+.media-torrents-panel__original,
+.media-torrents-panel__meta {
+  margin: 4px 0 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -200,34 +77,15 @@
   color: var(--app-text-muted);
 }
 
-.media-torrents-dialog__close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.media-torrents-panel__tabs {
+  position: relative;
+  z-index: 2;
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  margin: 0;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--chrome-muted, var(--app-text-muted));
-  cursor: pointer;
-  transition: color var(--transition-fast);
-}
-
-.media-torrents-dialog__close:hover {
-  color: var(--app-text);
-}
-
-.media-torrents-dialog__tabs {
-  flex-shrink: 0;
-  margin: 12px 18px 0;
   min-width: 0;
+  padding: 0 2px 0 4px;
 }
 
-.media-torrents-dialog__tabs .ui-tabs--segmented {
+.media-torrents-panel__tabs .ui-tabs--segmented {
   display: flex;
   flex-wrap: nowrap;
   width: 100%;
@@ -236,11 +94,11 @@
   scrollbar-width: none;
 }
 
-.media-torrents-dialog__tabs .ui-tabs--segmented::-webkit-scrollbar {
+.media-torrents-panel__tabs .ui-tabs--segmented::-webkit-scrollbar {
   display: none;
 }
 
-.media-torrents-dialog__tabs .ui-tabs--segmented .ui-tabs__tab {
+.media-torrents-panel__tabs .ui-tabs--segmented .ui-tabs__tab {
   flex: 1 0 auto;
   justify-content: center;
   min-height: 32px;
@@ -248,83 +106,84 @@
   font-size: 0.8125rem;
 }
 
-.media-torrents-dialog__body {
+.media-torrents-panel__body {
+  flex: 1 1 auto;
   min-height: 0;
-  flex: 1;
   overflow: auto;
-  padding: 12px 10px 4px;
+  padding: 0 0 4px;
+  scrollbar-width: thin;
 }
 
-.media-torrents-dialog__state {
+.media-torrents-panel__state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  min-height: 160px;
-  padding: 24px 16px;
+  min-height: 180px;
+  padding: 24px 12px;
   text-align: center;
   color: var(--app-text-muted);
 }
 
-.media-torrents-dialog__state p {
+.media-torrents-panel__state p {
   margin: 0;
   font-size: 0.875rem;
   font-weight: 510;
 }
 
-.media-torrents-dialog__state--error {
+.media-torrents-panel__state--error {
   color: color-mix(in srgb, #ff6b6b 78%, var(--app-text));
 }
 
-.media-torrents-dialog__spinner {
+.media-torrents-panel__spinner {
   width: 22px;
   height: 22px;
   border: 2px solid color-mix(in srgb, var(--app-text) 12%, transparent);
   border-top-color: var(--ui-control-accent, var(--app-accent));
   border-radius: 50%;
-  animation: media-torrents-dialog-spin 0.7s linear infinite;
+  animation: media-torrents-panel-spin 0.7s linear infinite;
 }
 
-.media-torrents-dialog__list {
+.media-torrents-panel__list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.media-torrents-dialog__row {
+.media-torrents-panel__row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px;
+  gap: 2px;
   align-items: stretch;
-  border-radius: 14px;
+  border-radius: 12px;
   transition: background var(--transition-fast);
 }
 
-.media-torrents-dialog__row:hover {
-  background: var(--app-surface-hover, color-mix(in srgb, var(--app-text) 6%, transparent));
+.media-torrents-panel__row:hover {
+  background: var(--chrome-surface-hover, var(--app-surface-hover));
 }
 
-.media-torrents-dialog__main {
+.media-torrents-panel__main {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-columns: 48px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
   min-width: 0;
   margin: 0;
-  padding: 10px 8px 10px 10px;
+  padding: 10px 6px 10px 8px;
   border: none;
-  border-radius: 14px;
+  border-radius: 12px;
   background: transparent;
   color: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.media-torrents-dialog__quality {
+.media-torrents-panel__quality {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -339,22 +198,22 @@
   font-variant-numeric: tabular-nums;
 }
 
-.media-torrents-dialog__copy {
+.media-torrents-panel__copy {
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
 }
 
-.media-torrents-dialog__topline {
+.media-torrents-panel__topline {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 8px;
+  gap: 5px 8px;
   min-width: 0;
 }
 
-.media-torrents-dialog__size {
+.media-torrents-panel__size {
   font-size: 0.8125rem;
   font-weight: 620;
   letter-spacing: -0.02em;
@@ -362,14 +221,14 @@
   font-variant-numeric: tabular-nums;
 }
 
-.media-torrents-dialog__dot {
+.media-torrents-panel__dot {
   font-size: 0.6875rem;
   font-weight: 520;
   letter-spacing: -0.01em;
   color: var(--app-text-muted);
 }
 
-.media-torrents-dialog__best {
+.media-torrents-panel__best {
   display: inline-flex;
   align-items: center;
   padding: 1px 6px;
@@ -382,11 +241,11 @@
   text-transform: uppercase;
 }
 
-.media-torrents-dialog__name {
+.media-torrents-panel__name {
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -394,14 +253,14 @@
   color: color-mix(in srgb, var(--app-text) 72%, transparent);
 }
 
-.media-torrents-dialog__bottom {
+.media-torrents-panel__bottom {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 6px 10px;
 }
 
-.media-torrents-dialog__seeds {
+.media-torrents-panel__seeds {
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -409,12 +268,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-.media-torrents-dialog__peers {
+.media-torrents-panel__peers {
   color: var(--app-text-muted);
   font-weight: 520;
 }
 
-.media-torrents-dialog__voice {
+.media-torrents-panel__voice {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -424,15 +283,15 @@
   color: var(--app-text-muted);
 }
 
-.media-torrents-dialog__actions {
+.media-torrents-panel__actions {
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 4px;
-  padding: 8px 8px 8px 0;
+  padding: 8px 4px 8px 0;
 }
 
-.media-torrents-dialog__action {
+.media-torrents-panel__action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -448,99 +307,69 @@
   transition:
     color var(--transition-fast),
     background var(--transition-fast),
-    border-color var(--transition-fast),
     box-shadow var(--transition-fast);
 }
 
-.media-torrents-dialog__action:hover {
+.media-torrents-panel__action:hover {
   color: var(--app-text);
-  background: var(--ui-segmented-hover-bg, color-mix(in srgb, var(--app-text) 8%, transparent));
+  background: var(--ui-segmented-hover-bg, var(--chrome-surface-hover));
 }
 
-.media-torrents-dialog__action--primary {
+.media-torrents-panel__action--primary {
   color: var(--ui-segmented-active-color, var(--app-text));
   background: var(--ui-segmented-active-bg, color-mix(in srgb, var(--ui-control-accent) 22%, transparent));
   box-shadow: var(--ui-segmented-active-shadow);
 }
 
-.media-torrents-dialog__action--primary:hover {
+.media-torrents-panel__action--primary:hover {
   filter: brightness(1.06);
 }
 
-.media-torrents-dialog__footnote {
+.media-torrents-panel__footnote {
   flex-shrink: 0;
   margin: 0;
-  padding: 10px 18px 14px;
-  border-top: 1px solid var(--chrome-divider, color-mix(in srgb, var(--app-text) 8%, transparent));
+  margin-top: auto;
+  padding: 2px 8px 4px 8px;
+  text-align: left;
   font-size: 0.6875rem;
   font-weight: 510;
   letter-spacing: -0.01em;
+  line-height: 1.35;
   color: var(--app-text-muted);
 }
 
-.media-torrents-dialog__close:focus-visible,
-.media-torrents-dialog__main:focus-visible,
-.media-torrents-dialog__action:focus-visible {
+.media-torrents-panel__identity,
+.media-torrents-panel__tabs {
+  flex-shrink: 0;
+}
+
+/* Панель занимает высоту slide-menu body; скролл только у списка */
+.slide-menu__body:has(> .media-torrents-panel) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 12px;
+}
+
+.slide-menu__body:has(> .media-torrents-panel) > .media-torrents-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.media-torrents-panel__main:focus-visible,
+.media-torrents-panel__action:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--ui-control-accent, var(--app-accent)) 55%, transparent);
   outline-offset: 2px;
 }
 
-@keyframes media-torrents-dialog-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes media-torrents-dialog-snake-spin {
-  to {
-    transform: translate3d(-50%, -50%, 0) rotate(360deg);
-  }
-}
-
-@keyframes media-torrents-dialog-spin {
+@keyframes media-torrents-panel-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .media-torrents-dialog__snake {
+  .media-torrents-panel__spinner {
     animation: none;
   }
-
-  .media-torrents-dialog__snake-beam--trail,
-  .media-torrents-dialog__snake-beam--core,
-  .media-torrents-dialog__spinner {
-    animation: none;
-  }
-}
-
-[data-theme='pearl'] .media-torrents-dialog__backdrop {
-  background: rgba(30, 36, 48, 0.28);
-}
-
-[data-theme='pearl'] .media-torrents-dialog__snake {
-  padding: 0;
-  border: 1px solid var(--app-border-strong, var(--app-border));
-  background: var(--app-elevated);
-}
-
-[data-theme='pearl'] .media-torrents-dialog__snake-ring,
-[data-theme='pearl'] .media-torrents-dialog__snake-beam {
-  opacity: 0 !important;
-  animation: none !important;
-}
-
-[data-theme='pearl'] .media-torrents-dialog__panel {
-  background: var(--app-elevated);
-  backdrop-filter: none;
-}
-
-[data-color-scheme='light'] .media-torrents-dialog__panel {
-  background: color-mix(in srgb, var(--app-elevated) 96%, white);
 }
