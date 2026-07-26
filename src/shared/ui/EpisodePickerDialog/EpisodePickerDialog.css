@@ -1,5 +1,142 @@
-.episode-picker__frame {
+.episode-picker {
+  --episode-glass-bg: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--app-elevated) 78%, var(--app-bg)) 30%,
+    transparent
+  );
+  --episode-glass-tint: color-mix(in srgb, var(--app-accent-soft) 28%, transparent);
+  --episode-glass-border: color-mix(in srgb, var(--app-text) 10%, transparent);
+  --episode-glass-blur: blur(72px) saturate(200%);
+  --episode-glass-shadow:
+    0 10px 28px color-mix(in srgb, #000000 28%, transparent),
+    0 2px 8px color-mix(in srgb, #000000 16%, transparent),
+    inset 0 0.5px 0 color-mix(in srgb, var(--app-text) 16%, transparent);
+  --episode-glass-row: color-mix(in srgb, var(--app-text) 7%, transparent);
+  --episode-glass-row-hover: color-mix(in srgb, var(--app-text) 10%, transparent);
+  --episode-glass-chip: color-mix(in srgb, var(--app-text) 9%, transparent);
+
+  position: fixed;
+  inset: 0;
+  z-index: 13000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+  color: var(--app-text);
+  animation: episode-picker-fade-in 180ms ease;
+}
+
+[data-color-scheme='light'] .episode-picker {
+  --episode-glass-bg: color-mix(in srgb, #ffffff 38%, transparent);
+  --episode-glass-tint: color-mix(in srgb, var(--app-accent-soft) 22%, transparent);
+  --episode-glass-border: color-mix(in srgb, var(--app-text) 8%, transparent);
+  --episode-glass-shadow:
+    0 12px 32px rgba(30, 36, 48, 0.14),
+    0 3px 10px rgba(30, 36, 48, 0.08),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.92);
+  --episode-glass-row: color-mix(in srgb, var(--app-text) 5%, transparent);
+  --episode-glass-row-hover: color-mix(in srgb, var(--app-text) 8%, transparent);
+  --episode-glass-chip: color-mix(in srgb, var(--app-text) 7%, transparent);
+}
+
+.episode-picker__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: color-mix(in srgb, var(--app-bg) 52%, transparent);
+  cursor: pointer;
+}
+
+[data-color-scheme='light'] .episode-picker__backdrop {
+  background: color-mix(in srgb, #1c2230 28%, transparent);
+}
+
+.episode-picker__backdrop:disabled {
+  cursor: default;
+}
+
+.episode-picker__panel {
+  position: relative;
+  z-index: 1;
   width: min(100%, 420px);
+  max-height: min(78vh, 640px);
+  display: flex;
+  flex-direction: column;
+  padding: 18px 16px 14px;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid var(--episode-glass-border);
+  background:
+    radial-gradient(120% 80% at 12% -10%, var(--episode-glass-tint), transparent 52%),
+    radial-gradient(90% 70% at 100% 110%, var(--episode-glass-tint), transparent 48%),
+    var(--episode-glass-bg);
+  backdrop-filter: var(--episode-glass-blur);
+  -webkit-backdrop-filter: var(--episode-glass-blur);
+  box-shadow: var(--episode-glass-shadow);
+  animation: episode-picker-slide-up 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.episode-picker__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.episode-picker__heading {
+  min-width: 0;
+}
+
+.episode-picker__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.25;
+  color: var(--app-text);
+}
+
+.episode-picker__hint {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: -0.008em;
+  line-height: 1.35;
+  color: var(--app-text-muted);
+}
+
+.episode-picker__close {
+  appearance: none;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin: -2px -2px 0 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--episode-glass-chip);
+  color: color-mix(in srgb, var(--app-text) 72%, transparent);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.episode-picker__close:hover:not(:disabled) {
+  color: var(--app-text);
+  background: var(--episode-glass-row-hover);
+}
+
+.episode-picker__close:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .episode-picker__seasons {
@@ -7,6 +144,7 @@
   flex-wrap: wrap;
   gap: 6px;
   margin: 0 0 12px;
+  flex-shrink: 0;
 }
 
 .episode-picker__season {
@@ -15,7 +153,7 @@
   margin: 0;
   padding: 7px 12px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--app-text) 7%, transparent);
+  background: var(--episode-glass-chip);
   color: var(--app-text-muted);
   font-family: inherit;
   font-size: 12px;
@@ -29,12 +167,13 @@
 
 .episode-picker__season:hover:not(:disabled) {
   color: var(--app-text);
-  background: color-mix(in srgb, var(--app-text) 11%, transparent);
+  background: var(--episode-glass-row-hover);
 }
 
 .episode-picker__season.is-active {
   color: #fff;
   background: var(--ui-control-accent, var(--app-accent));
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--ui-control-accent, var(--app-accent)) 35%, transparent);
 }
 
 .episode-picker__season:disabled {
@@ -45,12 +184,23 @@
 .episode-picker__list {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
   max-height: min(48vh, 360px);
   overflow: auto;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--app-text) 4.5%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-text) 6%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--app-text) 4%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--app-text) 7%, transparent),
+    inset 0 0.5px 0 color-mix(in srgb, var(--app-text) 10%, transparent);
   scrollbar-width: thin;
+}
+
+[data-color-scheme='light'] .episode-picker__list {
+  background: color-mix(in srgb, #ffffff 42%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--app-text) 6%, transparent),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.75);
 }
 
 .episode-picker__item {
@@ -85,15 +235,15 @@
 }
 
 .episode-picker__item:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--app-text) 5%, transparent);
+  background: var(--episode-glass-row-hover);
 }
 
 .episode-picker__item.is-selected {
-  background: var(--app-accent-soft);
+  background: color-mix(in srgb, var(--app-accent-soft) 72%, transparent);
 }
 
 .episode-picker__item.is-selected:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--app-accent-soft) 80%, var(--app-text) 6%);
+  background: color-mix(in srgb, var(--app-accent-soft) 88%, var(--app-text) 4%);
 }
 
 .episode-picker__item:disabled {
@@ -146,7 +296,7 @@
 }
 
 .episode-picker__item.is-done .episode-picker__item-progress {
-  color: color-mix(in srgb, var(--app-text-muted) 70%, #34c759 30%);
+  color: color-mix(in srgb, var(--app-text-muted) 55%, #34c759 45%);
 }
 
 .episode-picker__item-file {
@@ -186,10 +336,84 @@
   color: var(--app-accent);
 }
 
-.episode-picker .player-picker__actions {
+.episode-picker__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   margin-top: 14px;
+  flex-shrink: 0;
 }
 
-[data-theme='pearl'] .episode-picker__list {
-  background: color-mix(in srgb, var(--app-text) 3.5%, #fff);
+.episode-picker__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 510;
+  letter-spacing: -0.014em;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    opacity var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.episode-picker__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.episode-picker__btn--cancel {
+  border-color: color-mix(in srgb, var(--app-text) 10%, transparent);
+  background: color-mix(in srgb, var(--app-text) 6%, transparent);
+  color: var(--app-text);
+}
+
+.episode-picker__btn--cancel:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--app-text) 10%, transparent);
+}
+
+.episode-picker__btn--primary {
+  background: var(--app-text);
+  border-color: transparent;
+  color: var(--app-bg);
+}
+
+.episode-picker__btn--primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+@keyframes episode-picker-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes episode-picker-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .episode-picker,
+  .episode-picker__panel {
+    animation: none;
+  }
 }
