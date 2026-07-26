@@ -1,21 +1,30 @@
 .search-overlay {
-  --search-spotlight-radius: 22px;
+  --search-spotlight-field-height: 58px;
+  /* Same as pill ends on idle height — no radius morph jump on expand */
+  --search-spotlight-radius: calc(var(--search-spotlight-field-height) / 2);
   --search-spotlight-width: 560px;
+  --search-spotlight-orb-gap: 12px;
+  --search-spotlight-orb-size: 58px;
   --search-spotlight-bg: color-mix(
     in srgb,
-    color-mix(in srgb, var(--app-elevated) 78%, var(--app-bg)) 68%,
+    color-mix(in srgb, var(--app-elevated) 78%, var(--app-bg)) 30%,
     transparent
   );
-  --search-spotlight-tint: color-mix(in srgb, var(--app-accent-soft) 55%, transparent);
-  --search-spotlight-border: color-mix(in srgb, var(--app-text) 14%, transparent);
-  --search-spotlight-hairline: color-mix(in srgb, var(--app-text) 12%, transparent);
-  --search-spotlight-row-hover: color-mix(in srgb, var(--app-text) 9%, transparent);
-  --search-spotlight-icon-bg: color-mix(in srgb, var(--app-text) 10%, transparent);
-  --search-spotlight-chip-bg: color-mix(in srgb, var(--app-text) 10%, transparent);
+  --search-spotlight-tint: color-mix(in srgb, var(--app-accent-soft) 28%, transparent);
+  --search-spotlight-border: color-mix(in srgb, var(--app-text) 10%, transparent);
+  --search-spotlight-hairline: color-mix(in srgb, var(--app-text) 10%, transparent);
+  --search-spotlight-row-hover: color-mix(in srgb, var(--app-text) 8%, transparent);
+  --search-spotlight-icon-bg: color-mix(in srgb, var(--app-text) 9%, transparent);
+  --search-spotlight-chip-bg: color-mix(in srgb, var(--app-text) 9%, transparent);
+  --search-spotlight-blur: blur(72px) saturate(200%);
+  /* Soft floating shadow like the reference */
   --search-spotlight-shadow:
-    0 0 0 0.5px color-mix(in srgb, var(--app-text) 8%, transparent),
-    0 24px 64px color-mix(in srgb, var(--app-bg) 55%, transparent),
-    0 8px 24px rgba(0, 0, 0, 0.28),
+    0 10px 28px color-mix(in srgb, #000000 28%, transparent),
+    0 2px 8px color-mix(in srgb, #000000 16%, transparent),
+    inset 0 0.5px 0 color-mix(in srgb, var(--app-text) 16%, transparent);
+  --search-spotlight-orb-shadow:
+    0 8px 22px color-mix(in srgb, #000000 32%, transparent),
+    0 2px 6px color-mix(in srgb, #000000 18%, transparent),
     inset 0 0.5px 0 color-mix(in srgb, var(--app-text) 16%, transparent);
 
   position: fixed;
@@ -24,43 +33,54 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: min(12vh, 108px) 20px 32px;
+  padding: min(18vh, 156px) max(20px, calc((var(--search-spotlight-orb-size) * 2) + 14px + var(--search-spotlight-orb-gap) + 12px)) 32px;
   animation: searchOverlayFadeIn 160ms ease;
+  overflow: visible;
 }
 
 [data-color-scheme='light'] .search-overlay {
-  --search-spotlight-bg: color-mix(in srgb, #ffffff 72%, transparent);
-  --search-spotlight-tint: color-mix(in srgb, var(--app-accent-soft) 40%, transparent);
-  --search-spotlight-border: color-mix(in srgb, var(--app-text) 10%, transparent);
-  --search-spotlight-hairline: color-mix(in srgb, var(--app-text) 9%, transparent);
-  --search-spotlight-row-hover: color-mix(in srgb, var(--app-text) 6%, transparent);
-  --search-spotlight-icon-bg: color-mix(in srgb, var(--app-text) 7%, transparent);
-  --search-spotlight-chip-bg: color-mix(in srgb, var(--app-text) 8%, transparent);
+  --search-spotlight-bg: color-mix(in srgb, #ffffff 34%, transparent);
+  --search-spotlight-tint: color-mix(in srgb, var(--app-accent-soft) 22%, transparent);
+  --search-spotlight-border: color-mix(in srgb, var(--app-text) 8%, transparent);
+  --search-spotlight-hairline: color-mix(in srgb, var(--app-text) 8%, transparent);
+  --search-spotlight-row-hover: color-mix(in srgb, var(--app-text) 5%, transparent);
+  --search-spotlight-icon-bg: color-mix(in srgb, var(--app-text) 6%, transparent);
+  --search-spotlight-chip-bg: color-mix(in srgb, var(--app-text) 7%, transparent);
   --search-spotlight-shadow:
-    0 0 0 0.5px color-mix(in srgb, var(--app-text) 6%, transparent),
-    0 24px 64px rgba(30, 36, 48, 0.18),
-    0 8px 20px rgba(30, 36, 48, 0.08),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.92);
+    0 12px 32px rgba(30, 36, 48, 0.14),
+    0 3px 10px rgba(30, 36, 48, 0.08),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.9);
+  --search-spotlight-orb-shadow:
+    0 8px 22px rgba(30, 36, 48, 0.16),
+    0 2px 6px rgba(30, 36, 48, 0.1),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.9);
 }
 
 .search-overlay__backdrop {
   position: absolute;
   inset: 0;
   border: none;
-  background: color-mix(in srgb, var(--app-bg) 42%, transparent);
+  background: color-mix(in srgb, var(--app-bg) 58%, transparent);
   cursor: pointer;
 }
 
 [data-color-scheme='light'] .search-overlay__backdrop {
-  background: color-mix(in srgb, #1c2230 18%, transparent);
+  background: color-mix(in srgb, #1c2230 28%, transparent);
+}
+
+.search-overlay__stage {
+  position: relative;
+  z-index: 1;
+  width: min(100%, var(--search-spotlight-width));
+  overflow: visible;
 }
 
 .search-overlay__panel {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  width: min(100%, var(--search-spotlight-width));
+  width: 100%;
   max-height: min(74vh, 680px);
   overflow: hidden;
   border-radius: var(--search-spotlight-radius);
@@ -69,10 +89,129 @@
     radial-gradient(120% 80% at 12% -10%, var(--search-spotlight-tint), transparent 52%),
     radial-gradient(90% 70% at 100% 110%, var(--search-spotlight-tint), transparent 48%),
     var(--search-spotlight-bg);
-  backdrop-filter: blur(48px) saturate(190%);
-  -webkit-backdrop-filter: blur(48px) saturate(190%);
+  backdrop-filter: var(--search-spotlight-blur);
+  -webkit-backdrop-filter: var(--search-spotlight-blur);
   box-shadow: var(--search-spotlight-shadow);
   animation: searchOverlaySlideIn 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: top center;
+}
+
+/* Orbs rail — right of search, vertically centered with the pill */
+.search-overlay__orbs {
+  position: absolute;
+  top: 0;
+  left: calc(100% + var(--search-spotlight-orb-gap));
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--search-spotlight-field-height);
+  pointer-events: none;
+}
+
+.search-overlay__orb {
+  --orb-index: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--app-text);
+  cursor: pointer;
+  opacity: 0;
+  filter: blur(8px);
+  pointer-events: none;
+  transform: translateX(28px) scale(0.82);
+  transition:
+    transform 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 360ms ease,
+    filter 420ms ease;
+  transition-delay: calc(40ms + var(--orb-index) * 70ms);
+}
+
+.search-overlay__stage--orbs .search-overlay__orbs {
+  pointer-events: auto;
+}
+
+.search-overlay__stage--orbs .search-overlay__orb {
+  opacity: 1;
+  filter: none;
+  pointer-events: auto;
+  transform: translateX(0) scale(1);
+}
+
+.search-overlay__stage--orbs.search-overlay__stage--typing .search-overlay__orbs {
+  pointer-events: none;
+}
+
+.search-overlay__stage--orbs.search-overlay__stage--typing .search-overlay__orb {
+  opacity: 0;
+  filter: blur(6px);
+  pointer-events: none;
+  transform: translateX(14px) scale(0.9);
+  transition-delay: calc((1 - var(--orb-index)) * 45ms);
+}
+
+.search-overlay__orb-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--search-spotlight-orb-size);
+  height: var(--search-spotlight-orb-size);
+  border-radius: 999px;
+  color: var(--app-text);
+  border: 1px solid var(--search-spotlight-border);
+  background:
+    radial-gradient(120% 80% at 12% -10%, var(--search-spotlight-tint), transparent 52%),
+    radial-gradient(90% 70% at 100% 110%, var(--search-spotlight-tint), transparent 48%),
+    var(--search-spotlight-bg);
+  box-shadow: var(--search-spotlight-orb-shadow);
+  backdrop-filter: var(--search-spotlight-blur);
+  -webkit-backdrop-filter: var(--search-spotlight-blur);
+  transition:
+    transform 160ms ease,
+    color 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.search-overlay__orb:hover .search-overlay__orb-icon {
+  transform: scale(1.06);
+}
+
+.search-overlay__orb:active .search-overlay__orb-icon {
+  transform: scale(0.94);
+}
+
+.search-overlay__orb--active .search-overlay__orb-icon {
+  color: var(--app-bg);
+  background: var(--app-text);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 18%, transparent),
+    0 14px 30px color-mix(in srgb, #000000 30%, transparent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.search-overlay__orb-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+[data-color-scheme='light'] .search-overlay__orb--active .search-overlay__orb-icon {
+  color: #fff;
 }
 
 @keyframes searchOverlayFadeIn {
@@ -97,9 +236,22 @@
   }
 }
 
+@media (max-width: 720px) {
+  .search-overlay__orbs {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .search-overlay,
   .search-overlay__panel {
     animation: none;
+  }
+
+  .search-overlay__panel,
+  .search-overlay__orb,
+  .search-overlay__orb-icon {
+    transition: none;
+    filter: none;
   }
 }

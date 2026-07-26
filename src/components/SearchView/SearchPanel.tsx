@@ -1,5 +1,8 @@
 import { getSearchShortcutParts } from '@/features/onboarding/tips/platformShortcut';
-import { useMediaSearch } from '@/features/search/model/useMediaSearch';
+import {
+  useMediaSearch,
+  type SearchTypeFilter,
+} from '@/features/search/model/useMediaSearch';
 import type { MediaItem } from '@/shared/domain/media';
 import { getMediaTypeLabel } from '@/shared/domain/media';
 import { HeroRating } from '@/shared/ui/HeroRating/HeroRating';
@@ -16,6 +19,8 @@ interface SearchPanelProps {
   autoFocus?: boolean;
   variant?: 'page' | 'overlay';
   inputId?: string;
+  typeFilter?: SearchTypeFilter;
+  expanded?: boolean;
 }
 
 function SpotlightResultRow({
@@ -82,15 +87,27 @@ export function SearchPanel({
   autoFocus = false,
   variant = 'page',
   inputId = 'search-panel-input',
+  typeFilter = 'all',
+  expanded = false,
 }: SearchPanelProps) {
-  const { isLoading, results } = useMediaSearch(query);
+  const { isLoading, results } = useMediaSearch(query, typeFilter);
   const isOverlay = variant === 'overlay';
   const searchShortcutParts = getSearchShortcutParts();
   const trimmed = query.trim();
+  const showResults = !isLoading && results.length > 0;
+  const showEmpty = !isLoading && trimmed.length > 0 && results.length === 0;
+  const overlayPlaceholder =
+    typeFilter === 'movie'
+      ? 'Поиск по фильмам'
+      : typeFilter === 'serial'
+        ? 'Поиск по сериалам'
+        : 'Поиск';
 
   if (isOverlay) {
     return (
-      <div className="search-spotlight">
+      <div
+        className={`search-spotlight${expanded ? ' search-spotlight--expanded' : ' search-spotlight--idle'}`}
+      >
         <div className="search-spotlight__field">
           <span className="search-spotlight__icon" aria-hidden="true">
             <SearchIcon size={20} />
@@ -99,53 +116,51 @@ export function SearchPanel({
             id={inputId}
             className="search-spotlight__input"
             type="search"
-            placeholder="Поиск"
+            placeholder={overlayPlaceholder}
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             autoFocus={autoFocus}
             autoComplete="off"
             spellCheck={false}
           />
-          <span className="search-spotlight__shortcut">
+          <span
+            className={`search-spotlight__shortcut${expanded ? ' search-spotlight__shortcut--hidden' : ''}`}
+            aria-hidden={expanded}
+          >
             <ShortcutKeys keys={searchShortcutParts} size="sm" muted />
           </span>
         </div>
 
-        {isLoading ? (
-          <div className="search-spotlight__body" aria-busy="true" aria-label="Поиск">
-            <PageLoading title="Ищем…" centered />
-          </div>
-        ) : null}
+        <div className="search-spotlight__drawer" aria-hidden={!expanded}>
+          <div className="search-spotlight__drawer-inner">
+            {isLoading && trimmed ? (
+              <div className="search-spotlight__body" aria-busy="true" aria-label="Поиск">
+                <PageLoading title="Ищем…" centered />
+              </div>
+            ) : null}
 
-        {!isLoading && trimmed && results.length === 0 ? (
-          <div className="search-spotlight__body search-spotlight__body--empty">
-            <p>Ничего не найдено</p>
-          </div>
-        ) : null}
+            {showEmpty ? (
+              <div className="search-spotlight__body search-spotlight__body--empty">
+                <p>Ничего не найдено</p>
+              </div>
+            ) : null}
 
-        {!isLoading && results.length > 0 ? (
-          <div className="search-spotlight__body">
-            {groupSearchResults(results).map((group) => (
-              <section key={group.label} className="search-spotlight__group">
-                <h2 className="search-spotlight__section">{group.label}</h2>
-                <div className="search-spotlight__list" role="listbox" aria-label={group.label}>
-                  {group.items.map((item) => (
-                    <SpotlightResultRow key={item.id} item={item} onSelect={onMediaSelect} />
-                  ))}
-                </div>
-              </section>
-            ))}
+            {showResults ? (
+              <div className="search-spotlight__body">
+                {groupSearchResults(results).map((group) => (
+                  <section key={group.label} className="search-spotlight__group">
+                    <h2 className="search-spotlight__section">{group.label}</h2>
+                    <div className="search-spotlight__list" role="listbox" aria-label={group.label}>
+                      {group.items.map((item) => (
+                        <SpotlightResultRow key={item.id} item={item} onSelect={onMediaSelect} />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : null}
           </div>
-        ) : null}
-
-        {!isLoading && !trimmed ? (
-          <div className="search-spotlight__hint-bar">
-            <span className="search-spotlight__hint">
-              <ShortcutKeys keys={['Esc']} size="sm" muted />
-              закрыть
-            </span>
-          </div>
-        ) : null}
+        </div>
       </div>
     );
   }

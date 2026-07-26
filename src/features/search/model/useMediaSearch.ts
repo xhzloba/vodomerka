@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { vokinoRepository } from '@/shared/api/vokino/repository';
 import type { MediaItem } from '@/shared/domain/media';
+import { isMovieMedia, isSerialMedia } from '@/shared/domain/media';
 
-export function useMediaSearch(query: string) {
+export type SearchTypeFilter = 'all' | 'movie' | 'serial';
+
+export function useMediaSearch(query: string, typeFilter: SearchTypeFilter = 'all') {
   const [catalog, setCatalog] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -32,19 +35,27 @@ export function useMediaSearch(query: string) {
   }, []);
 
   const results = useMemo(() => {
-    if (!query.trim()) {
+    let items = catalog;
+
+    if (typeFilter === 'movie') {
+      items = items.filter(isMovieMedia);
+    } else if (typeFilter === 'serial') {
+      items = items.filter(isSerialMedia);
+    }
+
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) {
       return [];
     }
 
-    const normalizedQuery = query.toLowerCase();
-    return catalog.filter(
+    return items.filter(
       (item) =>
         item.title.toLowerCase().includes(normalizedQuery) ||
         item.subtitle?.toLowerCase().includes(normalizedQuery) ||
         item.genres.some((genre) => genre.toLowerCase().includes(normalizedQuery)) ||
         item.description?.toLowerCase().includes(normalizedQuery),
     );
-  }, [catalog, query]);
+  }, [catalog, query, typeFilter]);
 
   return { isLoading, results };
 }
