@@ -402,3 +402,19 @@
     animation: none !important;
   }
 }
+
+/* Pearl / light: no snake */
+[data-theme='pearl'] .player-picker__backdrop {
+  background: rgba(30, 36, 48, 0.28);
+}
+
+[data-theme='pearl'] .player-picker__frame {
+  border: 1px solid var(--app-border-strong);
+  background: var(--app-elevated);
+}
+
+[data-theme='pearl'] .player-picker__snake-ring,
+[data-theme='pearl'] .player-picker__snake-beam {
+  opacity: 0 !important;
+  animation: none !important;
+}
