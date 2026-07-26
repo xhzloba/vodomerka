@@ -149,9 +149,25 @@ export function getFileProgress(file: TorrentDownloadFile): number {
   return Math.min(1, Math.max(0, file.progress ?? 0));
 }
 
-/** Whole percent 0–100; sub-1% crumbs count as 0 (queue noise from piece overlap). */
+/** 0–100 with hundredths (1.05), not whole percents. */
+export function getProgressPercent(progress01: number): number {
+  const pct = Math.min(100, Math.max(0, progress01 * 100));
+  if (pct >= 99.995) {
+    return 100;
+  }
+  return Math.round(pct * 100) / 100;
+}
+
+export function formatProgressPercent(progress01: number): string {
+  const pct = getProgressPercent(progress01);
+  if (pct >= 100) {
+    return '100';
+  }
+  return pct.toFixed(2);
+}
+
 export function getFileProgressPercent(file: TorrentDownloadFile): number {
-  return Math.round(getFileProgress(file) * 100);
+  return getProgressPercent(getFileProgress(file));
 }
 
 export function formatFileProgressLabel(file: TorrentDownloadFile): string {
@@ -160,8 +176,9 @@ export function formatFileProgressLabel(file: TorrentDownloadFile): string {
     return 'Готово';
   }
   const percent = getFileProgressPercent(file);
-  if (percent <= 0) {
+  // Tiny piece-overlap crumbs stay as waiting.
+  if (percent < 0.01) {
     return 'Ожидает';
   }
-  return `${percent}%`;
+  return `${formatProgressPercent(progress)}%`;
 }

@@ -9,7 +9,11 @@ import { useWatched } from '@/shared/domain/WatchedContext';
 import { playLikeSound } from '@/shared/audio/uiSounds';
 import { useAppTopProgressIslandState } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
 import { usePlayer } from '@/shared/domain/PlayerContext';
-import { hasMultipleEpisodes } from '@/shared/domain/torrentEpisodes';
+import {
+  formatProgressPercent,
+  getProgressPercent,
+  hasMultipleEpisodes,
+} from '@/shared/domain/torrentEpisodes';
 import { EyeIcon, FavoritesIcon, PlayIcon, WatchingIcon } from '@/shared/ui/icons';
 import { WATCH_STATUS_LABELS } from '@/shared/domain/watchStatus';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
@@ -580,9 +584,10 @@ export function DynamicIsland() {
     void playDownloadFile();
   };
 
-  const downloadPercent = downloadActivity?.percent ?? 0;
+  const downloadProgress = downloadActivity?.progress ?? 0;
+  const downloadPercent = getProgressPercent(downloadProgress);
+  const downloadPercentLabel = formatProgressPercent(downloadProgress);
   const downloadCount = downloadActivity?.count ?? 0;
-  const downloadItemPercent = Math.round((downloadActivity?.progress ?? 0) * 100);
   const downloadTitle = downloadActivity?.title ?? 'Торрент';
 
   return createPortal(
@@ -630,7 +635,7 @@ export function DynamicIsland() {
           ? 'Перетащи на избранное или просмотренное'
           : shellMode === 'download' && downloadActivity
             ? [
-                `Скачивание «${downloadTitle}» ${downloadPercent}%`,
+                `Скачивание «${downloadTitle}» ${downloadPercentLabel}%`,
                 downloadCount > 1 ? `${downloadCount} файлов` : null,
                 downloadExpanded
                   ? 'Нажмите, чтобы свернуть'
@@ -713,7 +718,7 @@ export function DynamicIsland() {
               {downloadCount > 1 ? (
                 <span className="dynamic-island__download-count">{downloadCount}</span>
               ) : null}
-              <span className="dynamic-island__download-percent">{downloadPercent}%</span>
+              <span className="dynamic-island__download-percent">{downloadPercentLabel}%</span>
             </div>
 
             <div
@@ -737,11 +742,11 @@ export function DynamicIsland() {
                       : 'Скачивается'}
                   </span>
                   <span className="dynamic-island__download-detail-percent">
-                    {downloadItemPercent}%
+                    {downloadPercentLabel}%
                   </span>
                 </div>
                 <div className="dynamic-island__download-progress" aria-hidden="true">
-                  <span style={{ width: `${downloadItemPercent}%` }} />
+                  <span style={{ width: `${downloadPercent}%` }} />
                 </div>
               </div>
 

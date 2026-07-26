@@ -175,7 +175,7 @@ export function EpisodePickerDialog({
             const progress = getFileProgress(item.file);
             const percent = getFileProgressPercent(item.file);
             const progressLabel = formatFileProgressLabel(item.file);
-            const isDownloading = percent > 0 && progress < 0.999;
+            const isDownloading = percent >= 0.01 && progress < 0.999;
             return (
               <button
                 key={item.file.path}

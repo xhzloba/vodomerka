@@ -97,8 +97,14 @@ const activeTorrents = new Map<string, WebTorrentTorrent>();
 const playbackFocusById = new Map<string, string>();
 /** Serialize start/stop so only one torrent downloads at a time. */
 let queuePump: Promise<void> | null = null;
+const stallWatchdogs = new Map<string, ReturnType<typeof setInterval>>();
+const lastStallKickAt = new Map<string, number>();
 let webTorrentServer: WebTorrentServer | null = null;
 let webTorrentServerPort: number | null = null;
+
+const STALL_SPEED_BPS = 2 * 1024; // below ~2 KiB/s counts as stalled
+const STALL_AFTER_MS = 40_000;
+const STALL_KICK_COOLDOWN_MS = 90_000;
 
 function magnetKey(magnet: string): string {
   return createHash('sha1').update(magnet.trim()).digest('hex').slice(0, 16);
@@ -486,11 +492,21 @@ function applySequentialFileSelection(id: string, preferredPath?: string | null)
   selectOnlyTorrentFile(torrent, next);
 }
 
+function clearStallWatchdog(id: string): void {
+  const timer = stallWatchdogs.get(id);
+  if (timer) {
+    clearInterval(timer);
+    stallWatchdogs.delete(id);
+  }
+}
+
 function bindTorrent(id: string, torrent: WebTorrentTorrent) {
   activeTorrents.set(id, torrent);
+  clearStallWatchdog(id);
 
   let persistTimer: ReturnType<typeof setTimeout> | null = null;
   let lastSequentialAt = 0;
+  let stalledSince: number | null = null;
   const schedulePersist = () => {
     if (persistTimer) {
       return;
@@ -501,6 +517,56 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
     }, 750);
   };
 
+  const maybeKickStall = () => {
+    const current = records.find((item) => item.id === id);
+    if (!current || current.status !== 'downloading' || torrent.paused) {
+      stalledSince = null;
+      return;
+    }
+    if (!torrent.files?.length) {
+      // Still waiting for metadata — not a swarm stall yet.
+      stalledSince = null;
+      return;
+    }
+
+    let speed = 0;
+    try {
+      speed = torrent.downloadSpeed || 0;
+    } catch {
+      speed = 0;
+    }
+
+    if (speed >= STALL_SPEED_BPS || current.progress >= 0.999) {
+      stalledSince = null;
+      return;
+    }
+
+    const now = Date.now();
+    if (stalledSince == null) {
+      stalledSince = now;
+      return;
+    }
+    if (now - stalledSince < STALL_AFTER_MS) {
+      return;
+    }
+    const lastKick = lastStallKickAt.get(id) ?? 0;
+    if (now - lastKick < STALL_KICK_COOLDOWN_MS) {
+      return;
+    }
+
+    lastStallKickAt.set(id, now);
+    stalledSince = null;
+    console.warn('[torrents] stall kick — reconnecting swarm', id, current.title);
+    void resumeTorrentDownload(id);
+  };
+
+  stallWatchdogs.set(
+    id,
+    setInterval(() => {
+      maybeKickStall();
+    }, 5_000),
+  );
+
   const syncProgress = () => {
     try {
       const current = records.find((item) => item.id === id);
@@ -510,6 +576,7 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
 
       // Don't revive a user-paused torrent into "downloading".
       if (paused && !done) {
+        stalledSince = null;
         patchRecord(id, {
           title: stats.name || current?.title || 'Торрент',
           progress: Math.max(current?.progress ?? 0, stats.progress || 0),
@@ -570,8 +637,13 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
         error: undefined,
       });
       if (done) {
+        stalledSince = null;
+        clearStallWatchdog(id);
         void persist().then(() => pumpDownloadQueue());
       } else {
+        if (stats.downloadSpeed >= STALL_SPEED_BPS) {
+          stalledSince = null;
+        }
         schedulePersist();
         emit();
       }
@@ -593,6 +665,7 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
     syncProgress();
   });
   torrent.on('download', () => {
+    stalledSince = null;
     syncProgress();
   });
   torrent.on('done', () => {
@@ -600,6 +673,7 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
     syncProgress();
   });
   torrent.on('error', (error: unknown) => {
+    clearStallWatchdog(id);
     markTorrentError(id, error);
   });
   torrent.on('warning', (error: unknown) => {
@@ -651,6 +725,72 @@ export function getTorrentsFolderPath(): string {
   return getTorrentsRoot();
 }
 
+function isIncompleteRecord(record: TorrentDownloadRecord): boolean {
+  return record.status !== 'done' && record.progress < 0.999;
+}
+
+/** Remove leftover incomplete download folders so a re-add doesn't hang on verify. */
+async function wipeRecordDiskData(record: TorrentDownloadRecord): Promise<void> {
+  const savePath = path.resolve(record.savePath || getTorrentsDownloadsDir());
+  const candidates = new Set<string>();
+
+  for (const file of record.files) {
+    if (!file.path) {
+      continue;
+    }
+    candidates.add(path.resolve(file.path));
+    const parent = path.resolve(path.dirname(file.path));
+    if (parent.startsWith(savePath + path.sep) && parent !== savePath) {
+      candidates.add(parent);
+    }
+  }
+
+  // WebTorrent usually writes Downloads/<torrentName>/...
+  for (const name of [record.title, record.mediaTitle]) {
+    const trimmed = name?.trim();
+    if (!trimmed || trimmed === '.' || trimmed === '..') {
+      continue;
+    }
+    candidates.add(path.resolve(savePath, trimmed));
+  }
+
+  for (const target of candidates) {
+    if (target === savePath || !target.startsWith(savePath + path.sep)) {
+      continue;
+    }
+    try {
+      await rm(target, { recursive: true, force: true });
+    } catch {
+      // ignore
+    }
+  }
+}
+
+async function wipeOrphanDownloadDir(savePath: string, torrentTitle?: string): Promise<void> {
+  const trimmed = torrentTitle?.trim();
+  if (!trimmed || trimmed === '.' || trimmed === '..') {
+    return;
+  }
+  const dir = path.resolve(savePath, trimmed);
+  const root = path.resolve(savePath);
+  if (dir === root || !dir.startsWith(root + path.sep)) {
+    return;
+  }
+  const inUse = records.some(
+    (item) =>
+      item.title === trimmed ||
+      item.files.some((file) => path.resolve(file.path).startsWith(dir + path.sep)),
+  );
+  if (inUse) {
+    return;
+  }
+  try {
+    await rm(dir, { recursive: true, force: true });
+  } catch {
+    // ignore
+  }
+}
+
 export async function addTorrent(payload: TorrentAddPayload): Promise<TorrentAddResult> {
   await initTorrentManager();
 
@@ -658,18 +798,35 @@ export async function addTorrent(payload: TorrentAddPayload): Promise<TorrentAdd
     return { ok: false, error: 'Некорректная magnet-ссылка' };
   }
 
-  const existing = records.find((item) => item.magnet === payload.magnet);
+  const magnet = enrichMagnet(payload.magnet);
+  const key = magnetKey(magnet);
+  const existing = records.find((item) => magnetKey(item.magnet) === key);
   if (existing) {
+    if (
+      existing.status === 'paused' ||
+      existing.status === 'error' ||
+      existing.status === 'queued' ||
+      (existing.status === 'downloading' && existing.downloadSpeed < STALL_SPEED_BPS)
+    ) {
+      // Re-click "Скачать" / stalled swarm → reconnect instead of no-op.
+      void resumeTorrentDownload(existing.id);
+    }
     return { ok: true, torrent: existing };
   }
 
   const now = Date.now();
-  const id = `${magnetKey(payload.magnet)}-${randomUUID().slice(0, 8)}`;
+  const id = `${key}-${randomUUID().slice(0, 8)}`;
   const downloads = getTorrentsDownloadsDir();
+  const title = payload.title || payload.mediaTitle || 'Торрент';
+
+  // Previous delete-without-wipe left junk here → WebTorrent freezes on piece verify.
+  await wipeOrphanDownloadDir(downloads, payload.title);
+  await wipeOrphanDownloadDir(downloads, title);
+
   const record: TorrentDownloadRecord = {
     id,
-    magnet: payload.magnet,
-    title: payload.title || payload.mediaTitle || 'Торрент',
+    magnet,
+    title,
     mediaId: payload.mediaId,
     mediaTitle: payload.mediaTitle,
     posterUrl: sanitizePosterUrl(payload.posterUrl),
@@ -688,11 +845,6 @@ export async function addTorrent(payload: TorrentAddPayload): Promise<TorrentAdd
     updatedAt: now,
   };
 
-  const magnet = enrichMagnet(payload.magnet);
-  if (magnet !== payload.magnet) {
-    record.magnet = magnet;
-  }
-
   records.unshift(record);
   await persist();
   emit();
@@ -701,6 +853,7 @@ export async function addTorrent(payload: TorrentAddPayload): Promise<TorrentAdd
 }
 
 async function destroyActiveTorrent(id: string, deleteFiles = false): Promise<void> {
+  clearStallWatchdog(id);
   const active = activeTorrents.get(id);
   if (!active) {
     return;
@@ -835,18 +988,14 @@ export async function removeTorrent(id: string, deleteFiles = false): Promise<To
   await initTorrentManager();
   const record = records.find((item) => item.id === id);
   const active = activeTorrents.get(id);
+  // Incomplete downloads always wipe disk — leftover partials hang the next "Скачать".
+  const wipe = Boolean(deleteFiles || (record && isIncompleteRecord(record)));
 
   if (active) {
-    await destroyActiveTorrent(id, deleteFiles);
-  } else if (deleteFiles && record?.savePath) {
-    // Best-effort cleanup of known files
-    for (const file of record.files) {
-      try {
-        await rm(file.path, { force: true });
-      } catch {
-        // ignore
-      }
-    }
+    await destroyActiveTorrent(id, wipe);
+  }
+  if (wipe && record) {
+    await wipeRecordDiskData(record);
   }
 
   records = records.filter((item) => item.id !== id);

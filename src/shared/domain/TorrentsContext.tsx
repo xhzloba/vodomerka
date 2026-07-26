@@ -151,7 +151,7 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
 
     return {
       count: queue.length,
-      percent: Math.round(progress * 100),
+      percent: Math.round(progress * 10000) / 100,
       title: primary.mediaTitle || primary.title || 'Торрент',
       id: primary.id,
       posterUrl: primary.posterUrl,

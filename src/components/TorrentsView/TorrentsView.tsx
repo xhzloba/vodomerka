@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { TorrentDownloadRecord } from '../../../contracts/ipc';
 import { useTorrents } from '@/shared/domain/TorrentsContext';
 import { usePlayer } from '@/shared/domain/PlayerContext';
-import { hasMultipleEpisodes, listVideoTorrentFiles } from '@/shared/domain/torrentEpisodes';
+import {
+  formatProgressPercent,
+  getProgressPercent,
+  hasMultipleEpisodes,
+  listVideoTorrentFiles,
+} from '@/shared/domain/torrentEpisodes';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { formatTorrentQuality } from '@/shared/api/vokino/torrents';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
@@ -206,7 +211,8 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
         ) : (
           <ul className="torrents-view__list">
             {sorted.map((item) => {
-              const percent = Math.round(Math.min(1, Math.max(0, item.progress)) * 100);
+              const percent = getProgressPercent(item.progress);
+              const percentLabel = formatProgressPercent(item.progress);
               const meta = [
                 item.quality != null ? formatTorrentQuality(item.quality) : null,
                 item.sizeName || (item.length > 0 ? formatBytes(item.length) : null),
@@ -240,7 +246,7 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
                   </div>
 
                   <div className="torrents-view__actions">
-                    <span className="torrents-view__percent">{percent}%</span>
+                    <span className="torrents-view__percent">{percentLabel}%</span>
                     <button
                       type="button"
                       className="torrents-view__action torrents-view__action--primary"
@@ -280,8 +286,12 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
                       type="button"
                       className="torrents-view__action"
                       aria-label="Удалить"
-                      title="Удалить"
-                      onClick={() => void removeTorrent(item.id, false)}
+                      title={
+                        item.status === 'done'
+                          ? 'Убрать из списка (файлы останутся)'
+                          : 'Отменить и удалить недокачанные файлы'
+                      }
+                      onClick={() => void removeTorrent(item.id, item.status !== 'done')}
                     >
                       <TrashIcon size={15} />
                     </button>
