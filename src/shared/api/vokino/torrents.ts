@@ -39,6 +39,42 @@ export function formatTorrentQuality(quality: number | null | undefined): string
   return formatQuality(quality) ?? '—';
 }
 
+const FALLBACK_TRACKERS = [
+  'udp://tracker.opentrackr.org:1337/announce',
+  'http://tracker.opentrackr.org:1337/announce',
+  'udp://open.stealth.si:80/announce',
+  'udp://tracker.torrent.eu.org:451/announce',
+  'http://bt3.t-ru.org/ann?magnet',
+  'http://bt4.t-ru.org/ann?magnet',
+];
+
+/** API often returns bare btih magnets — append public trackers for WebTorrent. */
+export function enrichMagnetUri(magnet: string): string {
+  const trimmed = magnet.trim();
+  if (!trimmed.startsWith('magnet:')) {
+    return trimmed;
+  }
+
+  // Avoid URL.toString() — it breaks xt=urn:btih for parse-torrent.
+  const existing = new Set<string>();
+  for (const match of trimmed.matchAll(/[?&]tr=([^&]*)/gi)) {
+    try {
+      existing.add(decodeURIComponent(match[1] ?? ''));
+    } catch {
+      existing.add(match[1] ?? '');
+    }
+  }
+
+  const extras = FALLBACK_TRACKERS.filter((tracker) => !existing.has(tracker))
+    .map((tracker) => `tr=${encodeURIComponent(tracker)}`)
+    .join('&');
+
+  if (!extras) {
+    return trimmed;
+  }
+  return trimmed.includes('?') ? `${trimmed}&${extras}` : `${trimmed}?${extras}`;
+}
+
 export function mapTorrentChannels(response: VokinoTorrentsResponse): TorrentOffer[] {
   return (response.channels ?? [])
     .filter((channel) => Boolean(channel.magnet?.startsWith('magnet:')))
@@ -53,7 +89,7 @@ export function mapTorrentChannels(response: VokinoTorrentsResponse): TorrentOff
       seeds: typeof channel.sid === 'number' ? channel.sid : Number(channel.sid) || 0,
       peers: typeof channel.pir === 'number' ? channel.pir : Number(channel.pir) || 0,
       bitrate: channel.bitrate?.trim() || '',
-      magnet: channel.magnet,
+      magnet: enrichMagnetUri(channel.magnet),
       createTime: channel.createTime,
     }));
 }

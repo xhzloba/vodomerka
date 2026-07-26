@@ -15,12 +15,27 @@ import { registerPluginsIpc } from './ipc/plugins';
 import { registerDetailIpc } from './ipc/detail';
 import { configureAppBranding, APP_NAME } from './branding';
 import { registerAppMenu } from './menu';
-import { registerWindowChromeIpc, getMacTrafficLightPosition } from './ipc/windowChrome';
+import { registerWindowChromeIpc, getMacTrafficLightPosition, bindMainWindowChrome } from './ipc/windowChrome';
 import { registerSystemIpc } from './ipc/system';
 import { registerTorrentsIpc, shutdownTorrentsIpc } from './ipc/torrents';
+import { registerMediaIpc, shutdownMediaIpc } from './ipc/media';
 
 if (process.platform === 'darwin') {
   app.setName(APP_NAME);
+}
+
+// Suppress Electron's blocking error dialog; log instead so vite can restart cleanly.
+process.on('uncaughtException', (error) => {
+  console.error('[main] uncaughtException', error);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[main] unhandledRejection', reason);
+});
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+  process.exit(0);
 }
 
 process.env.DIST = path.join(__dirname, '../dist');
@@ -32,6 +47,17 @@ const MAIN_WINDOW_MIN_WIDTH = 1280;
 const MAIN_WINDOW_MIN_HEIGHT = 840;
 
 const isDev = !!process.env.VITE_DEV_SERVER_URL;
+
+function focusMainWindow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+  mainWindow.show();
+  mainWindow.focus();
+}
 
 function applyWindowTitle(win: BrowserWindow): void {
   win.setTitle(APP_NAME);
@@ -79,6 +105,7 @@ function createWindow() {
 
   if (mainWindow) {
     bindWindowTitle(mainWindow);
+    bindMainWindowChrome(mainWindow);
   }
 
   mainWindow.once('ready-to-show', () => {
@@ -107,6 +134,14 @@ function createWindow() {
   });
 }
 
+app.on('second-instance', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+    return;
+  }
+  focusMainWindow();
+});
+
 app.whenReady().then(() => {
   configureAppBranding();
   registerSettingsIpc(() => mainWindow);
@@ -122,21 +157,28 @@ app.whenReady().then(() => {
   registerWindowChromeIpc(() => mainWindow);
   registerSystemIpc();
   registerTorrentsIpc();
+  registerMediaIpc();
   registerAppMenu(() => mainWindow);
   createWindow();
 });
 
 app.on('window-all-closed', () => {
-  app.quit();
+  // На Mac окно скрываем (hide), процесс живёт — иначе «пропало и не найти».
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
 });
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+  } else {
+    focusMainWindow();
   }
 });
 
 app.on('will-quit', () => {
   void shutdownTorrentsIpc();
+  void shutdownMediaIpc();
   closeDatabase();
 });

@@ -78,6 +78,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   dismissedTipIds: [],
   tipShownAt: {},
   apiServer: '1',
+  torrentPlaybackPlayerId: 'vodomerka',
 };
 
 export const HERO_SLIDE_INTERVAL_MIN_SEC = 3;

@@ -486,6 +486,81 @@ export function PlayIcon({ size = 24, className, ...props }: IconProps) {
   );
 }
 
+export function PauseBarsIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      className={className ? `app-icon app-icon--filled ${className}` : 'app-icon app-icon--filled'}
+      aria-hidden={props['aria-label'] ? undefined : true}
+      {...props}
+    >
+      <rect x="6.5" y="5" width="3.5" height="14" rx="1" />
+      <rect x="14" y="5" width="3.5" height="14" rx="1" />
+    </svg>
+  );
+}
+
+export function VolumeIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <StrokeIcon {...props} size={size} className={className} fill="none" stroke="currentColor">
+      <path d="M4.5 9.5h3.2L12 5.8v12.4L7.7 14.5H4.5V9.5Z" fill="currentColor" stroke="none" />
+      <path d="M14.8 9.2a3.2 3.2 0 0 1 0 5.6" />
+      <path d="M16.8 6.8a6 6 0 0 1 0 10.4" />
+    </StrokeIcon>
+  );
+}
+
+export function VolumeMutedIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <StrokeIcon {...props} size={size} className={className} fill="none" stroke="currentColor">
+      <path d="M4.5 9.5h3.2L12 5.8v12.4L7.7 14.5H4.5V9.5Z" fill="currentColor" stroke="none" />
+      <path d="M16 9l4 4M20 9l-4 4" />
+    </StrokeIcon>
+  );
+}
+
+export function FullscreenIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <StrokeIcon {...props} size={size} className={className} fill="none" stroke="currentColor">
+      <path d="M8 4.5H4.5V8" />
+      <path d="M16 4.5h3.5V8" />
+      <path d="M8 19.5H4.5V16" />
+      <path d="M16 19.5h3.5V16" />
+    </StrokeIcon>
+  );
+}
+
+export function FullscreenExitIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <StrokeIcon {...props} size={size} className={className} fill="none" stroke="currentColor">
+      <path d="M9.5 4.5v4H5.5" />
+      <path d="M14.5 4.5v4h4" />
+      <path d="M9.5 19.5v-4H5.5" />
+      <path d="M14.5 19.5v-4h4" />
+    </StrokeIcon>
+  );
+}
+
+export function CaptionsIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <StrokeIcon {...props} size={size} className={className} fill="none" stroke="currentColor">
+      <rect x="3.5" y="6.5" width="17" height="11" rx="2.5" />
+      <path d="M7.5 12.5h3.2M13.2 12.5H16.5" />
+    </StrokeIcon>
+  );
+}
+
+export function PictureInPictureIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <StrokeIcon {...props} size={size} className={className} fill="none" stroke="currentColor">
+      <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+      <rect x="11.5" y="11" width="7" height="5.5" rx="1" fill="currentColor" stroke="none" />
+    </StrokeIcon>
+  );
+}
+
 export function PlayOverlayIcon({ size = 56, className, ...props }: IconProps) {
   return (
     <svg

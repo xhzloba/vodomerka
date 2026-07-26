@@ -75,6 +75,8 @@ export interface AppSettings {
   dismissedTipIds: string[];
   tipShownAt: Record<string, number>;
   apiServer: ApiServerId;
+  /** Preferred player for torrent playback: `vodomerka` | `system` | app id */
+  torrentPlaybackPlayerId: string;
 }
 
 export interface StoredMediaItem {
@@ -172,19 +174,29 @@ export const IPC_CHANNELS = {
   },
   windowChrome: {
     setSidebarCollapsed: 'windowChrome:setSidebarCollapsed',
+    setFullScreen: 'windowChrome:setFullScreen',
+    focusMain: 'windowChrome:focusMain',
+    setPlayerOpen: 'windowChrome:setPlayerOpen',
+    closePlayer: 'windowChrome:closePlayer',
+    fullScreenChanged: 'windowChrome:fullScreenChanged',
   },
   system: {
     getUserDisplayName: 'system:getUserDisplayName',
     openExternal: 'system:openExternal',
+    listMediaPlayers: 'system:listMediaPlayers',
   },
   torrents: {
     list: 'torrents:list',
     add: 'torrents:add',
     remove: 'torrents:remove',
     openFile: 'torrents:openFile',
+    openInPlayer: 'torrents:openInPlayer',
     openFolder: 'torrents:openFolder',
     getFolderPath: 'torrents:getFolderPath',
     changed: 'torrents:changed',
+  },
+  media: {
+    prepareTorrentPlayback: 'media:prepareTorrentPlayback',
   },
   detail: {
     tryFocus: 'detail:tryFocus',
@@ -264,6 +276,35 @@ export type TorrentAddResult =
   | { ok: true; torrent: TorrentDownloadRecord }
   | { ok: false; error: string };
 
+export interface MediaPlaybackSession {
+  torrentId: string;
+  title: string;
+  posterUrl?: string;
+  url: string;
+  filePath: string;
+  sourcePath: string;
+  remuxed: boolean;
+  /** True while torrent is still downloading / live remux stream. */
+  live?: boolean;
+  seekable?: boolean;
+}
+
+export type MediaPreparePlaybackResult =
+  | { ok: true; session: MediaPlaybackSession }
+  | { ok: false; error: string };
+
+export interface MediaPlayerOption {
+  id: string;
+  name: string;
+  kind: 'builtin' | 'app' | 'system';
+  installed: boolean;
+  appPath?: string;
+}
+
+export type OpenInPlayerResult =
+  | { ok: true; action: 'native' | 'external' }
+  | { ok: false; error: string };
+
 export interface ElectronApi {
   platform: string;
   api: {
@@ -326,9 +367,13 @@ export interface ElectronApi {
     add: (payload: TorrentAddPayload) => Promise<TorrentAddResult>;
     remove: (id: string, deleteFiles?: boolean) => Promise<TorrentDownloadRecord[]>;
     openFile: (id: string) => Promise<{ ok: boolean; error?: string }>;
+    openInPlayer: (id: string, playerId: string) => Promise<OpenInPlayerResult>;
     openFolder: () => Promise<{ ok: boolean; error?: string }>;
     getFolderPath: () => Promise<string>;
     onChanged: (callback: (items: TorrentDownloadRecord[]) => void) => Unsubscribe;
+  };
+  media: {
+    prepareTorrentPlayback: (torrentId: string) => Promise<MediaPreparePlaybackResult>;
   };
   sidebar: {
     onToggle: (callback: () => void) => Unsubscribe;
@@ -338,10 +383,16 @@ export interface ElectronApi {
   };
   windowChrome: {
     setSidebarCollapsed: (collapsed: boolean) => Promise<void>;
+    setFullScreen: (fullScreen: boolean) => Promise<boolean>;
+    focusMain: () => Promise<void>;
+    setPlayerOpen: (open: boolean) => Promise<void>;
+    onClosePlayer: (callback: () => void) => Unsubscribe;
+    onFullScreenChanged: (callback: (fullScreen: boolean) => void) => Unsubscribe;
   };
   system: {
     getUserDisplayName: () => Promise<string | null>;
     openExternal: (url: string) => Promise<OpenExternalResult>;
+    listMediaPlayers: () => Promise<MediaPlayerOption[]>;
   };
   detail: {
     tryFocus: (mediaId: string) => Promise<boolean>;

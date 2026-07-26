@@ -12,7 +12,7 @@ export default defineConfig({
         vite: {
           build: {
             rollupOptions: {
-              external: ['better-sqlite3', 'webtorrent'],
+              external: ['better-sqlite3', 'webtorrent', 'ffmpeg-static'],
             },
           },
         },

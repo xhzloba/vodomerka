@@ -1,9 +1,12 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { TorrentDownloadRecord } from '../../../contracts/ipc';
 import { useTorrents } from '@/shared/domain/TorrentsContext';
+import { usePlayer } from '@/shared/domain/PlayerContext';
+import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { formatTorrentQuality } from '@/shared/api/vokino/torrents';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
+import { PlayerPickerDialog } from '@/shared/ui/PlayerPickerDialog/PlayerPickerDialog';
 import { DownloadIcon, FolderIcon, PlayIcon, TrashIcon } from '@/shared/ui/icons';
 import { PageLoading } from '@/shared/ui/PageState';
 import '../BrowseView/BrowseView.css';
@@ -47,11 +50,14 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
     isLoading,
     folderPath,
     removeTorrent,
-    openTorrentFile,
     openTorrentsFolder,
   } = useTorrents();
+  const { playTorrent } = usePlayer();
+  const { settings, updateSettings } = useAppSettings();
   const { showToast } = useToast();
   const scrollRef = useOverlayScroll<HTMLDivElement>();
+  const [pickerTorrentId, setPickerTorrentId] = useState<string | null>(null);
+  const [isOpening, setIsOpening] = useState(false);
 
   const sorted = useMemo(
     () => [...torrents].sort((a, b) => b.addedAt - a.addedAt),
@@ -65,16 +71,6 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
     scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' });
   }, [isActive, scrollRef]);
 
-  const handleOpen = async (id: string) => {
-    const result = await openTorrentFile(id);
-    if (!result.ok) {
-      showToast(result.error ?? 'Не удалось открыть файл', {
-        kind: 'hide',
-        title: 'Ошибка',
-      });
-    }
-  };
-
   const handleOpenFolder = async () => {
     const result = await openTorrentsFolder();
     if (!result.ok) {
@@ -84,6 +80,54 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
       });
     }
   };
+
+  const handlePlayClick = (id: string) => {
+    setPickerTorrentId(id);
+  };
+
+  const handlePickerConfirm = useCallback(
+    async (playerId: string, remember: boolean) => {
+      if (!pickerTorrentId) {
+        return;
+      }
+
+      setIsOpening(true);
+      try {
+        if (remember && playerId !== settings.torrentPlaybackPlayerId) {
+          await updateSettings({ torrentPlaybackPlayerId: playerId });
+        }
+
+        if (playerId === 'vodomerka') {
+          await playTorrent(pickerTorrentId);
+          setPickerTorrentId(null);
+          return;
+        }
+
+        const result = await window.electronAPI?.torrents?.openInPlayer?.(
+          pickerTorrentId,
+          playerId,
+        );
+        if (!result?.ok) {
+          showToast(result?.error ?? 'Не удалось открыть в плеере', {
+            kind: 'hide',
+            title: 'Плеер',
+          });
+          return;
+        }
+
+        setPickerTorrentId(null);
+      } finally {
+        setIsOpening(false);
+      }
+    },
+    [
+      pickerTorrentId,
+      playTorrent,
+      settings.torrentPlaybackPlayerId,
+      showToast,
+      updateSettings,
+    ],
+  );
 
   return (
     <div className="library-view torrents-view">
@@ -154,10 +198,14 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
                     <button
                       type="button"
                       className="torrents-view__action torrents-view__action--primary"
-                      aria-label="Открыть"
-                      title="Открыть"
-                      disabled={item.status !== 'done' && item.progress < 0.05}
-                      onClick={() => void handleOpen(item.id)}
+                      aria-label="Смотреть"
+                      title="Смотреть"
+                      disabled={
+                        item.status === 'error' ||
+                        item.status === 'queued' ||
+                        item.files.length === 0
+                      }
+                      onClick={() => handlePlayClick(item.id)}
                     >
                       <PlayIcon size={15} />
                     </button>
@@ -177,6 +225,20 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
           </ul>
         )}
       </div>
+
+      <PlayerPickerDialog
+        open={pickerTorrentId != null}
+        defaultPlayerId={settings.torrentPlaybackPlayerId || 'vodomerka'}
+        isOpening={isOpening}
+        onCancel={() => {
+          if (!isOpening) {
+            setPickerTorrentId(null);
+          }
+        }}
+        onConfirm={(playerId, remember) => {
+          void handlePickerConfirm(playerId, remember);
+        }}
+      />
     </div>
   );
 }

@@ -143,6 +143,10 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     dismissedTipIds: normalizeDismissedTipIds(value.dismissedTipIds),
     tipShownAt: normalizeTipShownAt(value.tipShownAt),
     apiServer: normalizeApiServer(value.apiServer),
+    torrentPlaybackPlayerId:
+      typeof value.torrentPlaybackPlayerId === 'string' && value.torrentPlaybackPlayerId.trim()
+        ? value.torrentPlaybackPlayerId.trim()
+        : DEFAULT_APP_SETTINGS.torrentPlaybackPlayerId,
   };
 }
 

@@ -126,10 +126,13 @@ async function openExternalUrl(url: string): Promise<OpenExternalResult> {
   }
 }
 
+import { listInstalledMediaPlayers } from '../media/players';
+
 export function registerSystemIpc(): void {
   ipcMain.handle(IPC_CHANNELS.system.getUserDisplayName, () => getSystemUserDisplayName());
   ipcMain.handle(
     IPC_CHANNELS.system.openExternal,
     async (_event, url: string): Promise<OpenExternalResult> => openExternalUrl(url),
   );
+  ipcMain.handle(IPC_CHANNELS.system.listMediaPlayers, async () => listInstalledMediaPlayers());
 }

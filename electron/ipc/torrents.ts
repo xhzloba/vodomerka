@@ -12,6 +12,7 @@ import {
   listTorrents,
   onTorrentsChanged,
   openTorrentFile,
+  openTorrentInPlayer,
   openTorrentsFolder,
   removeTorrent,
 } from '../torrents/manager';
@@ -49,6 +50,11 @@ export function registerTorrentsIpc(): void {
   );
 
   ipcMain.handle(IPC_CHANNELS.torrents.openFile, async (_event, id: string) => openTorrentFile(id));
+
+  ipcMain.handle(
+    IPC_CHANNELS.torrents.openInPlayer,
+    async (_event, id: string, playerId: string) => openTorrentInPlayer(id, playerId),
+  );
 
   ipcMain.handle(IPC_CHANNELS.torrents.openFolder, async () => openTorrentsFolder());
 

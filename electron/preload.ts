@@ -6,8 +6,11 @@ import {
   type ElectronApi,
   type InstalledSidebarAnimationPlugin,
   type InstalledThemePlugin,
+  type MediaPreparePlaybackResult,
+  type MediaPlayerOption,
   type MediaOverridesMap,
   type OpenExternalResult,
+  type OpenInPlayerResult,
   type PluginInstallProgressEvent,
   type PluginResult,
   type StoredMediaItem,
@@ -128,6 +131,8 @@ const electronApi: ElectronApi = {
       ipcRenderer.invoke(IPC_CHANNELS.torrents.remove, id, deleteFiles),
     openFile: (id: string): Promise<{ ok: boolean; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.torrents.openFile, id),
+    openInPlayer: (id: string, playerId: string): Promise<OpenInPlayerResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.torrents.openInPlayer, id, playerId),
     openFolder: (): Promise<{ ok: boolean; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.torrents.openFolder),
     getFolderPath: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.torrents.getFolderPath),
@@ -140,6 +145,10 @@ const electronApi: ElectronApi = {
         ipcRenderer.removeListener(IPC_CHANNELS.torrents.changed, listener);
       };
     },
+  },
+  media: {
+    prepareTorrentPlayback: (torrentId: string): Promise<MediaPreparePlaybackResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.media.prepareTorrentPlayback, torrentId),
   },
   sidebar: {
     onToggle: (callback: () => void) => {
@@ -162,12 +171,37 @@ const electronApi: ElectronApi = {
   windowChrome: {
     setSidebarCollapsed: (collapsed: boolean): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.windowChrome.setSidebarCollapsed, collapsed),
+    setFullScreen: (fullScreen: boolean): Promise<boolean> =>
+      ipcRenderer.invoke(IPC_CHANNELS.windowChrome.setFullScreen, fullScreen),
+    focusMain: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.windowChrome.focusMain),
+    setPlayerOpen: (open: boolean): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.windowChrome.setPlayerOpen, open),
+    onClosePlayer: (callback: () => void): (() => void) => {
+      const listener = (): void => {
+        callback();
+      };
+      ipcRenderer.on(IPC_CHANNELS.windowChrome.closePlayer, listener);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.windowChrome.closePlayer, listener);
+      };
+    },
+    onFullScreenChanged: (callback: (fullScreen: boolean) => void): (() => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, fullScreen: boolean): void => {
+        callback(Boolean(fullScreen));
+      };
+      ipcRenderer.on(IPC_CHANNELS.windowChrome.fullScreenChanged, listener);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.windowChrome.fullScreenChanged, listener);
+      };
+    },
   },
   system: {
     getUserDisplayName: (): Promise<string | null> =>
       ipcRenderer.invoke(IPC_CHANNELS.system.getUserDisplayName),
     openExternal: (url: string): Promise<OpenExternalResult> =>
       ipcRenderer.invoke(IPC_CHANNELS.system.openExternal, url),
+    listMediaPlayers: (): Promise<MediaPlayerOption[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.system.listMediaPlayers),
   },
   detail: {
     tryFocus: (mediaId: string): Promise<boolean> =>

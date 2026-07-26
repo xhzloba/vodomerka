@@ -3,6 +3,7 @@ import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { shell } from 'electron';
 import type {
+  OpenInPlayerResult,
   TorrentAddPayload,
   TorrentAddResult,
   TorrentDownloadFile,
@@ -10,6 +11,27 @@ import type {
 } from '../../contracts/ipc';
 import { ensureTorrentsDirs, getTorrentsDownloadsDir, getTorrentsRoot } from './paths';
 import { loadTorrentState, saveTorrentState } from './store';
+import { listInstalledMediaPlayers, openFileWithPlayer } from '../media/players';
+
+type WebTorrentFile = {
+  name: string;
+  path: string;
+  length: number;
+  progress: number;
+  done: boolean;
+  type: string;
+  select: (priority?: number) => void;
+  deselect: () => void;
+  createReadStream: (opts?: { start?: number; end?: number }) => NodeJS.ReadableStream;
+};
+
+type WebTorrentServer = {
+  listen: (port: number, hostname: string, cb?: () => void) => void;
+  address: () => { port: number } | string | null;
+  close: (cb?: () => void) => void;
+  destroy: (cb?: () => void) => void;
+  pathname: string;
+};
 
 type WebTorrentClient = {
   add: (
@@ -17,9 +39,12 @@ type WebTorrentClient = {
     opts: { path: string },
     cb?: (torrent: WebTorrentTorrent) => void,
   ) => WebTorrentTorrent;
-  get: (id: string) => WebTorrentTorrent | undefined;
+  get: (id: string) => Promise<WebTorrentTorrent | null> | WebTorrentTorrent | undefined;
   remove: (id: string, opts?: { destroyStore?: boolean }, cb?: (err?: Error | string) => void) => void;
   destroy: (cb?: (err?: Error) => void) => void;
+  createServer: (opts?: { origin?: string; hostname?: string; pathname?: string }) => WebTorrentServer;
+  ready: boolean;
+  on: (event: string, listener: (...args: unknown[]) => void) => void;
 };
 
 type WebTorrentTorrent = {
@@ -33,7 +58,7 @@ type WebTorrentTorrent = {
   downloaded: number;
   length: number;
   done: boolean;
-  files: Array<{ name: string; path: string; length: number }>;
+  files: WebTorrentFile[];
   path: string;
   destroy: (opts?: { destroyStore?: boolean }, cb?: (err?: Error | string) => void) => void;
   on: (event: string, listener: (...args: unknown[]) => void) => void;
@@ -44,6 +69,8 @@ let records: TorrentDownloadRecord[] = [];
 let ready = false;
 const listeners = new Set<(items: TorrentDownloadRecord[]) => void>();
 const activeTorrents = new Map<string, WebTorrentTorrent>();
+let webTorrentServer: WebTorrentServer | null = null;
+let webTorrentServerPort: number | null = null;
 
 function magnetKey(magnet: string): string {
   return createHash('sha1').update(magnet.trim()).digest('hex').slice(0, 16);
@@ -59,6 +86,83 @@ function sanitizePosterUrl(url: string | undefined): string | undefined {
     return undefined;
   }
   return trimmed;
+}
+
+/** Vokino often returns bare btih magnets without trackers — DHT alone is too slow/unreliable. */
+const DEFAULT_TRACKERS = [
+  'udp://tracker.opentrackr.org:1337/announce',
+  'http://tracker.opentrackr.org:1337/announce',
+  'udp://open.stealth.si:80/announce',
+  'udp://tracker.torrent.eu.org:451/announce',
+  'udp://exodus.desync.com:6969/announce',
+  'udp://tracker.moeking.me:6969/announce',
+  'http://bt3.t-ru.org/ann?magnet',
+  'http://bt4.t-ru.org/ann?magnet',
+  'http://retracker.local/announce',
+];
+
+export function enrichMagnet(magnet: string): string {
+  let trimmed = magnet.trim();
+  if (!trimmed.startsWith('magnet:')) {
+    return trimmed;
+  }
+
+  // Repair over-encoded magnets from URL.toString() (xt=urn%3Abtih%3A…)
+  trimmed = trimmed
+    .replace(/([?&]xt=)urn%3Abtih%3A/gi, '$1urn:btih:')
+    .replace(/([?&]xt=)URN%3ABTIH%3A/g, '$1urn:btih:');
+
+  // Do NOT use URL.toString() — it percent-encodes xt=urn:btih:… and parse-torrent
+  // then treats the magnet as a filesystem path → "Invalid torrent identifier".
+  const existing = new Set<string>();
+  for (const match of trimmed.matchAll(/[?&]tr=([^&]*)/gi)) {
+    try {
+      existing.add(decodeURIComponent(match[1] ?? ''));
+    } catch {
+      existing.add(match[1] ?? '');
+    }
+  }
+
+  const extras = DEFAULT_TRACKERS.filter((tracker) => !existing.has(tracker))
+    .map((tracker) => `tr=${encodeURIComponent(tracker)}`)
+    .join('&');
+
+  if (!extras) {
+    return trimmed;
+  }
+  return trimmed.includes('?') ? `${trimmed}&${extras}` : `${trimmed}?${extras}`;
+}
+
+function readTorrentStats(torrent: WebTorrentTorrent): {
+  progress: number;
+  downloadSpeed: number;
+  uploaded: number;
+  downloaded: number;
+  length: number;
+  done: boolean;
+  name: string;
+} {
+  try {
+    return {
+      progress: Math.min(1, Math.max(0, torrent.progress || 0)),
+      downloadSpeed: torrent.downloadSpeed || 0,
+      uploaded: torrent.uploaded || 0,
+      downloaded: torrent.downloaded || 0,
+      length: torrent.length || 0,
+      done: Boolean(torrent.done),
+      name: torrent.name || '',
+    };
+  } catch {
+    return {
+      progress: 0,
+      downloadSpeed: 0,
+      uploaded: 0,
+      downloaded: 0,
+      length: torrent.length || 0,
+      done: Boolean(torrent.done),
+      name: torrent.name || '',
+    };
+  }
 }
 
 function emit() {
@@ -113,21 +217,43 @@ function markTorrentError(id: string, error: unknown) {
 function bindTorrent(id: string, torrent: WebTorrentTorrent) {
   activeTorrents.set(id, torrent);
 
+  let persistTimer: ReturnType<typeof setTimeout> | null = null;
+  const schedulePersist = () => {
+    if (persistTimer) {
+      return;
+    }
+    persistTimer = setTimeout(() => {
+      persistTimer = null;
+      void persist();
+    }, 750);
+  };
+
   const syncProgress = () => {
-    const done = Boolean(torrent.done) || torrent.progress >= 0.999;
-    patchRecord(id, {
-      title: torrent.name || records.find((item) => item.id === id)?.title || 'Торрент',
-      progress: Math.min(1, Math.max(0, torrent.progress || 0)),
-      downloadSpeed: torrent.downloadSpeed || 0,
-      uploaded: torrent.uploaded || 0,
-      downloaded: torrent.downloaded || 0,
-      length: torrent.length || 0,
-      status: done ? 'done' : 'downloading',
-      files: mapFiles(torrent),
-      savePath: torrent.path || getTorrentsDownloadsDir(),
-      error: undefined,
-    });
-    void persist();
+    try {
+      const stats = readTorrentStats(torrent);
+      const done = stats.done || stats.progress >= 0.999;
+      patchRecord(id, {
+        title: stats.name || records.find((item) => item.id === id)?.title || 'Торрент',
+        progress: stats.progress,
+        downloadSpeed: stats.downloadSpeed,
+        uploaded: stats.uploaded,
+        downloaded: stats.downloaded,
+        length: stats.length,
+        status: done ? 'done' : 'downloading',
+        files: mapFiles(torrent),
+        savePath: torrent.path || getTorrentsDownloadsDir(),
+        error: undefined,
+      });
+      if (done) {
+        void persist();
+      } else {
+        schedulePersist();
+        emit();
+      }
+    } catch (error) {
+      // WebTorrent can throw on progress getters mid-swarm; don't kill the download.
+      console.warn('[torrents] syncProgress failed', error);
+    }
   };
 
   torrent.on('infoHash', () => {
@@ -147,6 +273,9 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
   });
   torrent.on('error', (error: unknown) => {
     markTorrentError(id, error);
+  });
+  torrent.on('warning', (error: unknown) => {
+    console.warn('[torrents] warning', error);
   });
 
   syncProgress();
@@ -235,10 +364,14 @@ export async function addTorrent(payload: TorrentAddPayload): Promise<TorrentAdd
 
   try {
     const client = await getClient();
-    const torrent = client.add(payload.magnet, { path: downloads });
+    const magnet = enrichMagnet(payload.magnet);
+    if (magnet !== payload.magnet) {
+      patchRecord(id, { magnet });
+    }
+    const torrent = client.add(magnet, { path: downloads });
+    bindTorrent(id, torrent);
     patchRecord(id, { status: 'downloading' });
     await persist();
-    bindTorrent(id, torrent);
     return { ok: true, torrent: records.find((item) => item.id === id)! };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Не удалось начать загрузку';
@@ -253,10 +386,18 @@ async function resumeTorrent(id: string): Promise<void> {
     return;
   }
   const client = await getClient();
-  const torrent = client.add(record.magnet, { path: record.savePath || getTorrentsDownloadsDir() });
-  patchRecord(id, { status: 'downloading', error: undefined });
-  await persist();
-  bindTorrent(id, torrent);
+  const magnet = enrichMagnet(record.magnet);
+  if (magnet !== record.magnet) {
+    patchRecord(id, { magnet });
+  }
+  try {
+    const torrent = client.add(magnet, { path: record.savePath || getTorrentsDownloadsDir() });
+    bindTorrent(id, torrent);
+    patchRecord(id, { status: 'downloading', error: undefined });
+    await persist();
+  } catch (error) {
+    markTorrentError(id, error instanceof Error ? error : 'Не удалось возобновить загрузку');
+  }
 }
 
 export async function removeTorrent(id: string, deleteFiles = false): Promise<TorrentDownloadRecord[]> {
@@ -285,23 +426,152 @@ export async function removeTorrent(id: string, deleteFiles = false): Promise<To
   return listTorrents();
 }
 
-export async function openTorrentFile(id: string): Promise<{ ok: boolean; error?: string }> {
+const VIDEO_EXT = /\.(mkv|mp4|avi|mov|wmv|m4v|webm|ts)$/i;
+
+function pickVideoFile<T extends { name: string; length: number }>(files: T[]): T | undefined {
+  return files.find((file) => VIDEO_EXT.test(file.name)) ?? [...files].sort((a, b) => b.length - a.length)[0];
+}
+
+export function getTorrentPlaybackSource(
+  id: string,
+):
+  | {
+      ok: true;
+      filePath: string;
+      title: string;
+      posterUrl?: string;
+      done: boolean;
+      progress: number;
+      fileName: string;
+    }
+  | { ok: false; error: string } {
   const record = records.find((item) => item.id === id);
   if (!record) {
     return { ok: false, error: 'Торрент не найден' };
   }
 
-  const videoExt = /\.(mkv|mp4|avi|mov|wmv|m4v|webm|ts)$/i;
-  const preferred =
-    record.files.find((file) => videoExt.test(file.name)) ??
-    [...record.files].sort((a, b) => b.length - a.length)[0];
-
-  const target = preferred?.path || record.savePath;
+  const preferred = pickVideoFile(record.files);
+  const target = preferred?.path;
   if (!target) {
-    return { ok: false, error: 'Файл ещё не готов' };
+    return { ok: false, error: 'Метаданные ещё качаются — подожди пару секунд' };
   }
 
-  const result = await shell.openPath(target);
+  return {
+    ok: true,
+    filePath: target,
+    fileName: preferred?.name || path.basename(target),
+    title: record.mediaTitle || record.title || preferred?.name || 'Видео',
+    posterUrl: record.posterUrl,
+    done: record.status === 'done' || record.progress >= 0.999,
+    progress: record.progress,
+  };
+}
+
+/** Prioritize video file pieces from the start (play-while-download). */
+export function prioritizeTorrentPlayback(id: string): WebTorrentFile | null {
+  const torrent = activeTorrents.get(id);
+  if (!torrent?.files?.length) {
+    return null;
+  }
+
+  const video = pickVideoFile(torrent.files);
+  if (!video) {
+    return null;
+  }
+
+  for (const file of torrent.files) {
+    if (file === video) {
+      file.select(10);
+    } else {
+      try {
+        file.deselect();
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  return video;
+}
+
+export async function ensureWebTorrentHttpServer(): Promise<{ port: number; pathname: string }> {
+  if (webTorrentServer && webTorrentServerPort != null) {
+    return { port: webTorrentServerPort, pathname: webTorrentServer.pathname || '/webtorrent' };
+  }
+
+  const client = await getClient();
+  const server = client.createServer({ origin: '*', hostname: '127.0.0.1' });
+  await new Promise<void>((resolve, reject) => {
+    try {
+      server.listen(0, '127.0.0.1', () => resolve());
+    } catch (error) {
+      reject(error);
+    }
+  });
+
+  const address = server.address();
+  if (!address || typeof address === 'string') {
+    throw new Error('WebTorrent server failed to bind');
+  }
+
+  webTorrentServer = server;
+  webTorrentServerPort = address.port;
+  return { port: address.port, pathname: server.pathname || '/webtorrent' };
+}
+
+export function buildWebTorrentFileUrl(
+  port: number,
+  pathname: string,
+  infoHash: string,
+  filePath: string,
+): string {
+  const normalized = filePath.replace(/\\/g, '/');
+  const encodedPath = normalized
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+  const base = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  return `http://127.0.0.1:${port}${base}/${infoHash}/${encodedPath}`;
+}
+
+export function getActiveWebTorrent(id: string): WebTorrentTorrent | undefined {
+  return activeTorrents.get(id);
+}
+
+export async function openTorrentInPlayer(
+  id: string,
+  playerId: string,
+): Promise<OpenInPlayerResult> {
+  await initTorrentManager();
+  const source = getTorrentPlaybackSource(id);
+  if (!source.ok) {
+    return source;
+  }
+
+  if (playerId === 'vodomerka') {
+    return { ok: true, action: 'native' };
+  }
+
+  const players = await listInstalledMediaPlayers();
+  const player = players.find((item) => item.id === playerId && item.installed);
+  if (!player) {
+    return { ok: false, error: 'Плеер не установлен' };
+  }
+
+  const opened = await openFileWithPlayer(source.filePath, player);
+  if (!opened.ok) {
+    return { ok: false, error: opened.error ?? 'Не удалось открыть файл' };
+  }
+  return { ok: true, action: 'external' };
+}
+
+export async function openTorrentFile(id: string): Promise<{ ok: boolean; error?: string }> {
+  const source = getTorrentPlaybackSource(id);
+  if (!source.ok) {
+    return source;
+  }
+
+  const result = await shell.openPath(source.filePath);
   if (result) {
     return { ok: false, error: result };
   }
@@ -318,6 +588,18 @@ export async function openTorrentsFolder(): Promise<{ ok: boolean; error?: strin
 }
 
 export async function destroyTorrentManager(): Promise<void> {
+  if (webTorrentServer) {
+    try {
+      await new Promise<void>((resolve) => {
+        webTorrentServer?.destroy(() => resolve());
+      });
+    } catch {
+      // ignore
+    }
+    webTorrentServer = null;
+    webTorrentServerPort = null;
+  }
+
   if (!clientPromise) {
     return;
   }

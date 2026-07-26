@@ -36,6 +36,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   dismissedTipIds: [],
   tipShownAt: {},
   apiServer: '1',
+  torrentPlaybackPlayerId: 'vodomerka',
 };
 
 const DEFAULT_HIDDEN_BUILTIN_HOME_SECTIONS = DEFAULT_SETTINGS.hiddenHomeSections;
@@ -71,6 +72,7 @@ const SETTING_KEYS = {
   dismissedTipIds: 'dismissed_tip_ids',
   tipShownAt: 'tip_shown_at',
   apiServer: 'api_server',
+  torrentPlaybackPlayerId: 'torrent_playback_player_id',
 } as const;
 
 const LEGACY_CARD_KEYS = ['card_show_title', 'card_show_year', 'card_show_rating'] as const;
@@ -260,6 +262,10 @@ function getDefaultSettingEntries(): Array<{ key: string; value: string }> {
       key: SETTING_KEYS.apiServer,
       value: DEFAULT_SETTINGS.apiServer,
     },
+    {
+      key: SETTING_KEYS.torrentPlaybackPlayerId,
+      value: DEFAULT_SETTINGS.torrentPlaybackPlayerId,
+    },
   ];
 }
 
@@ -291,6 +297,13 @@ function normalizeApiServer(value: string | undefined): AppSettings['apiServer']
   }
 
   return DEFAULT_SETTINGS.apiServer;
+}
+
+function normalizeTorrentPlaybackPlayerId(value: string | undefined): string {
+  if (typeof value === 'string' && value.trim().length > 0 && value.trim().length < 64) {
+    return value.trim();
+  }
+  return DEFAULT_SETTINGS.torrentPlaybackPlayerId;
 }
 
 function normalizeTheme(value: string | undefined): AppTheme {
@@ -553,6 +566,7 @@ function parseSettings(database: Database.Database): AppSettings {
   const dismissedTipIdsRaw = readSetting(database, SETTING_KEYS.dismissedTipIds);
   const tipShownAtRaw = readSetting(database, SETTING_KEYS.tipShownAt);
   const apiServerRaw = readSetting(database, SETTING_KEYS.apiServer);
+  const torrentPlaybackPlayerIdRaw = readSetting(database, SETTING_KEYS.torrentPlaybackPlayerId);
 
   const heroSlideIntervalSec = clampInterval(Number.parseInt(intervalRaw ?? '', 10));
 
@@ -580,6 +594,7 @@ function parseSettings(database: Database.Database): AppSettings {
     dismissedTipIds: parseDismissedTipIds(dismissedTipIdsRaw),
     tipShownAt: parseTipShownAt(tipShownAtRaw),
     apiServer: normalizeApiServer(apiServerRaw),
+    torrentPlaybackPlayerId: normalizeTorrentPlaybackPlayerId(torrentPlaybackPlayerIdRaw),
   });
 }
 
@@ -777,6 +792,13 @@ export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
     upsert.run({
       key: SETTING_KEYS.apiServer,
       value: normalizeApiServer(patch.apiServer),
+    });
+  }
+
+  if (patch.torrentPlaybackPlayerId !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.torrentPlaybackPlayerId,
+      value: normalizeTorrentPlaybackPlayerId(patch.torrentPlaybackPlayerId),
     });
   }
 
