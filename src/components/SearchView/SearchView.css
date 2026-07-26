@@ -102,12 +102,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  color: var(--app-text);
-  background: var(--search-spotlight-icon-bg, color-mix(in srgb, var(--app-text) 10%, transparent));
-  opacity: 0.92;
+  color: var(--app-text-muted);
+  opacity: 0.9;
 }
 
 .search-spotlight__input {
