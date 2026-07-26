@@ -90,6 +90,7 @@ export function MediaCard({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   const [torrentsOpen, setTorrentsOpen] = useState(false);
+  const [torrentsMounted, setTorrentsMounted] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const closeContextMenu = useCallback(() => {
@@ -122,6 +123,7 @@ export function MediaCard({
           }
           break;
         case 'download':
+          setTorrentsMounted(true);
           setTorrentsOpen(true);
           break;
         case 'copy-id':
@@ -498,16 +500,18 @@ export function MediaCard({
         onClose={() => setDescriptionOpen(false)}
       />
 
-      <MediaTorrentsDialog
-        open={torrentsOpen}
-        mediaId={item.id}
-        title={item.title}
-        subtitle={item.subtitle}
-        year={item.year}
-        type={item.type}
-        posterUrl={item.poster || undefined}
-        onClose={() => setTorrentsOpen(false)}
-      />
+      {torrentsMounted ? (
+        <MediaTorrentsDialog
+          open={torrentsOpen}
+          mediaId={item.id}
+          title={item.title}
+          subtitle={item.subtitle}
+          year={item.year}
+          type={item.type}
+          posterUrl={item.poster || undefined}
+          onClose={() => setTorrentsOpen(false)}
+        />
+      ) : null}
     </>
   );
 }

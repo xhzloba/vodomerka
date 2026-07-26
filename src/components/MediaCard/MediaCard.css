@@ -65,9 +65,18 @@
   z-index: 0;
   margin: 0;
   transform: translate3d(-50%, -50%, 0);
-  will-change: transform;
   backface-visibility: hidden;
   pointer-events: none;
+}
+
+.media-card:hover .media-card__snake-beam,
+.media-card--focused .media-card__snake-beam {
+  will-change: transform;
+}
+
+.media-card:hover .media-card__snake-beam--trail,
+.media-card--focused .media-card__snake-beam--trail {
+  filter: blur(3px);
 }
 
 .media-card__snake-beam--trail {
@@ -77,7 +86,6 @@
   width: min(300%, 960px);
   height: min(300%, 960px);
   opacity: 0.88;
-  filter: blur(3px);
   transition: --snake-trail-half var(--media-snake-grow) cubic-bezier(0.22, 1, 0.36, 1);
   background: conic-gradient(
     from 0deg,

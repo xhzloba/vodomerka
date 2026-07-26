@@ -12,7 +12,6 @@ import {
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { usePlayer } from '@/shared/domain/PlayerContext';
 import { useRecentlyViewed } from '@/shared/domain/RecentlyViewedContext';
-import { useTorrents } from '@/shared/domain/TorrentsContext';
 import type { ContentRow as ContentRowData, MediaItem } from '@/shared/domain/media';
 import {
   getHiddenHomeSectionIds,
@@ -69,7 +68,6 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
     findByMediaId,
     removeProgress,
   } = useContinueWatching();
-  const { torrents } = useTorrents();
   const { playTorrent } = usePlayer();
   const { data, isLoading, isError, error, reload, isRefreshing } = useHomePage();
 
@@ -189,6 +187,8 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
         return;
       }
 
+      // One-shot list on click — don't subscribe Home to torrent progress ticks.
+      const torrents = (await window.electronAPI?.torrents?.list?.()) ?? [];
       const torrent = torrents.find((entry) => entry.id === record.torrentId);
       if (!torrent) {
         onMediaSelect(item);
@@ -208,14 +208,7 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
         onMediaSelect(item);
       }
     },
-    [
-      continueRecords,
-      findByMediaId,
-      onMediaSelect,
-      playTorrent,
-      showToast,
-      torrents,
-    ],
+    [continueRecords, findByMediaId, onMediaSelect, playTorrent, showToast],
   );
 
   const heroItems = useMemo(

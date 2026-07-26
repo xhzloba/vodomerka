@@ -653,22 +653,54 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
     }
   };
 
+  // WebTorrent fires `download` very frequently — coalesce so IPC/React aren't flooded.
+  const PROGRESS_SYNC_MIN_MS = 300;
+  let progressSyncTimer: ReturnType<typeof setTimeout> | null = null;
+  let progressSyncQueued = false;
+
+  const flushProgressSync = () => {
+    if (progressSyncTimer) {
+      clearTimeout(progressSyncTimer);
+      progressSyncTimer = null;
+    }
+    progressSyncQueued = false;
+  };
+
+  const scheduleProgressSync = () => {
+    if (progressSyncTimer) {
+      progressSyncQueued = true;
+      return;
+    }
+    syncProgress();
+    progressSyncTimer = setTimeout(() => {
+      progressSyncTimer = null;
+      if (progressSyncQueued) {
+        progressSyncQueued = false;
+        syncProgress();
+      }
+    }, PROGRESS_SYNC_MIN_MS);
+  };
+
   torrent.on('infoHash', () => {
+    flushProgressSync();
     syncProgress();
   });
   torrent.on('metadata', () => {
+    flushProgressSync();
     applySequentialFileSelection(id);
     syncProgress();
   });
   torrent.on('ready', () => {
+    flushProgressSync();
     applySequentialFileSelection(id);
     syncProgress();
   });
   torrent.on('download', () => {
     stalledSince = null;
-    syncProgress();
+    scheduleProgressSync();
   });
   torrent.on('done', () => {
+    flushProgressSync();
     applySequentialFileSelection(id);
     syncProgress();
   });

@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -192,19 +193,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     };
   }, [clearAutoDismiss]);
 
-  return (
-    <ToastContext.Provider
-      value={{
-        showToast,
-        toast,
-        dismissToast,
-        pauseToastAutoDismiss,
-        resumeToastAutoDismiss,
-      }}
-    >
-      {children}
-    </ToastContext.Provider>
+  const value = useMemo(
+    () => ({
+      showToast,
+      toast,
+      dismissToast,
+      pauseToastAutoDismiss,
+      resumeToastAutoDismiss,
+    }),
+    [showToast, toast, dismissToast, pauseToastAutoDismiss, resumeToastAutoDismiss],
   );
+
+  return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
 }
 
 export function useToast() {
