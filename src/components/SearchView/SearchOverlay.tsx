@@ -59,7 +59,8 @@ export function SearchOverlay({
   const [revealOrbs, setRevealOrbs] = useState(false);
   const [exitQuery, setExitQuery] = useState(query);
   const trimmed = (closing ? exitQuery : query).trim();
-  const showResultsChrome = trimmed.length > 0;
+  const isTyping = trimmed.length > 0;
+  const showResultsChrome = isTyping || typeFilter !== 'all';
   const visible = mounted;
 
   queryRef.current = query;
@@ -192,18 +193,18 @@ export function SearchOverlay({
         className={[
           'search-overlay__stage',
           revealOrbs ? 'search-overlay__stage--orbs' : '',
-          showResultsChrome ? 'search-overlay__stage--typing' : '',
+          showResultsChrome && isTyping ? 'search-overlay__stage--typing' : '',
         ]
           .filter(Boolean)
           .join(' ')}
       >
         <div
           className="search-overlay__orbs"
-          aria-hidden={!revealOrbs || showResultsChrome || closing}
+          aria-hidden={!revealOrbs || isTyping || closing}
         >
           {SPOTLIGHT_ORBS.map((orb, index) => {
             const active = typeFilter === orb.id;
-            const orbsInteractive = revealOrbs && !showResultsChrome && !closing;
+            const orbsInteractive = revealOrbs && !isTyping && !closing;
 
             return (
               <button

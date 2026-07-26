@@ -94,6 +94,7 @@ export function SearchPanel({
   const isOverlay = variant === 'overlay';
   const searchShortcutParts = getSearchShortcutParts();
   const trimmed = query.trim();
+  const showIdleTrending = !trimmed && typeFilter !== 'all';
   const showResults = !isLoading && results.length > 0;
   const showEmpty = !isLoading && trimmed.length > 0 && results.length === 0;
   const overlayPlaceholder =
@@ -102,6 +103,12 @@ export function SearchPanel({
       : typeFilter === 'serial'
         ? 'Поиск по сериалам'
         : 'Поиск';
+  const resultsSectionLabel =
+    showIdleTrending
+      ? typeFilter === 'movie'
+        ? 'В тренде · Фильмы'
+        : 'В тренде · Сериалы'
+      : null;
 
   if (isOverlay) {
     return (
@@ -133,7 +140,7 @@ export function SearchPanel({
 
         <div className="search-spotlight__drawer" aria-hidden={!expanded}>
           <div className="search-spotlight__drawer-inner">
-            {isLoading && trimmed ? (
+            {isLoading && (trimmed || showIdleTrending) ? (
               <div className="search-spotlight__body" aria-busy="true" aria-label="Поиск">
                 <PageLoading title="Ищем…" centered />
               </div>
@@ -147,16 +154,31 @@ export function SearchPanel({
 
             {showResults ? (
               <div className="search-spotlight__body">
-                {groupSearchResults(results).map((group) => (
-                  <section key={group.label} className="search-spotlight__group">
-                    <h2 className="search-spotlight__section">{group.label}</h2>
-                    <div className="search-spotlight__list" role="listbox" aria-label={group.label}>
-                      {group.items.map((item) => (
+                {resultsSectionLabel ? (
+                  <section className="search-spotlight__group">
+                    <h2 className="search-spotlight__section">{resultsSectionLabel}</h2>
+                    <div
+                      className="search-spotlight__list"
+                      role="listbox"
+                      aria-label={resultsSectionLabel}
+                    >
+                      {results.map((item) => (
                         <SpotlightResultRow key={item.id} item={item} onSelect={onMediaSelect} />
                       ))}
                     </div>
                   </section>
-                ))}
+                ) : (
+                  groupSearchResults(results).map((group) => (
+                    <section key={group.label} className="search-spotlight__group">
+                      <h2 className="search-spotlight__section">{group.label}</h2>
+                      <div className="search-spotlight__list" role="listbox" aria-label={group.label}>
+                        {group.items.map((item) => (
+                          <SpotlightResultRow key={item.id} item={item} onSelect={onMediaSelect} />
+                        ))}
+                      </div>
+                    </section>
+                  ))
+                )}
               </div>
             ) : null}
           </div>
