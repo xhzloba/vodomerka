@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { useMediaDrag, type MediaDragDropTarget } from '@/shared/domain/MediaDragContext';
 import type { MediaItem } from '@/shared/domain/media';
+import { useTorrents } from '@/shared/domain/TorrentsContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
 import { playLikeSound } from '@/shared/audio/uiSounds';
 import { useAppTopProgressIslandState } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
@@ -20,7 +21,7 @@ import {
 } from '@/shared/ui/Toast/ToastContext';
 import './DynamicIsland.css';
 
-type ShellMode = 'idle' | 'toast' | 'loading' | 'drop';
+type ShellMode = 'idle' | 'toast' | 'loading' | 'download' | 'drop';
 
 const COMPACT_TOAST_KINDS = new Set<ToastKind>([
   'favorite',
@@ -37,6 +38,25 @@ const CONTENT_OUT_MS = 200;
 const SHELL_OUT_MS = 620;
 const CONTENT_IN_DELAY_MS = 90;
 const SNAKE_CYCLE_MS = 3600;
+
+function DownloadIslandGlyph() {
+  return (
+    <svg
+      className="dynamic-island__download-glyph"
+      viewBox="0 0 14 14"
+      width={14}
+      height={14}
+      fill="none"
+      aria-hidden="true"
+    >
+      <g className="dynamic-island__download-arrow" stroke="currentColor" strokeWidth="1.6">
+        <path d="M7 2.5v6.4" strokeLinecap="round" />
+        <path d="M4.4 6.6 7 9.2l2.6-2.6" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M3.1 11.5h7.8" strokeLinecap="round" />
+      </g>
+    </svg>
+  );
+}
 
 function isCompactToast(toast: ToastState | null): boolean {
   if (!toast) {
@@ -67,6 +87,7 @@ export function DynamicIsland() {
   const { showToast } = useToast();
   const { settings } = useAppSettings();
   const progress = useAppTopProgressIslandState();
+  const { downloadActivity, torrents, isLoading: isLoadingTorrents } = useTorrents();
   const { draggingItem, dropTarget, endMediaDrag, setDropAction } = useMediaDrag();
   const { isFavorite, addFavorite } = useFavorites();
   const { getStatus, setStatus } = useWatched();
@@ -75,23 +96,30 @@ export function DynamicIsland() {
   const [heldToast, setHeldToast] = useState<ToastState | null>(null);
   const [toastContentOn, setToastContentOn] = useState(false);
   const [loadingContentOn, setLoadingContentOn] = useState(false);
+  const [downloadContentOn, setDownloadContentOn] = useState(false);
   const [dropContentOn, setDropContentOn] = useState(false);
   const [snakeOn, setSnakeOn] = useState(false);
   const [tipExpanded, setTipExpanded] = useState(false);
 
   const toastTimers = useRef<number[]>([]);
   const loadingTimers = useRef<number[]>([]);
+  const downloadTimers = useRef<number[]>([]);
   const dropTimers = useRef<number[]>([]);
   const hoverAddTimer = useRef<number | null>(null);
   const loadingActiveRef = useRef(false);
+  const downloadActiveRef = useRef(false);
   const snakeStartedAtRef = useRef<number | null>(null);
   const appliedDropRef = useRef(false);
+  const downloadStatusSeededRef = useRef(false);
+  const downloadStatusRef = useRef<Map<string, string>>(new Map());
 
   const isProgressActive = progress?.mode === 'active';
+  const isDownloadActive = Boolean(downloadActivity);
   const isDropMode = Boolean(draggingItem);
   const snakeAllowed = resolveThemeColorScheme(settings.theme) === 'dark';
-  /** Snake while dragging to island or while top progress runs (not under toast). Light themes: off. */
-  const snakeHold = snakeAllowed && (isDropMode || (isProgressActive && !toast));
+  /** Snake while dragging / download / top progress (not under toast). Light themes: off. */
+  const snakeHold =
+    snakeAllowed && (isDropMode || isDownloadActive || (isProgressActive && !toast));
 
   const clearHoverAddTimer = useCallback(() => {
     if (hoverAddTimer.current != null) {
@@ -99,6 +127,32 @@ export function DynamicIsland() {
       hoverAddTimer.current = null;
     }
   }, []);
+
+  useEffect(() => {
+    if (isLoadingTorrents) {
+      return;
+    }
+
+    const prev = downloadStatusRef.current;
+    if (!downloadStatusSeededRef.current) {
+      downloadStatusSeededRef.current = true;
+      downloadStatusRef.current = new Map(torrents.map((item) => [item.id, item.status]));
+      return;
+    }
+
+    for (const item of torrents) {
+      const previous = prev.get(item.id);
+      if (item.status === 'done' && previous && previous !== 'done') {
+        const title = item.mediaTitle || item.title || 'Фильм';
+        showToast(`«${title}» скачан`, {
+          kind: 'success',
+          title: 'Загрузка завершена',
+        });
+      }
+    }
+
+    downloadStatusRef.current = new Map(torrents.map((item) => [item.id, item.status]));
+  }, [torrents, isLoadingTorrents, showToast]);
 
   useEffect(() => {
     if (snakeHold) {
@@ -133,6 +187,7 @@ export function DynamicIsland() {
       setDropContentOn(false);
       setToastContentOn(false);
       setLoadingContentOn(false);
+      setDownloadContentOn(false);
       const showId = window.setTimeout(() => {
         setDropContentOn(true);
       }, CONTENT_IN_DELAY_MS);
@@ -166,6 +221,8 @@ export function DynamicIsland() {
       setShellMode('toast');
       setToastContentOn(false);
       setTipExpanded(false);
+      setDownloadContentOn(false);
+      setLoadingContentOn(false);
       const showId = window.setTimeout(() => {
         setToastContentOn(true);
       }, CONTENT_IN_DELAY_MS);
@@ -189,6 +246,48 @@ export function DynamicIsland() {
   }, [toast, isDropMode]);
 
   useEffect(() => {
+    if (isDropMode || toast || isProgressActive) {
+      clearTimers(downloadTimers);
+      downloadActiveRef.current = false;
+      setDownloadContentOn(false);
+      return;
+    }
+
+    if (isDownloadActive && downloadActivity) {
+      clearTimers(downloadTimers);
+
+      if (!downloadActiveRef.current) {
+        downloadActiveRef.current = true;
+        setShellMode('download');
+        setDownloadContentOn(false);
+        setLoadingContentOn(false);
+        const showId = window.setTimeout(() => {
+          setDownloadContentOn(true);
+        }, CONTENT_IN_DELAY_MS);
+        downloadTimers.current.push(showId);
+      } else {
+        setShellMode('download');
+        setDownloadContentOn(true);
+      }
+
+      return () => clearTimers(downloadTimers);
+    }
+
+    if (!downloadActiveRef.current) {
+      return;
+    }
+
+    setDownloadContentOn(false);
+    const shrinkId = window.setTimeout(() => {
+      downloadActiveRef.current = false;
+      setShellMode((current) => (current === 'download' ? 'idle' : current));
+    }, CONTENT_OUT_MS);
+    downloadTimers.current.push(shrinkId);
+
+    return () => clearTimers(downloadTimers);
+  }, [downloadActivity, isDownloadActive, isProgressActive, toast, isDropMode]);
+
+  useEffect(() => {
     if (isDropMode || toast) {
       clearTimers(loadingTimers);
       loadingActiveRef.current = false;
@@ -198,6 +297,9 @@ export function DynamicIsland() {
 
     if (isProgressActive) {
       clearTimers(loadingTimers);
+      // Лоадер страницы приоритетнее скачивания.
+      downloadActiveRef.current = false;
+      setDownloadContentOn(false);
 
       if (!loadingActiveRef.current) {
         loadingActiveRef.current = true;
@@ -344,6 +446,9 @@ export function DynamicIsland() {
     }
   };
 
+  const downloadPercent = downloadActivity?.percent ?? 0;
+  const downloadCount = downloadActivity?.count ?? 0;
+
   return createPortal(
     <div
       className={`dynamic-island dynamic-island--${shellMode}${
@@ -355,30 +460,38 @@ export function DynamicIsland() {
       }${toast?.dismissible || tipInteractive || isDropMode ? ' dynamic-island--interactive' : ''}${
         toastContentOn ? ' dynamic-island--toast-content-on' : ''
       }${loadingContentOn ? ' dynamic-island--loading-content-on' : ''}${
-        dropContentOn ? ' dynamic-island--drop-content-on' : ''
-      }${dropTarget ? ` dynamic-island--drop-hover-${dropTarget}` : ''}`}
+        downloadContentOn ? ' dynamic-island--download-content-on' : ''
+      }${dropContentOn ? ' dynamic-island--drop-content-on' : ''}${
+        dropTarget ? ` dynamic-island--drop-hover-${dropTarget}` : ''
+      }`}
       role={shellMode === 'idle' ? 'presentation' : 'status'}
-      aria-live={shellMode === 'toast' ? 'polite' : undefined}
-      aria-busy={shellMode === 'loading' && isProgressActive ? true : undefined}
+      aria-live={shellMode === 'toast' || shellMode === 'download' ? 'polite' : undefined}
+      aria-busy={
+        (shellMode === 'loading' && isProgressActive) || shellMode === 'download' ? true : undefined
+      }
       aria-expanded={isTip ? tipExpanded : undefined}
       aria-label={
         shellMode === 'drop'
           ? 'Перетащи на избранное или просмотренное'
-          : shellMode === 'loading'
-            ? 'Обновление'
-            : shellMode === 'toast' && heldToast
-              ? [
-                  heldToast.title,
-                  heldToast.message,
-                  isTip
-                    ? tipExpanded
-                      ? 'Нажмите, чтобы свернуть'
-                      : 'Нажмите, чтобы показать полностью'
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join('. ')
-              : undefined
+          : shellMode === 'download' && downloadActivity
+            ? `Скачивание ${downloadPercent}%${
+                downloadCount > 1 ? `, ${downloadCount} файлов` : ''
+              }`
+            : shellMode === 'loading'
+              ? 'Обновление'
+              : shellMode === 'toast' && heldToast
+                ? [
+                    heldToast.title,
+                    heldToast.message,
+                    isTip
+                      ? tipExpanded
+                        ? 'Нажмите, чтобы свернуть'
+                        : 'Нажмите, чтобы показать полностью'
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join('. ')
+                : undefined
       }
     >
       <div className="dynamic-island__snake">
@@ -425,7 +538,23 @@ export function DynamicIsland() {
             ) : null}
           </div>
 
-          <div className="dynamic-island__loading" aria-hidden={!loadingContentOn || isDropMode}>
+          <div
+            className="dynamic-island__download"
+            aria-hidden={!downloadContentOn || isDropMode || Boolean(toast) || isProgressActive}
+          >
+            <span className="dynamic-island__download-icon" aria-hidden="true">
+              <DownloadIslandGlyph />
+            </span>
+            {downloadCount > 1 ? (
+              <span className="dynamic-island__download-count">{downloadCount}</span>
+            ) : null}
+            <span className="dynamic-island__download-percent">{downloadPercent}%</span>
+          </div>
+
+          <div
+            className="dynamic-island__loading"
+            aria-hidden={!loadingContentOn || isDropMode}
+          >
             <span className="dynamic-island__spinner" aria-hidden="true" />
           </div>
 

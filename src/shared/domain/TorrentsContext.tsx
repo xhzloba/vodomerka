@@ -17,6 +17,11 @@ interface TorrentsContextValue {
   torrents: TorrentDownloadRecord[];
   isLoading: boolean;
   activeCount: number;
+  downloadActivity: {
+    count: number;
+    percent: number;
+    title: string;
+  } | null;
   folderPath: string | null;
   addTorrent: (payload: TorrentAddPayload) => Promise<TorrentAddResult>;
   removeTorrent: (id: string, deleteFiles?: boolean) => Promise<void>;
@@ -109,11 +114,37 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
     [torrents],
   );
 
+  const downloadActivity = useMemo(() => {
+    const active = torrents.filter(
+      (item) => item.status === 'downloading' || item.status === 'queued',
+    );
+    if (active.length === 0) {
+      return null;
+    }
+
+    let weighted = 0;
+    let weight = 0;
+    for (const item of active) {
+      const progress = Math.min(1, Math.max(0, item.progress || 0));
+      const size = item.length > 0 ? item.length : 1;
+      weighted += progress * size;
+      weight += size;
+    }
+
+    const ratio = weight > 0 ? weighted / weight : 0;
+    return {
+      count: active.length,
+      percent: Math.round(ratio * 100),
+      title: active[0]?.mediaTitle || active[0]?.title || 'Торрент',
+    };
+  }, [torrents]);
+
   const value = useMemo(
     () => ({
       torrents,
       isLoading,
       activeCount,
+      downloadActivity,
       folderPath,
       addTorrent,
       removeTorrent,
@@ -125,6 +156,7 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
       torrents,
       isLoading,
       activeCount,
+      downloadActivity,
       folderPath,
       addTorrent,
       removeTorrent,

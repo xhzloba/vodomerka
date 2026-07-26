@@ -214,6 +214,22 @@
     inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
 }
 
+.dynamic-island--download .dynamic-island__shell {
+  /* Same footprint as page loader */
+  width: var(--island-idle-w);
+  height: var(--island-idle-h);
+  border-radius: var(--island-idle-r);
+  padding: 0;
+  background: #000;
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.45),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+}
+
+.dynamic-island--download .dynamic-island__snake {
+  border-radius: var(--island-idle-r);
+}
+
 .dynamic-island--drop .dynamic-island__shell {
   width: min(var(--island-drop-w), calc(100vw - 28px));
   height: var(--island-drop-h);
@@ -471,6 +487,105 @@
     visibility var(--island-content-out);
 }
 
+.dynamic-island__download {
+  /* Mirror `.dynamic-island__loading` */
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  margin: 0;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--island-content-out),
+    visibility var(--island-content-out);
+}
+
+.dynamic-island--download-content-on .dynamic-island__download {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--island-content-in),
+    visibility var(--island-content-in);
+}
+
+.dynamic-island__download-icon {
+  /* Same geometry as `.dynamic-island__spinner` */
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  box-sizing: border-box;
+  color: rgba(255, 255, 255, 0.78);
+  transform: translateY(-50%);
+}
+
+.dynamic-island__download-glyph {
+  display: block;
+  width: 14px;
+  height: 14px;
+  overflow: visible;
+}
+
+.dynamic-island__download-arrow {
+  animation: dynamic-island-download-arrow 1.4s ease-in-out infinite;
+}
+
+.dynamic-island__download-count {
+  position: absolute;
+  top: 50%;
+  left: 30px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  font-family: var(--font-system);
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-50%);
+}
+
+.dynamic-island__download-percent {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  display: block;
+  height: 14px;
+  margin: 0;
+  font-family: var(--font-system);
+  font-size: 0.625rem;
+  font-weight: 560;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  -webkit-font-smoothing: antialiased;
+  transform: translateY(-50%);
+}
+
+@keyframes dynamic-island-download-arrow {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 .dynamic-island--loading-content-on .dynamic-island__loading {
   opacity: 1;
   visibility: visible;
@@ -651,12 +766,14 @@
   .dynamic-island__snake,
   .dynamic-island__toast,
   .dynamic-island__loading,
+  .dynamic-island__download,
   .dynamic-island__drop,
   .dynamic-island__drop-zone {
     transition: none;
   }
 
   .dynamic-island__spinner,
+  .dynamic-island__download-arrow,
   .dynamic-island--snake .dynamic-island__snake-beam {
     animation: none;
   }
