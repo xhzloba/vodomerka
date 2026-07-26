@@ -20,6 +20,8 @@ interface ContentRowProps {
   onTitleClick?: () => void;
   onHide?: () => void;
   onMediaSelect: (item: MediaItem) => void;
+  /** Context-menu «Подробнее»; defaults to onMediaSelect. */
+  onOpenDetails?: (item: MediaItem) => void;
   edgeFade?: boolean;
 }
 
@@ -40,6 +42,7 @@ export function ContentRow({
   onTitleClick,
   onHide,
   onMediaSelect,
+  onOpenDetails,
   edgeFade = false,
 }: ContentRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -231,6 +234,7 @@ export function ContentRow({
                 continueProgress={continueByItemId?.get(item.id) ?? null}
                 onRemoveContinue={onRemoveContinue}
                 onSelect={onMediaSelect}
+                onOpenDetails={onOpenDetails}
               />
             ))}
           </div>
@@ -246,6 +250,7 @@ export function ContentRow({
               continueProgress={continueByItemId?.get(item.id) ?? null}
               onRemoveContinue={onRemoveContinue}
               onSelect={onMediaSelect}
+              onOpenDetails={onOpenDetails}
             />
           ))}
         </div>

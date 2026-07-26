@@ -314,6 +314,7 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
             onMediaSelect={(item) => {
               void handleContinueSelect(item);
             }}
+            onOpenDetails={onMediaSelect}
             onHide={() =>
               requestHideSection({
                 id: HOME_CONTINUE_SECTION_ID,

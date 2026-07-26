@@ -39,6 +39,8 @@ interface MediaCardProps {
   continueProgress?: ContinueCardProgress | null;
   onRemoveContinue?: (continueId: string) => void;
   onSelect: (item: MediaItem) => void;
+  /** Context-menu «Подробнее». Defaults to onSelect (Continue overrides: click=play, details=detail). */
+  onOpenDetails?: (item: MediaItem) => void;
 }
 
 const DRAG_THRESHOLD_PX = 8;
@@ -51,6 +53,7 @@ export function MediaCard({
   continueProgress = null,
   onRemoveContinue,
   onSelect,
+  onOpenDetails,
 }: MediaCardProps) {
   const { settings } = useAppSettings();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -115,7 +118,7 @@ export function MediaCard({
     (menuItemId: string) => {
       switch (menuItemId) {
         case 'details':
-          onSelect(item);
+          (onOpenDetails ?? onSelect)(item);
           break;
         case 'description':
           if (item.description || item.genres.length > 0) {
@@ -171,7 +174,7 @@ export function MediaCard({
           break;
       }
     },
-    [copyMediaId, item, onSelect, showToast, toggleFavorite, toggleStatus],
+    [copyMediaId, item, onOpenDetails, onSelect, showToast, toggleFavorite, toggleStatus],
   );
 
   const handlePointerDown = useCallback(
