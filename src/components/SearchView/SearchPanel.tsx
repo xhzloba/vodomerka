@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getSearchShortcutParts } from '@/features/onboarding/tips/platformShortcut';
 import {
   useMediaSearch,
@@ -12,6 +13,8 @@ import { ShortcutKeys } from '@/shared/ui/ShortcutKeys/ShortcutKeys';
 import { MediaCard } from '../MediaCard/MediaCard';
 import './SearchView.css';
 
+const DRAWER_MS = 320;
+
 interface SearchPanelProps {
   query: string;
   onQueryChange: (query: string) => void;
@@ -21,6 +24,13 @@ interface SearchPanelProps {
   inputId?: string;
   typeFilter?: SearchTypeFilter;
   expanded?: boolean;
+}
+
+interface SpotlightDrawerSnapshot {
+  results: MediaItem[];
+  sectionLabel: string | null;
+  empty: boolean;
+  loading: boolean;
 }
 
 function SpotlightResultRow({
@@ -80,6 +90,66 @@ function groupSearchResults(results: MediaItem[]): { label: string; items: Media
   return [...groups.entries()].map(([label, items]) => ({ label, items }));
 }
 
+function SpotlightDrawerBody({
+  results,
+  sectionLabel,
+  empty,
+  loading,
+  onMediaSelect,
+}: {
+  results: MediaItem[];
+  sectionLabel: string | null;
+  empty: boolean;
+  loading: boolean;
+  onMediaSelect: (item: MediaItem) => void;
+}) {
+  if (loading) {
+    return (
+      <div className="search-spotlight__body" aria-busy="true" aria-label="Поиск">
+        <PageLoading title="Ищем…" centered />
+      </div>
+    );
+  }
+
+  if (empty) {
+    return (
+      <div className="search-spotlight__body search-spotlight__body--empty">
+        <p>Ничего не найдено</p>
+      </div>
+    );
+  }
+
+  if (results.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="search-spotlight__body">
+      {sectionLabel ? (
+        <section className="search-spotlight__group">
+          <h2 className="search-spotlight__section">{sectionLabel}</h2>
+          <div className="search-spotlight__list" role="listbox" aria-label={sectionLabel}>
+            {results.map((item) => (
+              <SpotlightResultRow key={item.id} item={item} onSelect={onMediaSelect} />
+            ))}
+          </div>
+        </section>
+      ) : (
+        groupSearchResults(results).map((group) => (
+          <section key={group.label} className="search-spotlight__group">
+            <h2 className="search-spotlight__section">{group.label}</h2>
+            <div className="search-spotlight__list" role="listbox" aria-label={group.label}>
+              {group.items.map((item) => (
+                <SpotlightResultRow key={item.id} item={item} onSelect={onMediaSelect} />
+              ))}
+            </div>
+          </section>
+        ))
+      )}
+    </div>
+  );
+}
+
 export function SearchPanel({
   query,
   onQueryChange,
@@ -95,8 +165,8 @@ export function SearchPanel({
   const searchShortcutParts = getSearchShortcutParts();
   const trimmed = query.trim();
   const showIdleTrending = !trimmed && typeFilter !== 'all';
-  const showResults = !isLoading && results.length > 0;
   const showEmpty = !isLoading && trimmed.length > 0 && results.length === 0;
+  const showLoading = isLoading && (trimmed.length > 0 || showIdleTrending);
   const overlayPlaceholder =
     typeFilter === 'movie'
       ? 'Поиск по фильмам'
@@ -110,10 +180,63 @@ export function SearchPanel({
         : 'В тренде · Сериалы'
       : null;
 
+  const [uiExpanded, setUiExpanded] = useState(expanded);
+  const [held, setHeld] = useState<SpotlightDrawerSnapshot>({
+    results: [],
+    sectionLabel: null,
+    empty: false,
+    loading: false,
+  });
+  const liveSnapshotRef = useRef<SpotlightDrawerSnapshot>(held);
+
+  if (expanded) {
+    liveSnapshotRef.current = {
+      results,
+      sectionLabel: resultsSectionLabel,
+      empty: showEmpty,
+      loading: showLoading,
+    };
+  }
+
+  useLayoutEffect(() => {
+    if (expanded) {
+      setUiExpanded(true);
+      setHeld(liveSnapshotRef.current);
+      return;
+    }
+
+    setUiExpanded(false);
+
+    const timer = window.setTimeout(() => {
+      setHeld({
+        results: [],
+        sectionLabel: null,
+        empty: false,
+        loading: false,
+      });
+    }, DRAWER_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [expanded]);
+
+  useEffect(() => {
+    if (!expanded) {
+      return;
+    }
+
+    setHeld(liveSnapshotRef.current);
+  }, [expanded, results, resultsSectionLabel, showEmpty, showLoading]);
+
   if (isOverlay) {
+    const drawerSnapshot = expanded ? liveSnapshotRef.current : held;
+    const hasDrawerContent =
+      drawerSnapshot.loading || drawerSnapshot.empty || drawerSnapshot.results.length > 0;
+
     return (
       <div
-        className={`search-spotlight${expanded ? ' search-spotlight--expanded' : ' search-spotlight--idle'}`}
+        className={`search-spotlight${uiExpanded ? ' search-spotlight--expanded' : ' search-spotlight--idle'}`}
       >
         <div className="search-spotlight__field">
           <span className="search-spotlight__icon" aria-hidden="true">
@@ -131,55 +254,23 @@ export function SearchPanel({
             spellCheck={false}
           />
           <span
-            className={`search-spotlight__shortcut${expanded ? ' search-spotlight__shortcut--hidden' : ''}`}
-            aria-hidden={expanded}
+            className={`search-spotlight__shortcut${uiExpanded ? ' search-spotlight__shortcut--hidden' : ''}`}
+            aria-hidden={uiExpanded}
           >
             <ShortcutKeys keys={searchShortcutParts} size="sm" muted />
           </span>
         </div>
 
-        <div className="search-spotlight__drawer" aria-hidden={!expanded}>
+        <div className="search-spotlight__drawer" aria-hidden={!uiExpanded}>
           <div className="search-spotlight__drawer-inner">
-            {isLoading && (trimmed || showIdleTrending) ? (
-              <div className="search-spotlight__body" aria-busy="true" aria-label="Поиск">
-                <PageLoading title="Ищем…" centered />
-              </div>
-            ) : null}
-
-            {showEmpty ? (
-              <div className="search-spotlight__body search-spotlight__body--empty">
-                <p>Ничего не найдено</p>
-              </div>
-            ) : null}
-
-            {showResults ? (
-              <div className="search-spotlight__body">
-                {resultsSectionLabel ? (
-                  <section className="search-spotlight__group">
-                    <h2 className="search-spotlight__section">{resultsSectionLabel}</h2>
-                    <div
-                      className="search-spotlight__list"
-                      role="listbox"
-                      aria-label={resultsSectionLabel}
-                    >
-                      {results.map((item) => (
-                        <SpotlightResultRow key={item.id} item={item} onSelect={onMediaSelect} />
-                      ))}
-                    </div>
-                  </section>
-                ) : (
-                  groupSearchResults(results).map((group) => (
-                    <section key={group.label} className="search-spotlight__group">
-                      <h2 className="search-spotlight__section">{group.label}</h2>
-                      <div className="search-spotlight__list" role="listbox" aria-label={group.label}>
-                        {group.items.map((item) => (
-                          <SpotlightResultRow key={item.id} item={item} onSelect={onMediaSelect} />
-                        ))}
-                      </div>
-                    </section>
-                  ))
-                )}
-              </div>
+            {hasDrawerContent ? (
+              <SpotlightDrawerBody
+                results={drawerSnapshot.results}
+                sectionLabel={drawerSnapshot.sectionLabel}
+                empty={drawerSnapshot.empty}
+                loading={drawerSnapshot.loading}
+                onMediaSelect={onMediaSelect}
+              />
             ) : null}
           </div>
         </div>
