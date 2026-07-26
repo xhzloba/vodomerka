@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -16,6 +17,29 @@ import {
   removeContinueWatchingItem,
   upsertContinueWatchingItem,
 } from '@/shared/domain/continueWatchingStorage';
+
+function continueRecordsEqual(
+  left: ContinueWatchingRecord[],
+  right: ContinueWatchingRecord[],
+): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+  for (let index = 0; index < left.length; index += 1) {
+    const a = left[index]!;
+    const b = right[index]!;
+    if (
+      a.id !== b.id ||
+      a.updatedAt !== b.updatedAt ||
+      a.positionSeconds !== b.positionSeconds ||
+      a.torrentId !== b.torrentId ||
+      a.filePath !== b.filePath
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
 
 interface ContinueWatchingContextValue {
   records: ContinueWatchingRecord[];
@@ -32,6 +56,12 @@ const ContinueWatchingContext = createContext<ContinueWatchingContextValue | nul
 export function ContinueWatchingProvider({ children }: { children: ReactNode }) {
   const [records, setRecords] = useState<ContinueWatchingRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  /** Skip onChanged reload while we already applied the IPC result locally. */
+  const localWriteDepthRef = useRef(0);
+
+  const applyRecords = useCallback((next: ContinueWatchingRecord[]) => {
+    setRecords((prev) => (continueRecordsEqual(prev, next) ? prev : next));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,27 +86,53 @@ export function ContinueWatchingProvider({ children }: { children: ReactNode }) 
 
   useEffect(() => {
     const unsubscribe = window.electronAPI?.continueWatching?.onChanged?.(() => {
+      if (localWriteDepthRef.current > 0) {
+        return;
+      }
       void ensureMediaOverridesLoaded()
         .then(() => loadContinueWatching())
         .then((loaded) => {
-          setRecords(loaded);
+          if (localWriteDepthRef.current > 0) {
+            return;
+          }
+          applyRecords(loaded);
         });
     });
 
     return () => {
       unsubscribe?.();
     };
-  }, []);
+  }, [applyRecords]);
 
-  const upsertProgress = useCallback(async (payload: ContinueWatchingUpsertPayload) => {
-    const next = await upsertContinueWatchingItem(payload);
-    setRecords(next);
-  }, []);
+  const upsertProgress = useCallback(
+    async (payload: ContinueWatchingUpsertPayload) => {
+      localWriteDepthRef.current += 1;
+      try {
+        const next = await upsertContinueWatchingItem(payload);
+        applyRecords(next);
+      } finally {
+        window.setTimeout(() => {
+          localWriteDepthRef.current = Math.max(0, localWriteDepthRef.current - 1);
+        }, 120);
+      }
+    },
+    [applyRecords],
+  );
 
-  const removeProgress = useCallback(async (id: string) => {
-    const next = await removeContinueWatchingItem(id);
-    setRecords(next);
-  }, []);
+  const removeProgress = useCallback(
+    async (id: string) => {
+      localWriteDepthRef.current += 1;
+      try {
+        const next = await removeContinueWatchingItem(id);
+        applyRecords(next);
+      } finally {
+        window.setTimeout(() => {
+          localWriteDepthRef.current = Math.max(0, localWriteDepthRef.current - 1);
+        }, 120);
+      }
+    },
+    [applyRecords],
+  );
 
   const findByMediaId = useCallback(
     (mediaId: string) => records.find((record) => record.mediaId === mediaId || record.item.id === mediaId),

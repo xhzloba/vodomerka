@@ -1,8 +1,37 @@
+import { fetchMediaById, isSparseMediaItem } from '@/shared/api/vokino/media';
 import type { MediaItem } from '@/shared/domain/media';
 import { ensureMediaOverridesLoaded, hydrateMediaItem } from '@/shared/domain/overridesStore';
 import { preloadDetailWindowAssets } from '@/shared/media/preloadDetailAssets';
 
 const DETAIL_OPEN_TIMEOUT_MS = 15_000;
+
+async function resolveDetailMediaItem(item: MediaItem): Promise<MediaItem> {
+  if (!isSparseMediaItem(item)) {
+    return item;
+  }
+
+  try {
+    const full = await fetchMediaById(item.id);
+    if (!full) {
+      return item;
+    }
+
+    // Heal watched/status stubs so the next open doesn't need another round-trip.
+    try {
+      const watched = (await window.electronAPI?.watched?.list?.()) ?? [];
+      const entry = watched.find((row) => row.item.id === full.id);
+      if (entry) {
+        void window.electronAPI?.watched?.setStatus?.(full, entry.status);
+      }
+    } catch {
+      // best-effort
+    }
+
+    return full;
+  } catch {
+    return item;
+  }
+}
 
 export function getDetailWindowMediaId(): string | null {
   const match = window.location.hash.match(/^#detail\/(.+)$/);
@@ -47,7 +76,9 @@ export async function openMediaDetailWindow(item: MediaItem): Promise<boolean> {
   }
 
   await ensureMediaOverridesLoaded();
-  const hydrated = hydrateMediaItem(item);
+  // Auto-watched / continue stubs often have only id+title+poster — pull full card from /view/{id}.
+  const resolved = await resolveDetailMediaItem(item);
+  const hydrated = hydrateMediaItem(resolved);
   await preloadDetailWindowAssets(hydrated);
 
   const readyPromise = waitForDetailWindowReady();

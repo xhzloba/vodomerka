@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { fetchMediaById, isSparseMediaItem } from '@/shared/api/vokino/media';
 import type { MediaItem } from '@/shared/domain/media';
 import { ensureMediaOverridesLoaded, hydrateMediaItem } from '@/shared/domain/overridesStore';
 import { closeMediaDetailWindow } from '@/shared/platform/mediaDetailWindow';
@@ -24,8 +25,16 @@ export function DetailWindowShell({ mediaId }: { mediaId: string }) {
           throw new Error('Detail payload not found');
         }
 
+        let next = hydrateMediaItem(payload);
+        if (isSparseMediaItem(next)) {
+          const full = await fetchMediaById(mediaId);
+          if (full) {
+            next = hydrateMediaItem(full);
+          }
+        }
+
         if (!cancelled) {
-          setItem(hydrateMediaItem(payload));
+          setItem(next);
         }
       })
       .catch(() => {

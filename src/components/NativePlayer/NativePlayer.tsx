@@ -69,6 +69,8 @@ export function NativePlayer() {
   const durationRef = useRef(0);
   const lastUpsertAtRef = useRef(0);
   const resumeAppliedKeyRef = useRef<string | null>(null);
+  /** True while closing — blocks double continue upsert (explicit flush + session cleanup). */
+  const closingRef = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -190,6 +192,10 @@ export function NativePlayer() {
       if (!session) {
         return;
       }
+      // Closing already flushed once — ignore timeupdate / cleanup duplicates.
+      if (closingRef.current && !force) {
+        return;
+      }
       const total =
         durationRef.current > 0
           ? durationRef.current
@@ -235,14 +241,20 @@ export function NativePlayer() {
   }, [duration]);
 
   useEffect(() => {
-    if (!session) {
+    if (!session || closingRef.current) {
       return;
     }
     void persistContinueProgress(false);
   }, [currentTime, persistContinueProgress, session]);
 
   useEffect(() => {
+    // New session — allow persist again after a previous close.
+    closingRef.current = false;
     return () => {
+      // Explicit close already flushed; skip the second upsert that was thrashing Home.
+      if (closingRef.current) {
+        return;
+      }
       void persistContinueProgress(true);
     };
     // Final flush when player unmounts / session tears down via close.
@@ -264,10 +276,16 @@ export function NativePlayer() {
   }, []);
 
   const handleClosePlayer = useCallback(() => {
-    void persistContinueProgress(true).finally(() => {
-      setIsFullscreen(false);
-      closePlayer();
-    });
+    if (closingRef.current) {
+      return;
+    }
+    closingRef.current = true;
+    void persistContinueProgress(true, undefined)
+      .catch(() => undefined)
+      .finally(() => {
+        setIsFullscreen(false);
+        closePlayer();
+      });
   }, [closePlayer, persistContinueProgress]);
 
   const togglePlay = useCallback(() => {

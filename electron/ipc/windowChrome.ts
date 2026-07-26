@@ -41,8 +41,24 @@ function exitAllFullscreenModes(win: BrowserWindow): void {
   }
 }
 
+/** Soft focus — no Mac Space / workspace flicker. Prefer this when closing the player overlay. */
+export function softFocusMainWindow(win: BrowserWindow | null = getMainWindow?.() ?? null): void {
+  if (!win || win.isDestroyed()) {
+    return;
+  }
+
+  if (win.isMinimized()) {
+    win.restore();
+  }
+  if (!win.isVisible()) {
+    win.show();
+  }
+  win.focus();
+}
+
 /**
  * Жёстко достаёт окно наружу: из minimize / hide / любого fullscreen.
+ * Heavy — toggles visibleOnAllWorkspaces on Mac (~400ms flicker). Use only when stuck.
  */
 export function forceRevealMainWindow(win: BrowserWindow | null = getMainWindow?.() ?? null): void {
   if (!win || win.isDestroyed()) {
@@ -120,25 +136,28 @@ export function registerWindowChromeIpc(getWindow: () => BrowserWindow | null): 
     if (!win || win.isDestroyed()) {
       return false;
     }
-    const applied = applyPlayerFullscreen(win, Boolean(fullScreen));
-    if (!fullScreen) {
-      forceRevealMainWindow(win);
-    } else {
-      win.show();
-      win.focus();
+    const wantFull = Boolean(fullScreen);
+    const wasMaximized = win.isMaximized();
+    const applied = applyPlayerFullscreen(win, wantFull);
+    if (wantFull) {
+      softFocusMainWindow(win);
+    } else if (wasMaximized || win.isMinimized() || !win.isVisible()) {
+      // Leaving player "fullscreen" (maximize) — soft focus only.
+      // forceReveal's workspace toggle was jerking the home UI on every close.
+      softFocusMainWindow(win);
     }
     win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, applied);
     return applied;
   });
 
   ipcMain.handle(IPC_CHANNELS.windowChrome.focusMain, () => {
-    forceRevealMainWindow(getWindow());
+    softFocusMainWindow(getWindow());
   });
 
   ipcMain.handle(IPC_CHANNELS.windowChrome.setPlayerOpen, (_event, open: boolean) => {
     playerOverlayOpen = Boolean(open);
     if (open) {
-      forceRevealMainWindow(getWindow());
+      softFocusMainWindow(getWindow());
     }
   });
 }
@@ -194,7 +213,7 @@ export function bindMainWindowChrome(win: BrowserWindow): void {
       }
       win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, false);
       win.webContents.send(IPC_CHANNELS.windowChrome.closePlayer);
-      forceRevealMainWindow(win);
+      softFocusMainWindow(win);
       return;
     }
 

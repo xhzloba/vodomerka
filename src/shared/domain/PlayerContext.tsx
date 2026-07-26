@@ -38,9 +38,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       void document.exitFullscreen().catch(() => undefined);
     }
     void window.electronAPI?.media?.stopPlayback?.();
-    void window.electronAPI?.windowChrome?.setFullScreen?.(false);
+    // One restore path only — setFullScreen(false) + focusMain used to double forceReveal (Mac jank).
     void window.electronAPI?.windowChrome?.setPlayerOpen?.(false);
-    void window.electronAPI?.windowChrome?.focusMain?.();
+    void window.electronAPI?.windowChrome?.setFullScreen?.(false);
   }, []);
 
   useEffect(() => {
@@ -49,6 +49,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [session, isPreparing, prepareError]);
 
   useEffect(() => {
+    // Window traffic-light / Cmd+W while player open — same teardown as in-player ✕.
     return window.electronAPI?.windowChrome?.onClosePlayer?.(() => {
       closePlayer();
     });
