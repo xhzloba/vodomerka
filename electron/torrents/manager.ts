@@ -126,8 +126,49 @@ const DEFAULT_TRACKERS = [
   'udp://tracker.moeking.me:6969/announce',
   'http://bt3.t-ru.org/ann?magnet',
   'http://bt4.t-ru.org/ann?magnet',
-  'http://retracker.local/announce',
 ];
+
+/** ISP-only / dead trackers that spam ENOTFOUND and never help outside that LAN. */
+function isUselessTracker(tracker: string): boolean {
+  const value = tracker.trim().toLowerCase();
+  return (
+    value.includes('retracker.local') ||
+    value.includes('.local/') ||
+    value.endsWith('.local') ||
+    value.includes('localhost') ||
+    value.includes('127.0.0.1') ||
+    value.includes('[::1]')
+  );
+}
+
+function trackerWarningMessage(error: unknown): string {
+  if (error instanceof Error) {
+    const cause =
+      error.cause instanceof Error
+        ? error.cause.message
+        : typeof error.cause === 'string'
+          ? error.cause
+          : '';
+    return `${error.message}${cause ? ` (${cause})` : ''}`;
+  }
+  return String(error);
+}
+
+/** Expected swarm noise — not actionable, don't dump stacks every few seconds. */
+function isBenignTrackerWarning(error: unknown): boolean {
+  const text = trackerWarningMessage(error).toLowerCase();
+  return (
+    text.includes('retracker.local') ||
+    text.includes('enotfound') ||
+    text.includes('torrent not registered') ||
+    text.includes('no nodes to query') ||
+    text.includes('timed out') ||
+    text.includes('timeout') ||
+    text.includes('econnrefused') ||
+    text.includes('ehostunreach') ||
+    text.includes('fetch failed')
+  );
+}
 
 export function enrichMagnet(magnet: string): string {
   let trimmed = magnet.trim();
@@ -140,18 +181,34 @@ export function enrichMagnet(magnet: string): string {
     .replace(/([?&]xt=)urn%3Abtih%3A/gi, '$1urn:btih:')
     .replace(/([?&]xt=)URN%3ABTIH%3A/g, '$1urn:btih:');
 
+  // Drop ISP-local trackers baked into magnets (retracker.local → ENOTFOUND for everyone else).
+  trimmed = trimmed
+    .replace(/[?&]tr=[^&]*retracker\.local[^&]*/gi, '')
+    .replace(/[?&]tr=[^&]*\.local[^&]*/gi, '')
+    .replace(/\?&/, '?')
+    .replace(/&&+/g, '&')
+    .replace(/\?$/, '')
+    .replace(/&$/, '');
+
   // Do NOT use URL.toString() — it percent-encodes xt=urn:btih:… and parse-torrent
   // then treats the magnet as a filesystem path → "Invalid torrent identifier".
   const existing = new Set<string>();
   for (const match of trimmed.matchAll(/[?&]tr=([^&]*)/gi)) {
+    let tracker = match[1] ?? '';
     try {
-      existing.add(decodeURIComponent(match[1] ?? ''));
+      tracker = decodeURIComponent(tracker);
     } catch {
-      existing.add(match[1] ?? '');
+      // keep raw
     }
+    if (!tracker || isUselessTracker(tracker)) {
+      continue;
+    }
+    existing.add(tracker);
   }
 
-  const extras = DEFAULT_TRACKERS.filter((tracker) => !existing.has(tracker))
+  const extras = DEFAULT_TRACKERS.filter(
+    (tracker) => !existing.has(tracker) && !isUselessTracker(tracker),
+  )
     .map((tracker) => `tr=${encodeURIComponent(tracker)}`)
     .join('&');
 
@@ -546,7 +603,10 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
     markTorrentError(id, error);
   });
   torrent.on('warning', (error: unknown) => {
-    console.warn('[torrents] warning', error);
+    if (isBenignTrackerWarning(error)) {
+      return;
+    }
+    console.warn('[torrents] warning', trackerWarningMessage(error));
   });
 
   applySequentialFileSelection(id);
