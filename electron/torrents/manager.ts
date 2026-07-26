@@ -11,6 +11,7 @@ import type {
 } from '../../contracts/ipc';
 import { ensureTorrentsDirs, getTorrentsDownloadsDir, getTorrentsRoot } from './paths';
 import { loadTorrentState, saveTorrentState } from './store';
+import { isFileDownloadComplete, sortVideoFilesByEpisode } from './episodeOrder';
 import { listInstalledMediaPlayers, openFileWithPlayer } from '../media/players';
 
 type WebTorrentFile = {
@@ -73,6 +74,8 @@ let records: TorrentDownloadRecord[] = [];
 let ready = false;
 const listeners = new Set<(items: TorrentDownloadRecord[]) => void>();
 const activeTorrents = new Map<string, WebTorrentTorrent>();
+/** While watching a specific episode — download that file first; then resume season order. */
+const playbackFocusById = new Map<string, string>();
 let webTorrentServer: WebTorrentServer | null = null;
 let webTorrentServerPort: number | null = null;
 
@@ -246,10 +249,80 @@ function markTorrentError(id: string, error: unknown) {
   void persist();
 }
 
+/**
+ * Download one episode at a time: S01E01 → done → S01E02 → …
+ * Non-video / later episodes stay deselected so the swarm isn't split.
+ */
+function applySequentialFileSelection(id: string, preferredPath?: string | null): void {
+  const torrent = activeTorrents.get(id);
+  if (!torrent?.files?.length) {
+    return;
+  }
+
+  const record = records.find((item) => item.id === id);
+  if (record?.status === 'paused' || torrent.paused) {
+    return;
+  }
+
+  const focusPath = preferredPath ?? playbackFocusById.get(id) ?? null;
+  if (focusPath) {
+    const focused = resolveWebTorrentFile(torrent, focusPath, path.basename(focusPath));
+    if (focused && !isFileDownloadComplete(focused)) {
+      for (const file of torrent.files) {
+        try {
+          if (file === focused) {
+            file.select(10);
+          } else {
+            file.deselect();
+          }
+        } catch {
+          // ignore
+        }
+      }
+      return;
+    }
+    playbackFocusById.delete(id);
+  }
+
+  const videos = sortVideoFilesByEpisode(torrent.files);
+  if (videos.length === 0) {
+    // No video names matched — keep WebTorrent default selection.
+    return;
+  }
+
+  const next = videos.find((file) => !isFileDownloadComplete(file));
+  if (!next) {
+    // All videos done: allow remaining files (subs, etc.).
+    for (const file of torrent.files) {
+      try {
+        if (!isFileDownloadComplete(file)) {
+          file.select();
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return;
+  }
+
+  for (const file of torrent.files) {
+    try {
+      if (file === next) {
+        file.select(10);
+      } else {
+        file.deselect();
+      }
+    } catch {
+      // ignore
+    }
+  }
+}
+
 function bindTorrent(id: string, torrent: WebTorrentTorrent) {
   activeTorrents.set(id, torrent);
 
   let persistTimer: ReturnType<typeof setTimeout> | null = null;
+  let lastSequentialAt = 0;
   const schedulePersist = () => {
     if (persistTimer) {
       return;
@@ -286,6 +359,13 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
         return;
       }
 
+      // Advance episode queue (throttled on hot download path).
+      const now = Date.now();
+      if (done || now - lastSequentialAt > 1200) {
+        lastSequentialAt = now;
+        applySequentialFileSelection(id);
+      }
+
       patchRecord(id, {
         title: stats.name || current?.title || 'Торрент',
         // Never drop below last known % (resume re-check starts at 0 briefly).
@@ -317,15 +397,18 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
     syncProgress();
   });
   torrent.on('metadata', () => {
+    applySequentialFileSelection(id);
     syncProgress();
   });
   torrent.on('ready', () => {
+    applySequentialFileSelection(id);
     syncProgress();
   });
   torrent.on('download', () => {
     syncProgress();
   });
   torrent.on('done', () => {
+    applySequentialFileSelection(id);
     syncProgress();
   });
   torrent.on('error', (error: unknown) => {
@@ -335,6 +418,7 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
     console.warn('[torrents] warning', error);
   });
 
+  applySequentialFileSelection(id);
   syncProgress();
 }
 
@@ -447,6 +531,7 @@ async function destroyActiveTorrent(id: string, deleteFiles = false): Promise<vo
     }
   });
   activeTorrents.delete(id);
+  playbackFocusById.delete(id);
 }
 
 async function startTorrentEngine(id: string): Promise<void> {
@@ -520,22 +605,16 @@ export async function resumeTorrentDownload(id: string): Promise<TorrentDownload
 
   const active = activeTorrents.get(id);
 
-  // Soft resume — keep piece bitfield / progress.
+  // Soft resume — keep piece bitfield / progress; continue episode queue.
   if (active && record.status === 'paused') {
     try {
-      for (const file of active.files ?? []) {
-        try {
-          file.select();
-        } catch {
-          // ignore
-        }
-      }
       active.resume();
       patchRecord(id, {
         status: 'downloading',
         error: undefined,
         downloadSpeed: 0,
       });
+      applySequentialFileSelection(id);
       await persist();
       emit();
       return listTorrents();
@@ -580,10 +659,8 @@ export async function removeTorrent(id: string, deleteFiles = false): Promise<To
   return listTorrents();
 }
 
-const VIDEO_EXT = /\.(mkv|mp4|avi|mov|wmv|m4v|webm|ts)$/i;
-
 function pickVideoFile<T extends { name: string; length: number }>(files: T[]): T | undefined {
-  return files.find((file) => VIDEO_EXT.test(file.name)) ?? [...files].sort((a, b) => b.length - a.length)[0];
+  return sortVideoFilesByEpisode(files)[0] ?? [...files].sort((a, b) => b.length - a.length)[0];
 }
 
 function resolveRecordVideoFile(
@@ -690,17 +767,8 @@ export function prioritizeTorrentPlayback(
     return null;
   }
 
-  for (const file of torrent.files) {
-    if (file === video) {
-      file.select(10);
-    } else {
-      try {
-        file.deselect();
-      } catch {
-        // ignore
-      }
-    }
-  }
+  const diskPath = path.isAbsolute(video.path) ? video.path : path.join(torrent.path, video.path);
+  playbackFocusById.set(id, diskPath);
 
   // Play-while-download: wake swarm even if user paused the download.
   try {
@@ -714,8 +782,10 @@ export function prioritizeTorrentPlayback(
   const recordStatus = records.find((item) => item.id === id);
   if (recordStatus?.status === 'paused') {
     patchRecord(id, { status: 'downloading', error: undefined });
-    emit();
   }
+
+  applySequentialFileSelection(id, diskPath);
+  emit();
 
   return video;
 }
