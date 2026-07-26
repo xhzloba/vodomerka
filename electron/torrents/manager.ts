@@ -26,6 +26,9 @@ type WebTorrentFile = {
   downloaded?: number;
   done: boolean;
   type: string;
+  /** Inclusive piece range for this file (WebTorrent internals). */
+  _startPiece?: number;
+  _endPiece?: number;
   select: (priority?: number) => void;
   deselect: () => void;
   createReadStream: (opts?: { start?: number; end?: number }) => NodeJS.ReadableStream;
@@ -39,10 +42,17 @@ type WebTorrentServer = {
   pathname: string;
 };
 
+type WebTorrentAddOpts = {
+  path: string;
+  /** Start with no pieces selected — required for sequential episode downloads. */
+  deselect?: boolean;
+  strategy?: 'sequential' | 'rarest';
+};
+
 type WebTorrentClient = {
   add: (
     magnet: string,
-    opts: { path: string },
+    opts: WebTorrentAddOpts,
     cb?: (torrent: WebTorrentTorrent) => void,
   ) => WebTorrentTorrent;
   get: (id: string) => Promise<WebTorrentTorrent | null> | WebTorrentTorrent | undefined;
@@ -66,9 +76,14 @@ type WebTorrentTorrent = {
   done: boolean;
   paused: boolean;
   files: WebTorrentFile[];
+  pieces: unknown[];
   path: string;
   pause: () => void;
   resume: () => void;
+  /** Select piece range [start, end] inclusive. */
+  select: (start: number, end: number, priority?: number) => void;
+  /** Clear piece range selection — needed before exclusive file select. */
+  deselect: (start: number, end: number) => void;
   destroy: (opts?: { destroyStore?: boolean }, cb?: (err?: Error | string) => void) => void;
   on: (event: string, listener: (...args: unknown[]) => void) => void;
 };
@@ -322,6 +337,50 @@ function pumpDownloadQueue(): Promise<void> {
 }
 
 /**
+ * WebTorrent selects the WHOLE torrent by default — file.deselect() alone is not enough.
+ * Must clear piece selections, then select only the target file's piece range.
+ */
+function selectOnlyTorrentFile(torrent: WebTorrentTorrent, target: WebTorrentFile): void {
+  const pieceCount = torrent.pieces?.length ?? 0;
+  if (pieceCount > 0) {
+    try {
+      torrent.deselect(0, pieceCount - 1);
+    } catch {
+      // ignore
+    }
+  }
+
+  for (const file of torrent.files) {
+    try {
+      file.deselect();
+    } catch {
+      // ignore
+    }
+  }
+
+  try {
+    const start = target._startPiece;
+    const end = target._endPiece;
+    if (
+      typeof start === 'number' &&
+      typeof end === 'number' &&
+      start >= 0 &&
+      end >= start &&
+      pieceCount > 0
+    ) {
+      torrent.select(start, end, 10);
+    }
+    target.select(10);
+  } catch {
+    try {
+      target.select(10);
+    } catch {
+      // ignore
+    }
+  }
+}
+
+/**
  * Download one episode at a time: S01E01 → done → S01E02 → …
  * Non-video / later episodes stay deselected so the swarm isn't split.
  */
@@ -340,17 +399,7 @@ function applySequentialFileSelection(id: string, preferredPath?: string | null)
   if (focusPath) {
     const focused = resolveWebTorrentFile(torrent, focusPath, path.basename(focusPath));
     if (focused && !isFileDownloadComplete(focused)) {
-      for (const file of torrent.files) {
-        try {
-          if (file === focused) {
-            file.select(10);
-          } else {
-            file.deselect();
-          }
-        } catch {
-          // ignore
-        }
-      }
+      selectOnlyTorrentFile(torrent, focused);
       return;
     }
     playbackFocusById.delete(id);
@@ -377,17 +426,7 @@ function applySequentialFileSelection(id: string, preferredPath?: string | null)
     return;
   }
 
-  for (const file of torrent.files) {
-    try {
-      if (file === next) {
-        file.select(10);
-      } else {
-        file.deselect();
-      }
-    } catch {
-      // ignore
-    }
-  }
+  selectOnlyTorrentFile(torrent, next);
 }
 
 function bindTorrent(id: string, torrent: WebTorrentTorrent) {
@@ -431,9 +470,9 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
         return;
       }
 
-      // Advance episode queue (throttled on hot download path).
+      // Re-assert exclusive episode selection (WebTorrent can re-select the whole torrent).
       const now = Date.now();
-      if (done || now - lastSequentialAt > 1200) {
+      if (done || now - lastSequentialAt > 800) {
         lastSequentialAt = now;
         applySequentialFileSelection(id);
       }
@@ -628,7 +667,11 @@ async function startTorrentEngine(id: string): Promise<void> {
     patchRecord(id, { magnet });
   }
   try {
-    const torrent = client.add(magnet, { path: record.savePath || getTorrentsDownloadsDir() });
+    const torrent = client.add(magnet, {
+      path: record.savePath || getTorrentsDownloadsDir(),
+      deselect: true,
+      strategy: 'sequential',
+    });
     bindTorrent(id, torrent);
     patchRecord(id, { status: 'downloading', error: undefined, downloadSpeed: 0 });
     await persist();

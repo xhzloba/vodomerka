@@ -13,6 +13,24 @@ interface PlayerPickerDialogProps {
   onConfirm: (playerId: string, remember: boolean) => void;
 }
 
+const DEFAULT_PLAYERS: MediaPlayerOption[] = [
+  {
+    id: 'vodomerka',
+    name: 'Vodomerka Player',
+    kind: 'builtin',
+    installed: true,
+  },
+  {
+    id: 'system',
+    name: 'Системный плеер',
+    kind: 'system',
+    installed: true,
+  },
+];
+
+/** Keep last IPC result so reopen is instant (no “Ищем плееры…” flash). */
+let cachedPlayers: MediaPlayerOption[] | null = null;
+
 function playerKindLabel(kind: MediaPlayerOption['kind']): string {
   if (kind === 'builtin') {
     return 'В приложении';
@@ -23,6 +41,15 @@ function playerKindLabel(kind: MediaPlayerOption['kind']): string {
   return 'Установлен в системе';
 }
 
+function pickPreferredId(list: MediaPlayerOption[], defaultPlayerId: string): string {
+  return (
+    list.find((item) => item.id === defaultPlayerId)?.id ??
+    list.find((item) => item.id === 'vodomerka')?.id ??
+    list[0]?.id ??
+    'vodomerka'
+  );
+}
+
 export function PlayerPickerDialog({
   open,
   title = 'Выбор плеера',
@@ -31,47 +58,44 @@ export function PlayerPickerDialog({
   onCancel,
   onConfirm,
 }: PlayerPickerDialogProps) {
-  const [players, setPlayers] = useState<MediaPlayerOption[]>([]);
+  const [players, setPlayers] = useState<MediaPlayerOption[]>(
+    () => cachedPlayers ?? DEFAULT_PLAYERS,
+  );
   const [selectedId, setSelectedId] = useState(defaultPlayerId);
   const [remember, setRemember] = useState(true);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    setSelectedId(defaultPlayerId);
+    const seed = cachedPlayers ?? DEFAULT_PLAYERS;
+    setPlayers(seed);
+    setSelectedId(pickPreferredId(seed, defaultPlayerId));
     setRemember(true);
-    setLoading(true);
 
+    let cancelled = false;
     void (async () => {
       try {
-        const list = (await window.electronAPI?.system?.listMediaPlayers?.()) ?? [
-          {
-            id: 'vodomerka',
-            name: 'Vodomerka Player',
-            kind: 'builtin' as const,
-            installed: true,
-          },
-          {
-            id: 'system',
-            name: 'Системный плеер',
-            kind: 'system' as const,
-            installed: true,
-          },
-        ];
+        const list = (await window.electronAPI?.system?.listMediaPlayers?.()) ?? DEFAULT_PLAYERS;
+        if (cancelled || list.length === 0) {
+          return;
+        }
+        cachedPlayers = list;
         setPlayers(list);
-        const preferred =
-          list.find((item) => item.id === defaultPlayerId)?.id ??
-          list.find((item) => item.id === 'vodomerka')?.id ??
-          list[0]?.id ??
-          'vodomerka';
-        setSelectedId(preferred);
-      } finally {
-        setLoading(false);
+        setSelectedId((current) =>
+          list.some((item) => item.id === current)
+            ? current
+            : pickPreferredId(list, defaultPlayerId),
+        );
+      } catch {
+        // keep seed list
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, defaultPlayerId]);
 
   useEffect(() => {
@@ -82,13 +106,13 @@ export function PlayerPickerDialog({
       if (event.key === 'Escape' && !isOpening) {
         onCancel();
       }
-      if (event.key === 'Enter' && !isOpening && !loading) {
+      if (event.key === 'Enter' && !isOpening) {
         onConfirm(selectedId, remember);
       }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open, isOpening, loading, selectedId, remember, onCancel, onConfirm]);
+  }, [open, isOpening, selectedId, remember, onCancel, onConfirm]);
 
   if (!open) {
     return null;
@@ -139,34 +163,30 @@ export function PlayerPickerDialog({
           </div>
 
           <div className="player-picker__list" role="radiogroup" aria-label="Плееры">
-            {loading ? (
-              <p className="player-picker__loading">Ищем плееры…</p>
-            ) : (
-              players.map((player, index) => {
-                const selected = selectedId === player.id;
-                return (
-                  <button
-                    key={player.id}
-                    type="button"
-                    className={`player-picker__option${selected ? ' is-selected' : ''}${
-                      index === 0 ? ' is-first' : ''
-                    }${index === players.length - 1 ? ' is-last' : ''}`}
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => setSelectedId(player.id)}
-                    disabled={isOpening}
-                  >
-                    <span className="player-picker__meta">
-                      <span className="player-picker__name">{player.name}</span>
-                      <span className="player-picker__kind">{playerKindLabel(player.kind)}</span>
-                    </span>
-                    <span className="player-picker__check" aria-hidden="true">
-                      {selected ? <CheckIcon size={15} strokeWidth={2.5} /> : null}
-                    </span>
-                  </button>
-                );
-              })
-            )}
+            {players.map((player, index) => {
+              const selected = selectedId === player.id;
+              return (
+                <button
+                  key={player.id}
+                  type="button"
+                  className={`player-picker__option${selected ? ' is-selected' : ''}${
+                    index === 0 ? ' is-first' : ''
+                  }${index === players.length - 1 ? ' is-last' : ''}`}
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setSelectedId(player.id)}
+                  disabled={isOpening}
+                >
+                  <span className="player-picker__meta">
+                    <span className="player-picker__name">{player.name}</span>
+                    <span className="player-picker__kind">{playerKindLabel(player.kind)}</span>
+                  </span>
+                  <span className="player-picker__check" aria-hidden="true">
+                    {selected ? <CheckIcon size={15} strokeWidth={2.5} /> : null}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           <label className={`player-picker__remember${remember ? ' is-on' : ''}`}>
@@ -193,7 +213,7 @@ export function PlayerPickerDialog({
               type="button"
               className="player-picker__btn player-picker__btn--primary"
               onClick={() => onConfirm(selectedId, remember)}
-              disabled={isOpening || loading || !selectedId}
+              disabled={isOpening || !selectedId}
             >
               {isOpening ? 'Открываем…' : 'Открыть'}
             </button>
