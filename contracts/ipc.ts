@@ -223,6 +223,7 @@ export const IPC_CHANNELS = {
     openInPlayer: 'torrents:openInPlayer',
     openFolder: 'torrents:openFolder',
     getFolderPath: 'torrents:getFolderPath',
+    probeConnectivity: 'torrents:probeConnectivity',
     changed: 'torrents:changed',
   },
   media: {
@@ -287,11 +288,30 @@ export interface TorrentDownloadRecord {
   uploaded: number;
   downloaded: number;
   length: number;
+  /** Live WebTorrent swarm peers (not catalog seeds). */
+  peers?: number;
   savePath: string;
   error?: string;
   files: TorrentDownloadFile[];
   addedAt: number;
   updatedAt: number;
+}
+
+export interface TorrentConnectivityTrackerResult {
+  url: string;
+  ok: boolean;
+  ms: number;
+  error?: string;
+}
+
+export interface TorrentConnectivityProbeResult {
+  ok: boolean;
+  checkedAt: number;
+  dnsOk: boolean;
+  trackersOk: number;
+  trackersTotal: number;
+  trackers: TorrentConnectivityTrackerResult[];
+  message: string;
 }
 
 export interface TorrentAddPayload {
@@ -424,6 +444,7 @@ export interface ElectronApi {
     ) => Promise<OpenInPlayerResult>;
     openFolder: () => Promise<{ ok: boolean; error?: string }>;
     getFolderPath: () => Promise<string>;
+    probeConnectivity: () => Promise<TorrentConnectivityProbeResult>;
     onChanged: (callback: (items: TorrentDownloadRecord[]) => void) => Unsubscribe;
   };
   media: {

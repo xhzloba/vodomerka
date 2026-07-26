@@ -46,8 +46,18 @@ function statusLabel(item: TorrentDownloadRecord): string {
   switch (item.status) {
     case 'queued':
       return 'В очереди';
-    case 'downloading':
-      return 'Качается';
+    case 'downloading': {
+      const peers = item.peers ?? 0;
+      const speed = item.downloadSpeed || 0;
+      // Catalog seeds can be huge while live swarm is empty — don't lie with «Качается».
+      if (peers <= 0 && speed < 2 * 1024 && (item.progress || 0) < 0.01) {
+        return 'Ищем пиров…';
+      }
+      if (peers > 0 && speed < 2 * 1024 && (item.progress || 0) < 0.05) {
+        return `Пиры ${peers} · ждём данные`;
+      }
+      return peers > 0 ? `Качается · ${peers}` : 'Качается';
+    }
     case 'done':
       return 'Готово';
     case 'paused':
@@ -75,6 +85,7 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
   const [pickerTorrentId, setPickerTorrentId] = useState<string | null>(null);
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
   const [isOpening, setIsOpening] = useState(false);
+  const [isProbing, setIsProbing] = useState(false);
 
   const sorted = useMemo(
     () => [...torrents].sort((a, b) => b.addedAt - a.addedAt),
@@ -100,6 +111,32 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
         kind: 'hide',
         title: 'Ошибка',
       });
+    }
+  };
+
+  const handleProbeConnectivity = async () => {
+    if (!window.electronAPI?.torrents?.probeConnectivity) {
+      showToast('Проверка доступна только в приложении', {
+        kind: 'error',
+        title: 'Сеть',
+      });
+      return;
+    }
+
+    setIsProbing(true);
+    try {
+      const result = await window.electronAPI.torrents.probeConnectivity();
+      showToast(result.message, {
+        kind: result.ok ? 'success' : 'error',
+        title: result.ok ? 'Соединение OK' : 'Проблема с сетью',
+      });
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось проверить соединение', {
+        kind: 'error',
+        title: 'Сеть',
+      });
+    } finally {
+      setIsProbing(false);
     }
   };
 
@@ -192,6 +229,16 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
             title={folderPath ?? 'Папка Torrents'}
           >
             <FolderIcon size={18} strokeWidth={1.75} />
+          </button>
+          <button
+            type="button"
+            className="library-view__clear-btn"
+            disabled={isProbing}
+            onClick={() => void handleProbeConnectivity()}
+            aria-label="Проверить соединение с трекерами"
+            title="Проверить соединение с трекерами"
+          >
+            {isProbing ? '…' : 'Сеть'}
           </button>
         </div>
       </div>

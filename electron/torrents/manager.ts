@@ -75,6 +75,7 @@ type WebTorrentTorrent = {
   length: number;
   done: boolean;
   paused: boolean;
+  numPeers?: number;
   files: WebTorrentFile[];
   pieces: unknown[];
   path: string;
@@ -232,6 +233,7 @@ function readTorrentStats(torrent: WebTorrentTorrent): {
   length: number;
   done: boolean;
   name: string;
+  peers: number;
 } {
   try {
     return {
@@ -242,6 +244,7 @@ function readTorrentStats(torrent: WebTorrentTorrent): {
       length: torrent.length || 0,
       done: Boolean(torrent.done),
       name: torrent.name || '',
+      peers: Math.max(0, torrent.numPeers || 0),
     };
   } catch {
     return {
@@ -252,6 +255,7 @@ function readTorrentStats(torrent: WebTorrentTorrent): {
       length: torrent.length || 0,
       done: Boolean(torrent.done),
       name: torrent.name || '',
+      peers: Math.max(0, torrent.numPeers || 0),
     };
   }
 }
@@ -584,6 +588,7 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
           uploaded: Math.max(current?.uploaded ?? 0, stats.uploaded || 0),
           downloaded: Math.max(current?.downloaded ?? 0, stats.downloaded || 0),
           length: stats.length > 0 ? stats.length : current?.length || 0,
+          peers: stats.peers,
           status: 'paused',
           files: mapFiles(torrent, current?.files ?? []),
           savePath: torrent.path || current?.savePath || getTorrentsDownloadsDir(),
@@ -631,6 +636,7 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
         uploaded: Math.max(current?.uploaded ?? 0, stats.uploaded || 0),
         downloaded: Math.max(current?.downloaded ?? 0, stats.downloaded || 0),
         length: stats.length > 0 ? stats.length : current?.length || 0,
+        peers: stats.peers,
         status: done ? 'done' : 'downloading',
         files: nextFiles,
         savePath: torrent.path || current?.savePath || getTorrentsDownloadsDir(),
@@ -871,6 +877,7 @@ export async function addTorrent(payload: TorrentAddPayload): Promise<TorrentAdd
     uploaded: 0,
     downloaded: 0,
     length: 0,
+    peers: 0,
     savePath: downloads,
     files: [],
     addedAt: now,

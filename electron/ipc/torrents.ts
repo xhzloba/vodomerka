@@ -19,6 +19,12 @@ import {
   resumeTorrentDownload,
 } from '../torrents/manager';
 import { ensureTorrentsDirs } from '../torrents/paths';
+import { probeTorrentConnectivity } from '../torrents/probeConnectivity';
+import {
+  removeContinueWatchingByTorrentId,
+  removeOrphanContinueWatchingTorrents,
+} from '../db/continueWatching';
+import { broadcastContinueWatchingChanged } from './continueWatching';
 
 function broadcast(items: TorrentDownloadRecord[]) {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -29,6 +35,13 @@ function broadcast(items: TorrentDownloadRecord[]) {
 export function registerTorrentsIpc(): void {
   void ensureTorrentsDirs()
     .then(() => initTorrentManager())
+    .then(() => {
+      // One-time sweep: continue-watching rows whose torrent was deleted earlier.
+      const validIds = listTorrents().map((item) => item.id);
+      if (removeOrphanContinueWatchingTorrents(validIds) > 0) {
+        broadcastContinueWatchingChanged();
+      }
+    })
     .catch(() => {
       // folder creation is best-effort at boot
     });
@@ -48,7 +61,18 @@ export function registerTorrentsIpc(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.torrents.remove,
-    async (_event, id: string, deleteFiles?: boolean) => removeTorrent(id, Boolean(deleteFiles)),
+    async (_event, id: string, deleteFiles?: boolean) => {
+      const next = await removeTorrent(id, Boolean(deleteFiles));
+      // Resume entries for a deleted torrent point at nothing — drop them from «Продолжить просмотр».
+      try {
+        if (removeContinueWatchingByTorrentId(id) > 0) {
+          broadcastContinueWatchingChanged();
+        }
+      } catch {
+        // best-effort cleanup
+      }
+      return next;
+    },
   );
 
   ipcMain.handle(IPC_CHANNELS.torrents.pause, async (_event, id: string) => {
@@ -85,6 +109,8 @@ export function registerTorrentsIpc(): void {
     await ensureTorrentsDirs();
     return getTorrentsFolderPath();
   });
+
+  ipcMain.handle(IPC_CHANNELS.torrents.probeConnectivity, async () => probeTorrentConnectivity());
 }
 
 export async function shutdownTorrentsIpc(): Promise<void> {

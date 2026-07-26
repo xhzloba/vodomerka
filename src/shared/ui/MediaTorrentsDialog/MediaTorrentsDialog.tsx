@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { TorrentConnectivityProbeResult } from '../../../../contracts/ipc';
 import {
   fetchTorrents,
   formatTorrentQuality,
@@ -12,6 +13,8 @@ import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { Tabs } from '@/shared/ui/Tabs';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import './MediaTorrentsDialog.css';
+
+type ProbeUiState = 'idle' | 'checking' | 'ok' | 'fail';
 
 interface MediaTorrentsDialogProps {
   open: boolean;
@@ -77,6 +80,8 @@ export function MediaTorrentsDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qualityFilter, setQualityFilter] = useState<QualityFilter>('all');
+  const [probeState, setProbeState] = useState<ProbeUiState>('idle');
+  const [probeMessage, setProbeMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !mediaId) {
@@ -88,6 +93,8 @@ export function MediaTorrentsDialog({
     setError(null);
     setQualityFilter('all');
     setTorrents([]);
+    setProbeState('idle');
+    setProbeMessage(null);
 
     void fetchTorrents(mediaId)
       .then((items) => {
@@ -147,38 +154,80 @@ export function MediaTorrentsDialog({
     !isLoading && !error ? `${visibleTorrents.length} раздач` : null,
   ].filter(Boolean);
 
-  const handleDownload = (torrent: TorrentOffer) => {
-    void addTorrent({
-      magnet: torrent.magnet,
-      title: torrent.title,
-      mediaId,
-      mediaTitle: title,
-      posterUrl,
-      quality: torrent.quality,
-      sizeName: torrent.sizeName,
-      trackerName: torrent.trackerName,
-    }).then((result) => {
-      if (result.ok) {
-        showToast(`${formatTorrentQuality(torrent.quality)} · ${torrent.sizeName}`, {
-          kind: 'restore',
-          title: 'Добавлено в Торренты',
-        });
-        onClose();
-        return;
-      }
-
-      void copyText(torrent.magnet).then((copied) => {
-        showToast(
-          copied
-            ? `${result.error}. Magnet скопирован`
-            : (result.error ?? 'Не удалось добавить торрент'),
-          {
-            kind: 'hide',
-            title: 'Ошибка загрузки',
-          },
-        );
+  const handleProbeConnectivity = useCallback(async () => {
+    if (!window.electronAPI?.torrents?.probeConnectivity) {
+      showToast('Проверка доступна только в приложении', {
+        kind: 'error',
+        title: 'Сеть',
       });
-    });
+      return;
+    }
+
+    setProbeState('checking');
+    setProbeMessage('Проверяем DNS и трекеры…');
+
+    try {
+      const result: TorrentConnectivityProbeResult =
+        await window.electronAPI.torrents.probeConnectivity();
+      setProbeState(result.ok ? 'ok' : 'fail');
+      setProbeMessage(result.message);
+      showToast(result.message, {
+        kind: result.ok ? 'success' : 'error',
+        title: result.ok ? 'Соединение OK' : 'Проблема с сетью',
+      });
+    } catch (err: unknown) {
+      const text = err instanceof Error ? err.message : 'Не удалось проверить соединение';
+      setProbeState('fail');
+      setProbeMessage(text);
+      showToast(text, { kind: 'error', title: 'Сеть' });
+    }
+  }, [showToast]);
+
+  const startDownload = useCallback(
+    (torrent: TorrentOffer) => {
+      void addTorrent({
+        magnet: torrent.magnet,
+        title: torrent.title,
+        mediaId,
+        mediaTitle: title,
+        posterUrl,
+        quality: torrent.quality,
+        sizeName: torrent.sizeName,
+        trackerName: torrent.trackerName,
+      }).then((result) => {
+        if (result.ok) {
+          showToast(`${formatTorrentQuality(torrent.quality)} · ${torrent.sizeName}`, {
+            kind: 'restore',
+            title: 'Добавлено в Торренты',
+          });
+          onClose();
+          return;
+        }
+
+        void copyText(torrent.magnet).then((copied) => {
+          showToast(
+            copied
+              ? `${result.error}. Magnet скопирован`
+              : (result.error ?? 'Не удалось добавить торрент'),
+            {
+              kind: 'hide',
+              title: 'Ошибка загрузки',
+            },
+          );
+        });
+      });
+    },
+    [addTorrent, mediaId, onClose, posterUrl, showToast, title],
+  );
+
+  const handleDownload = (torrent: TorrentOffer) => {
+    if (probeState === 'fail') {
+      showToast('Трекеры/сеть недоступны — загрузка может зависнуть на «Ищем пиров»', {
+        kind: 'tip',
+        title: 'Слабое соединение',
+      });
+    }
+    startDownload(torrent);
   };
 
   const handleCopy = async (torrent: TorrentOffer) => {
@@ -318,7 +367,28 @@ export function MediaTorrentsDialog({
           ) : null}
         </div>
 
-        <p className="media-torrents-panel__footnote">Скачивается во вкладку «Торренты»</p>
+        <div className="media-torrents-panel__footer">
+          <button
+            type="button"
+            className="media-torrents-panel__probe"
+            disabled={probeState === 'checking'}
+            onClick={() => void handleProbeConnectivity()}
+          >
+            {probeState === 'checking' ? 'Проверка…' : 'Проверить соединение'}
+          </button>
+          <p
+            className={`media-torrents-panel__footnote${
+              probeState === 'ok'
+                ? ' media-torrents-panel__footnote--ok'
+                : probeState === 'fail'
+                  ? ' media-torrents-panel__footnote--fail'
+                  : ''
+            }`}
+          >
+            {probeMessage ??
+              '↑↓ из каталога — не live. Перед скачиванием лучше проверить трекеры.'}
+          </p>
+        </div>
       </div>
     </SlideMenu>
   );

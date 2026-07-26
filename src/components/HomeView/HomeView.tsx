@@ -191,7 +191,12 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
       const torrents = (await window.electronAPI?.torrents?.list?.()) ?? [];
       const torrent = torrents.find((entry) => entry.id === record.torrentId);
       if (!torrent) {
-        onMediaSelect(item);
+        // Torrent deleted — the resume entry is unplayable, drop it instead of opening detail.
+        void removeProgress(record.id);
+        showToast(`«${item.title}» — загрузка удалена, запись убрана`, {
+          kind: 'hide',
+          title: 'Продолжить просмотр',
+        });
         return;
       }
 
@@ -208,7 +213,7 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
         onMediaSelect(item);
       }
     },
-    [continueRecords, findByMediaId, onMediaSelect, playTorrent, showToast],
+    [continueRecords, findByMediaId, onMediaSelect, playTorrent, removeProgress, showToast],
   );
 
   const heroItems = useMemo(

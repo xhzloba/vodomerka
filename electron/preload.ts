@@ -19,6 +19,7 @@ import {
   type ThemeCatalog,
   type TorrentAddPayload,
   type TorrentAddResult,
+  type TorrentConnectivityProbeResult,
   type TorrentDownloadRecord,
   type WatchStatus,
   type WatchStatusRecord,
@@ -163,6 +164,8 @@ const electronApi: ElectronApi = {
     openFolder: (): Promise<{ ok: boolean; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.torrents.openFolder),
     getFolderPath: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.torrents.getFolderPath),
+    probeConnectivity: (): Promise<TorrentConnectivityProbeResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.torrents.probeConnectivity),
     onChanged: (callback: (items: TorrentDownloadRecord[]) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, items: TorrentDownloadRecord[]) => {
         callback(items);

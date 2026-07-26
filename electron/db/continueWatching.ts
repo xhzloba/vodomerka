@@ -208,6 +208,37 @@ export function removeContinueWatching(id: string): ContinueWatchingRecord[] {
   return listContinueWatching();
 }
 
+/** Sweep resume entries pointing at torrents that no longer exist (deleted before this cleanup shipped). */
+export function removeOrphanContinueWatchingTorrents(validTorrentIds: string[]): number {
+  const database = getDatabase();
+  const rows = database
+    .prepare('SELECT id, torrent_id FROM continue_watching WHERE torrent_id IS NOT NULL')
+    .all() as Array<{ id: string; torrent_id: string }>;
+
+  const valid = new Set(validTorrentIds);
+  const remove = database.prepare('DELETE FROM continue_watching WHERE id = ?');
+  let removed = 0;
+  for (const row of rows) {
+    if (!valid.has(row.torrent_id)) {
+      remove.run(row.id);
+      removed += 1;
+    }
+  }
+  return removed;
+}
+
+/** Deleted torrent → its resume entries are unplayable, drop them. Returns removed count. */
+export function removeContinueWatchingByTorrentId(torrentId: string): number {
+  if (!torrentId) {
+    return 0;
+  }
+  const database = getDatabase();
+  const result = database
+    .prepare('DELETE FROM continue_watching WHERE torrent_id = ?')
+    .run(torrentId);
+  return Number(result.changes) || 0;
+}
+
 export function clearContinueWatching(): ContinueWatchingRecord[] {
   const database = getDatabase();
   database.prepare('DELETE FROM continue_watching').run();
