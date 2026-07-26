@@ -468,6 +468,16 @@
   animation: sidebar-icon-settings 1.1s cubic-bezier(0.4, 0, 0.2, 1) 1 both;
 }
 
+.sidebar__item--nav-torrents.sidebar__item--downloading .sidebar__item-icon {
+  opacity: 1;
+  color: var(--app-accent);
+  animation: sidebar-icon-torrents-download 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.sidebar__item--nav-torrents.sidebar__item--downloading .sidebar__item-icon svg {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--app-accent) 36%, transparent));
+}
+
 .sidebar__item--nav-home.sidebar__item--active .sidebar__item-icon svg,
 .sidebar__item--nav-browse.sidebar__item--active .sidebar__item-icon svg,
 .sidebar__item--nav-compilations.sidebar__item--active .sidebar__item-icon svg,
@@ -626,9 +636,26 @@
   }
 }
 
+@keyframes sidebar-icon-torrents-download {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(2px);
+  }
+
+  70% {
+    transform: translateY(-1.25px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sidebar__item--active .sidebar__item-icon,
-  .sidebar__item--active .sidebar__item-icon svg {
+  .sidebar__item--active .sidebar__item-icon svg,
+  .sidebar__item--nav-torrents.sidebar__item--downloading .sidebar__item-icon,
+  .sidebar__item--nav-torrents.sidebar__item--downloading .sidebar__item-icon svg {
     animation: none;
     filter: none;
   }

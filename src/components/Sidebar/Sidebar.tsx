@@ -335,6 +335,8 @@ export function Sidebar({
         type="button"
         className={`sidebar__item sidebar__item--nav-${item.id}${
           isActive ? ' sidebar__item--active' : ''
+        }${
+          item.id === 'torrents' && torrentsActiveCount > 0 ? ' sidebar__item--downloading' : ''
         }${showItemSettings ? ' sidebar__item--with-action' : ''}`}
         onPointerDown={(event) => handleNavPointerDown(event, item.id)}
         onClick={() => handleNavClick(item.id)}
