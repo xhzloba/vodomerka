@@ -21,7 +21,7 @@ import {
   getMacTrafficLightPosition,
   bindMainWindowChrome,
   markAppQuitting,
-  forceRevealMainWindow,
+  softFocusMainWindow,
 } from './ipc/windowChrome';
 import { registerSystemIpc } from './ipc/system';
 import { registerTorrentsIpc, shutdownTorrentsIpc } from './ipc/torrents';
@@ -60,7 +60,8 @@ function focusMainWindow(): void {
   if (!mainWindow || mainWindow.isDestroyed()) {
     return;
   }
-  forceRevealMainWindow(mainWindow);
+  // softFocus — Dock activate / second-instance. forceReveal's workspace toggle jerks the UI.
+  softFocusMainWindow(mainWindow);
 }
 
 function applyWindowTitle(win: BrowserWindow): void {

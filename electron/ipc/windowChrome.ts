@@ -165,9 +165,10 @@ export function registerWindowChromeIpc(getWindow: () => BrowserWindow | null): 
 export function bindMainWindowChrome(win: BrowserWindow): void {
   win.on('enter-full-screen', () => {
     if (playerOverlayOpen) {
+      // Player uses maximize, not OS fullscreen — bounce out without workspace flicker.
       exitAllFullscreenModes(win);
       win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, win.isMaximized());
-      forceRevealMainWindow(win);
+      softFocusMainWindow(win);
       return;
     }
     win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, true);
@@ -185,16 +186,16 @@ export function bindMainWindowChrome(win: BrowserWindow): void {
   });
 
   win.on('minimize', () => {
-    exitAllFullscreenModes(win);
-    win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, false);
-
-    // Пока играет плеер — не даём окну пропасть в никуда.
-    if (playerOverlayOpen) {
-      setTimeout(() => {
-        if (!win.isDestroyed() && playerOverlayOpen) {
-          forceRevealMainWindow(win);
-        }
-      }, 0);
+    // Allow normal minimize/restore. Fighting minimize with forceReveal caused Dock-restore jank.
+    // Only strip real OS fullscreen (rare) so the window can minimize cleanly.
+    const inOsFullscreen =
+      win.isFullScreen() ||
+      (process.platform === 'darwin' &&
+        typeof win.isSimpleFullScreen === 'function' &&
+        win.isSimpleFullScreen());
+    if (inOsFullscreen) {
+      exitAllFullscreenModes(win);
+      win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, false);
     }
   });
 
