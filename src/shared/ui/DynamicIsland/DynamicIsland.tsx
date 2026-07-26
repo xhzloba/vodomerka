@@ -733,7 +733,7 @@ export function DynamicIsland() {
                 <div className="dynamic-island__download-topline">
                   <span className="dynamic-island__download-meta">
                     {downloadCount > 1
-                      ? `Скачивается · ещё ${downloadCount - 1}`
+                      ? `Скачивается · ещё ${downloadCount - 1} в очереди`
                       : 'Скачивается'}
                   </span>
                   <span className="dynamic-island__download-detail-percent">

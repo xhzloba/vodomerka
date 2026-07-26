@@ -4,6 +4,7 @@ import type { Readable } from 'node:stream';
 import type { MediaPreparePlaybackResult } from '../../contracts/ipc';
 import {
   buildWebTorrentFileUrl,
+  ensureTorrentEngineForPlayback,
   ensureWebTorrentHttpServer,
   getActiveWebTorrent,
   getTorrentPlaybackSource,
@@ -67,6 +68,8 @@ export async function prepareTorrentPlayback(
   torrentId: string,
   filePath?: string | null,
 ): Promise<MediaPreparePlaybackResult> {
+  await ensureTorrentEngineForPlayback(torrentId);
+
   const source = getTorrentPlaybackSource(torrentId, filePath);
   if (!source.ok) {
     return source;

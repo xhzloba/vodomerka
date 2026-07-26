@@ -137,31 +137,25 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
   );
 
   const downloadActivity = useMemo(() => {
-    const active = torrents
+    const queue = torrents
       .filter((item) => item.status === 'downloading' || item.status === 'queued')
-      .sort((a, b) => b.updatedAt - a.updatedAt);
-    if (active.length === 0) {
+      .sort((a, b) => a.addedAt - b.addedAt);
+    if (queue.length === 0) {
       return null;
     }
 
-    let weighted = 0;
-    let weight = 0;
-    for (const item of active) {
-      const progress = Math.min(1, Math.max(0, item.progress || 0));
-      const size = item.length > 0 ? item.length : 1;
-      weighted += progress * size;
-      weight += size;
-    }
+    // Stable primary: the one actually downloading (FIFO), not whichever updated last.
+    const primary =
+      queue.find((item) => item.status === 'downloading') ?? queue[0]!;
+    const progress = Math.min(1, Math.max(0, primary.progress || 0));
 
-    const ratio = weight > 0 ? weighted / weight : 0;
-    const primary = active[0];
     return {
-      count: active.length,
-      percent: Math.round(ratio * 100),
+      count: queue.length,
+      percent: Math.round(progress * 100),
       title: primary.mediaTitle || primary.title || 'Торрент',
       id: primary.id,
       posterUrl: primary.posterUrl,
-      progress: Math.min(1, Math.max(0, primary.progress || 0)),
+      progress,
       canPlay: primary.status !== 'error',
     };
   }, [torrents]);

@@ -46,13 +46,29 @@ export function parseEpisodeFromName(name: string): { season: number | null; epi
   return { season: null, episode: null };
 }
 
+/** 1 серия / 2 серии / 5 серий */
+function formatEpisodeWord(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) {
+    return 'серия';
+  }
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return 'серии';
+  }
+  return 'серий';
+}
+
 export function formatEpisodeLabel(
   season: number | null,
   episode: number | null,
   fileName: string,
 ): string {
-  if (season != null && episode != null) {
-    return `S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`;
+  if (episode != null) {
+    return `${episode} ${formatEpisodeWord(episode)}`;
+  }
+  if (season != null) {
+    return `Сезон ${season}`;
   }
   return fileName.replace(VIDEO_EXT, '');
 }

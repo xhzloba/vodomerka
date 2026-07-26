@@ -76,6 +76,8 @@ const listeners = new Set<(items: TorrentDownloadRecord[]) => void>();
 const activeTorrents = new Map<string, WebTorrentTorrent>();
 /** While watching a specific episode — download that file first; then resume season order. */
 const playbackFocusById = new Map<string, string>();
+/** Serialize start/stop so only one torrent downloads at a time. */
+let queuePump: Promise<void> | null = null;
 let webTorrentServer: WebTorrentServer | null = null;
 let webTorrentServerPort: number | null = null;
 
@@ -247,6 +249,72 @@ function markTorrentError(id: string, error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   patchRecord(id, { status: 'error', error: message, downloadSpeed: 0 });
   void persist();
+  // Defer so we don't re-enter an in-flight queue pump.
+  queueMicrotask(() => {
+    void pumpDownloadQueue();
+  });
+}
+
+/** Drop swarm for a torrent but keep progress — used to free the single download slot. */
+async function parkForQueue(id: string): Promise<void> {
+  if (activeTorrents.has(id)) {
+    await destroyActiveTorrent(id, false);
+  }
+  const record = records.find((item) => item.id === id);
+  if (!record) {
+    return;
+  }
+  if (record.status === 'downloading' || record.status === 'queued') {
+    patchRecord(id, { status: 'queued', downloadSpeed: 0, error: undefined });
+  }
+}
+
+/**
+ * One active download at a time (FIFO by addedAt).
+ * Others stay queued — island won't flicker between posters.
+ */
+function pumpDownloadQueue(): Promise<void> {
+  if (queuePump) {
+    return queuePump;
+  }
+  queuePump = (async () => {
+    try {
+      await initTorrentManager();
+
+      const downloading = records
+        .filter((item) => item.status === 'downloading')
+        .sort((a, b) => a.addedAt - b.addedAt);
+
+      // Collapse parallel downloads into a single slot.
+      for (const extra of downloading.slice(1)) {
+        await parkForQueue(extra.id);
+      }
+
+      const active = records
+        .filter((item) => item.status === 'downloading')
+        .sort((a, b) => a.addedAt - b.addedAt)[0];
+
+      if (active) {
+        if (!activeTorrents.has(active.id)) {
+          await startTorrentEngine(active.id);
+        }
+        emit();
+        return;
+      }
+
+      const next = records
+        .filter((item) => item.status === 'queued')
+        .sort((a, b) => a.addedAt - b.addedAt)[0];
+
+      if (next) {
+        await startTorrentEngine(next.id);
+      }
+      emit();
+    } finally {
+      queuePump = null;
+    }
+  })();
+  return queuePump;
 }
 
 /**
@@ -382,7 +450,7 @@ function bindTorrent(id: string, torrent: WebTorrentTorrent) {
         error: undefined,
       });
       if (done) {
-        void persist();
+        void persist().then(() => pumpDownloadQueue());
       } else {
         schedulePersist();
         emit();
@@ -439,17 +507,17 @@ export async function initTorrentManager(): Promise<void> {
     posterUrl: sanitizePosterUrl(item.posterUrl),
   }));
   ready = true;
-  void persist();
 
-  // Resume unfinished downloads (keep user-paused ones paused)
-  const pending = records.filter(
-    (item) => item.status === 'downloading' || item.status === 'queued',
-  );
+  // One active download slot: oldest unfinished first, rest stay queued.
+  const pending = records
+    .filter((item) => item.status === 'downloading' || item.status === 'queued')
+    .sort((a, b) => a.addedAt - b.addedAt);
   for (const item of pending) {
-    void startTorrentEngine(item.id).catch((error) => {
-      markTorrentError(item.id, error instanceof Error ? error : 'Не удалось возобновить загрузку');
-    });
+    patchRecord(item.id, { status: 'queued', downloadSpeed: 0 });
   }
+  void persist();
+  emit();
+  void pumpDownloadQueue();
 }
 
 export function listTorrents(): TorrentDownloadRecord[] {
@@ -497,25 +565,16 @@ export async function addTorrent(payload: TorrentAddPayload): Promise<TorrentAdd
     updatedAt: now,
   };
 
+  const magnet = enrichMagnet(payload.magnet);
+  if (magnet !== payload.magnet) {
+    record.magnet = magnet;
+  }
+
   records.unshift(record);
   await persist();
-
-  try {
-    const client = await getClient();
-    const magnet = enrichMagnet(payload.magnet);
-    if (magnet !== payload.magnet) {
-      patchRecord(id, { magnet });
-    }
-    const torrent = client.add(magnet, { path: downloads });
-    bindTorrent(id, torrent);
-    patchRecord(id, { status: 'downloading' });
-    await persist();
-    return { ok: true, torrent: records.find((item) => item.id === id)! };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Не удалось начать загрузку';
-    markTorrentError(id, message);
-    return { ok: false, error: message };
-  }
+  emit();
+  await pumpDownloadQueue();
+  return { ok: true, torrent: records.find((item) => item.id === id)! };
 }
 
 async function destroyActiveTorrent(id: string, deleteFiles = false): Promise<void> {
@@ -563,21 +622,9 @@ export async function pauseTorrent(id: string): Promise<TorrentDownloadRecord[]>
     return listTorrents();
   }
 
-  const active = activeTorrents.get(id);
-  if (active) {
-    try {
-      active.pause();
-      for (const file of active.files ?? []) {
-        try {
-          file.deselect();
-        } catch {
-          // ignore
-        }
-      }
-    } catch {
-      // Fallback: drop swarm, keep files + saved progress.
-      await destroyActiveTorrent(id, false);
-    }
+  // Drop swarm so the single download slot can move to the next queued item.
+  if (activeTorrents.has(id)) {
+    await destroyActiveTorrent(id, false);
   }
 
   patchRecord(id, {
@@ -588,6 +635,7 @@ export async function pauseTorrent(id: string): Promise<TorrentDownloadRecord[]>
   });
   await persist();
   emit();
+  await pumpDownloadQueue();
   return listTorrents();
 }
 
@@ -600,6 +648,25 @@ export async function resumeTorrentDownload(id: string): Promise<TorrentDownload
   await initTorrentManager();
   const record = records.find((item) => item.id === id);
   if (!record || record.status === 'done') {
+    return listTorrents();
+  }
+
+  const otherDownloading = records.some(
+    (item) => item.id !== id && item.status === 'downloading',
+  );
+
+  // Slot busy → join FIFO queue instead of running in parallel (island flicker).
+  if (otherDownloading) {
+    if (activeTorrents.has(id)) {
+      await destroyActiveTorrent(id, false);
+    }
+    patchRecord(id, {
+      status: 'queued',
+      downloadSpeed: 0,
+      error: undefined,
+    });
+    await persist();
+    emit();
     return listTorrents();
   }
 
@@ -628,6 +695,7 @@ export async function resumeTorrentDownload(id: string): Promise<TorrentDownload
     await destroyActiveTorrent(id, false);
   }
 
+  patchRecord(id, { status: 'queued', error: undefined, downloadSpeed: 0 });
   try {
     await startTorrentEngine(id);
   } catch (error) {
@@ -655,8 +723,43 @@ export async function removeTorrent(id: string, deleteFiles = false): Promise<To
   }
 
   records = records.filter((item) => item.id !== id);
+  playbackFocusById.delete(id);
   await persist();
+  await pumpDownloadQueue();
   return listTorrents();
+}
+
+/** Bring a torrent online for play-while-download (may steal the single download slot). */
+export async function ensureTorrentEngineForPlayback(id: string): Promise<void> {
+  await initTorrentManager();
+  const record = records.find((item) => item.id === id);
+  if (!record || record.status === 'done') {
+    return;
+  }
+
+  for (const item of records) {
+    if (item.id !== id && item.status === 'downloading') {
+      await parkForQueue(item.id);
+    }
+  }
+
+  const active = activeTorrents.get(id);
+  if (active) {
+    try {
+      if (active.paused) {
+        active.resume();
+      }
+    } catch {
+      // ignore
+    }
+    patchRecord(id, { status: 'downloading', error: undefined, downloadSpeed: 0 });
+    applySequentialFileSelection(id);
+    emit();
+    return;
+  }
+
+  patchRecord(id, { status: 'queued', error: undefined, downloadSpeed: 0 });
+  await startTorrentEngine(id);
 }
 
 function pickVideoFile<T extends { name: string; length: number }>(files: T[]): T | undefined {
