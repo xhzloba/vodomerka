@@ -91,6 +91,8 @@
   flex-shrink: 0;
   min-height: var(--search-spotlight-field-height, 58px);
   padding: 14px 22px 14px 18px;
+  cursor: grab;
+  touch-action: none;
 }
 
 .search-spotlight--idle .search-spotlight__field {

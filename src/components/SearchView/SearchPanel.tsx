@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { getSearchShortcutParts } from '@/features/onboarding/tips/platformShortcut';
 import {
   useMediaSearch,
@@ -24,6 +24,7 @@ interface SearchPanelProps {
   inputId?: string;
   typeFilter?: SearchTypeFilter;
   expanded?: boolean;
+  onFieldPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void;
 }
 
 interface SpotlightDrawerSnapshot {
@@ -159,6 +160,7 @@ export function SearchPanel({
   inputId = 'search-panel-input',
   typeFilter = 'all',
   expanded = false,
+  onFieldPointerDown,
 }: SearchPanelProps) {
   const { isLoading, results } = useMediaSearch(query, typeFilter);
   const isOverlay = variant === 'overlay';
@@ -238,7 +240,7 @@ export function SearchPanel({
       <div
         className={`search-spotlight${uiExpanded ? ' search-spotlight--expanded' : ' search-spotlight--idle'}`}
       >
-        <div className="search-spotlight__field">
+        <div className="search-spotlight__field" onPointerDown={onFieldPointerDown}>
           <span className="search-spotlight__icon" aria-hidden="true">
             <SearchIcon size={20} />
           </span>

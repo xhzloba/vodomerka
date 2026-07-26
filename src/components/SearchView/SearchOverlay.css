@@ -92,6 +92,33 @@
   overflow: visible;
 }
 
+.search-overlay__stage--moved {
+  position: fixed;
+  margin: 0;
+  max-width: calc(100vw - 24px);
+}
+
+.search-overlay__stage--dragging {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.search-overlay--dragging {
+  cursor: grabbing;
+}
+
+.search-overlay--dragging .search-overlay__backdrop {
+  cursor: grabbing;
+}
+
+.search-overlay__stage--dragging .search-spotlight__field,
+.search-overlay__stage--dragging .search-spotlight__input {
+  cursor: grabbing;
+  caret-color: transparent;
+}
+
 .search-overlay__panel {
   position: relative;
   z-index: 2;
