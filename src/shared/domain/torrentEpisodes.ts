@@ -113,13 +113,19 @@ export function getFileProgress(file: TorrentDownloadFile): number {
   return Math.min(1, Math.max(0, file.progress ?? 0));
 }
 
+/** Whole percent 0–100; sub-1% crumbs count as 0 (queue noise from piece overlap). */
+export function getFileProgressPercent(file: TorrentDownloadFile): number {
+  return Math.round(getFileProgress(file) * 100);
+}
+
 export function formatFileProgressLabel(file: TorrentDownloadFile): string {
   const progress = getFileProgress(file);
   if (progress >= 0.999) {
     return 'Готово';
   }
-  if (progress <= 0) {
+  const percent = getFileProgressPercent(file);
+  if (percent <= 0) {
     return 'Ожидает';
   }
-  return `${Math.round(progress * 100)}%`;
+  return `${percent}%`;
 }

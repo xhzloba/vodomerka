@@ -4,6 +4,7 @@ import type { TorrentDownloadFile } from '../../../../contracts/ipc';
 import {
   formatFileProgressLabel,
   getFileProgress,
+  getFileProgressPercent,
   groupTorrentEpisodes,
 } from '@/shared/domain/torrentEpisodes';
 import { CheckIcon, CloseIcon } from '@/shared/ui/icons';
@@ -143,13 +144,15 @@ export function EpisodePickerDialog({
           {(activeGroup?.episodes ?? []).map((item) => {
             const selected = selectedPath === item.file.path;
             const progress = getFileProgress(item.file);
+            const percent = getFileProgressPercent(item.file);
             const progressLabel = formatFileProgressLabel(item.file);
+            const isDownloading = percent > 0 && progress < 0.999;
             return (
               <button
                 key={item.file.path}
                 type="button"
                 className={`episode-picker__item${selected ? ' is-selected' : ''}${
-                  progress >= 0.999 ? ' is-done' : progress > 0 ? ' is-downloading' : ''
+                  progress >= 0.999 ? ' is-done' : isDownloading ? ' is-downloading' : ''
                 }`}
                 role="option"
                 aria-selected={selected}
@@ -162,9 +165,9 @@ export function EpisodePickerDialog({
                     <span className="episode-picker__item-progress">{progressLabel}</span>
                   </span>
                   <span className="episode-picker__item-file">{item.file.name}</span>
-                  {progress > 0 && progress < 0.999 ? (
+                  {isDownloading ? (
                     <span className="episode-picker__item-bar" aria-hidden="true">
-                      <span style={{ width: `${Math.round(progress * 100)}%` }} />
+                      <span style={{ width: `${percent}%` }} />
                     </span>
                   ) : null}
                 </span>
