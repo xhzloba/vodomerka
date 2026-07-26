@@ -12,6 +12,9 @@ import {
   type PluginResult,
   type StoredMediaItem,
   type ThemeCatalog,
+  type TorrentAddPayload,
+  type TorrentAddResult,
+  type TorrentDownloadRecord,
   type WatchStatus,
   type WatchStatusRecord,
 } from '../contracts/ipc';
@@ -114,6 +117,27 @@ const electronApi: ElectronApi = {
       ipcRenderer.on(IPC_CHANNELS.watched.changed, listener);
       return () => {
         ipcRenderer.removeListener(IPC_CHANNELS.watched.changed, listener);
+      };
+    },
+  },
+  torrents: {
+    list: (): Promise<TorrentDownloadRecord[]> => ipcRenderer.invoke(IPC_CHANNELS.torrents.list),
+    add: (payload: TorrentAddPayload): Promise<TorrentAddResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.torrents.add, payload),
+    remove: (id: string, deleteFiles?: boolean): Promise<TorrentDownloadRecord[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.torrents.remove, id, deleteFiles),
+    openFile: (id: string): Promise<{ ok: boolean; error?: string }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.torrents.openFile, id),
+    openFolder: (): Promise<{ ok: boolean; error?: string }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.torrents.openFolder),
+    getFolderPath: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.torrents.getFolderPath),
+    onChanged: (callback: (items: TorrentDownloadRecord[]) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, items: TorrentDownloadRecord[]) => {
+        callback(items);
+      };
+      ipcRenderer.on(IPC_CHANNELS.torrents.changed, listener);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.torrents.changed, listener);
       };
     },
   },

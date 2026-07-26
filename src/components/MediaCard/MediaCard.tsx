@@ -425,7 +425,7 @@ export function MediaCard({
         subtitle={item.subtitle}
         year={item.year}
         type={item.type}
-        posterUrl={showImage ? src : undefined}
+        posterUrl={item.poster || undefined}
         onClose={() => setTorrentsOpen(false)}
       />
     </>

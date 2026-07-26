@@ -19,6 +19,7 @@ export {
   EyeOffIcon,
   FavoritesIcon,
   FilmIcon,
+  FolderIcon,
   GridIcon,
   HistoryIcon,
   HomeIcon,

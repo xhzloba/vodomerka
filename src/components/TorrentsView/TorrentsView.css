@@ -1,0 +1,168 @@
+/* Layout/paddings come from .library-view in BrowseView.css */
+
+.torrents-view__folder-btn:hover {
+  color: var(--app-text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.torrents-view__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0 18px 48px;
+  list-style: none;
+}
+
+.torrents-view__item {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--app-text) 4%, transparent);
+  transition: background var(--transition-fast);
+}
+
+.torrents-view__item:hover {
+  background: var(--chrome-surface-hover, color-mix(in srgb, var(--app-text) 7%, transparent));
+}
+
+.torrents-view__poster {
+  width: 52px;
+  height: 74px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--app-text) 8%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-text) 8%, transparent);
+}
+
+.torrents-view__poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.torrents-view__poster span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-weight: 620;
+  color: var(--app-text-muted);
+}
+
+.torrents-view__body {
+  min-width: 0;
+}
+
+.torrents-view__topline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.torrents-view__name {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  color: var(--app-text);
+}
+
+.torrents-view__percent {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+  color: var(--app-text-muted);
+}
+
+.torrents-view__subtitle,
+.torrents-view__meta {
+  margin: 4px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 510;
+  color: var(--app-text-muted);
+}
+
+.torrents-view__progress {
+  height: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-text) 10%, transparent);
+}
+
+.torrents-view__progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ui-control-accent, var(--app-accent));
+  transition: width 180ms ease;
+}
+
+.torrents-view__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.torrents-view__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--app-text-muted);
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.torrents-view__action:hover:not(:disabled) {
+  color: var(--app-text);
+  background: var(--ui-segmented-hover-bg, color-mix(in srgb, var(--app-text) 8%, transparent));
+}
+
+.torrents-view__action:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.torrents-view__action--primary {
+  color: var(--ui-segmented-active-color, var(--app-text));
+  background: var(--ui-segmented-active-bg, color-mix(in srgb, var(--ui-control-accent) 22%, transparent));
+  box-shadow: var(--ui-segmented-active-shadow);
+}
+
+/* Match collection apple-sidebar bleed inset (sidebar width + 18px) */
+.app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed)
+  .library-view.torrents-view
+  .torrents-view__list {
+  padding-left: calc(var(--app-sidebar-width) + 18px);
+  padding-right: 28px;
+}
+
+.app-shell--apple-sidebar:not(.app-shell--sidebar-collapsed)
+  .library-view.torrents-view
+  .library-view__empty {
+  padding-left: calc(var(--app-sidebar-width) + 18px);
+  padding-right: 28px;
+}

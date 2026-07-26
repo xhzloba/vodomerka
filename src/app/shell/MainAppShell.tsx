@@ -15,6 +15,7 @@ import { SearchView } from '@/components/SearchView/SearchView';
 import { SearchOverlay } from '@/components/SearchView/SearchOverlay';
 import { SettingsView } from '@/components/SettingsView/SettingsView';
 import { PluginsView } from '@/components/PluginsView/PluginsView';
+import { TorrentsView } from '@/components/TorrentsView/TorrentsView';
 import { Sidebar } from '@/components/Sidebar/Sidebar';
 import type { MediaItem } from '@/shared/domain/media';
 import { ensureMediaOverridesLoaded } from '@/shared/domain/overridesStore';
@@ -298,6 +299,8 @@ export function MainAppShell() {
         return <SettingsView />;
       case 'plugins':
         return <PluginsView />;
+      case 'torrents':
+        return <TorrentsView isActive />;
       default:
         return null;
     }

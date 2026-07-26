@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   fetchTorrents,
   formatTorrentQuality,
-  openMagnetLink,
   type TorrentOffer,
 } from '@/shared/api/vokino/torrents';
 import { getMediaTypeLabel } from '@/shared/domain/media';
+import { useTorrents } from '@/shared/domain/TorrentsContext';
 import { copyText } from '@/shared/lib/copyText';
 import { CopyIcon, DownloadIcon } from '@/shared/ui/icons';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
@@ -72,6 +72,7 @@ export function MediaTorrentsDialog({
   onClose,
 }: MediaTorrentsDialogProps) {
   const { showToast } = useToast();
+  const { addTorrent } = useTorrents();
   const [torrents, setTorrents] = useState<TorrentOffer[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -147,32 +148,36 @@ export function MediaTorrentsDialog({
   ].filter(Boolean);
 
   const handleDownload = (torrent: TorrentOffer) => {
-    void openMagnetLink(torrent.magnet).then(async (result) => {
+    void addTorrent({
+      magnet: torrent.magnet,
+      title: torrent.title,
+      mediaId,
+      mediaTitle: title,
+      posterUrl,
+      quality: torrent.quality,
+      sizeName: torrent.sizeName,
+      trackerName: torrent.trackerName,
+    }).then((result) => {
       if (result.ok) {
         showToast(`${formatTorrentQuality(torrent.quality)} · ${torrent.sizeName}`, {
           kind: 'restore',
-          title:
-            result.via &&
-            result.via !== 'system' &&
-            result.via !== 'browser' &&
-            result.via !== 'anchor'
-              ? `Открыто в ${result.via}`
-              : 'Открыт торрент-клиент',
+          title: 'Добавлено в Торренты',
         });
         onClose();
         return;
       }
 
-      const copied = await copyText(torrent.magnet);
-      showToast(
-        copied
-          ? 'Magnet скопирован — вставь в Transmission / qBittorrent'
-          : (result.error ?? 'Нет приложения для magnet'),
-        {
-          kind: 'hide',
-          title: 'Нужен торрент-клиент',
-        },
-      );
+      void copyText(torrent.magnet).then((copied) => {
+        showToast(
+          copied
+            ? `${result.error}. Magnet скопирован`
+            : (result.error ?? 'Не удалось добавить торрент'),
+          {
+            kind: 'hide',
+            title: 'Ошибка загрузки',
+          },
+        );
+      });
     });
   };
 
@@ -313,9 +318,7 @@ export function MediaTorrentsDialog({
           ) : null}
         </div>
 
-        <p className="media-torrents-panel__footnote">
-          Откроется в торрент-клиенте (не в VLC)
-        </p>
+        <p className="media-torrents-panel__footnote">Скачивается во вкладку «Торренты»</p>
       </div>
     </SlideMenu>
   );

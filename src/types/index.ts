@@ -3,6 +3,7 @@ export type NavItem =
   | 'browse'
   | 'compilations'
   | 'library'
+  | 'torrents'
   | 'search'
   | 'plugins'
   | 'settings';

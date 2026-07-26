@@ -7,6 +7,7 @@ import type { SidebarMenuAnimation, SidebarStyle } from '@/shared/settings/types
 import { getSearchShortcutLabel } from '@/features/onboarding/tips/platformShortcut';
 import { playMenuSound, playSubmenuSound } from '@/shared/audio/uiSounds';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
+import { useTorrents } from '@/shared/domain/TorrentsContext';
 import {
   getVisibleMediatekaItems,
   MEDIATEKA_MENU_ITEMS,
@@ -22,6 +23,7 @@ import {
   CheckIcon,
   CompilationsIcon,
   CoverSpacingIcon,
+  DownloadIcon,
   FilmIcon,
   GridIcon,
   HomeIcon,
@@ -57,6 +59,7 @@ const primaryNavItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
   { id: 'browse', label: 'Каталог', icon: <GridIcon size={20} /> },
   { id: 'compilations', label: 'Подборки', icon: <CompilationsIcon size={20} /> },
   { id: 'library', label: 'Коллекция', icon: <LayersIcon size={20} /> },
+  { id: 'torrents', label: 'Торренты', icon: <DownloadIcon size={20} /> },
 ];
 
 const searchNavItem: { id: NavItem; label: string; icon: JSX.Element } = {
@@ -100,6 +103,7 @@ export function Sidebar({
   const navRef = useRef<HTMLElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const { favorites } = useFavorites();
+  const { activeCount: torrentsActiveCount } = useTorrents();
   const { settings, updateSettings } = useAppSettings();
   const favoritesCount = favorites.length;
   const searchShortcutLabel = getSearchShortcutLabel();
@@ -205,6 +209,7 @@ export function Sidebar({
     collapsed,
     editingMediateka,
     favoritesCount,
+    torrentsActiveCount,
     magneticEnabled,
     edgePulseEnabled,
     visibleMediatekaItems.length,
@@ -338,7 +343,9 @@ export function Sidebar({
             ? `${item.label}, ${favoritesCount} в избранном`
             : item.id === 'library'
               ? 'Коллекция: избранное и статусы просмотра'
-              : item.label
+              : item.id === 'torrents' && torrentsActiveCount > 0
+                ? `${item.label}, ${torrentsActiveCount} активных`
+                : item.label
         }
         title={collapsed ? item.label : undefined}
       >
@@ -349,6 +356,11 @@ export function Sidebar({
           {item.id === 'library' && favoritesCount > 0 ? (
             <span className="sidebar__item-badge" aria-hidden="true">
               {favoritesCount}
+            </span>
+          ) : null}
+          {item.id === 'torrents' && torrentsActiveCount > 0 ? (
+            <span className="sidebar__item-badge" aria-hidden="true">
+              {torrentsActiveCount}
             </span>
           ) : null}
           {item.id === 'search' && !collapsed ? (
@@ -363,7 +375,7 @@ export function Sidebar({
     const SettingsActionIcon =
       settingsAction?.icon === 'cover-spacing' ? CoverSpacingIcon : SettingsIcon;
 
-    if (!showItemSettings) {
+    if (!showItemSettings || !settingsAction) {
       return <div key={item.id}>{itemButton}</div>;
     }
 

@@ -177,6 +177,15 @@ export const IPC_CHANNELS = {
     getUserDisplayName: 'system:getUserDisplayName',
     openExternal: 'system:openExternal',
   },
+  torrents: {
+    list: 'torrents:list',
+    add: 'torrents:add',
+    remove: 'torrents:remove',
+    openFile: 'torrents:openFile',
+    openFolder: 'torrents:openFolder',
+    getFolderPath: 'torrents:getFolderPath',
+    changed: 'torrents:changed',
+  },
   detail: {
     tryFocus: 'detail:tryFocus',
     open: 'detail:open',
@@ -202,6 +211,57 @@ export type BackupResult =
 
 export type OpenExternalResult =
   | { ok: true; via?: string }
+  | { ok: false; error: string };
+
+export type TorrentDownloadStatus =
+  | 'queued'
+  | 'downloading'
+  | 'done'
+  | 'error'
+  | 'paused';
+
+export interface TorrentDownloadFile {
+  name: string;
+  path: string;
+  length: number;
+}
+
+export interface TorrentDownloadRecord {
+  id: string;
+  magnet: string;
+  title: string;
+  mediaId?: string;
+  mediaTitle?: string;
+  posterUrl?: string;
+  quality?: number | null;
+  sizeName?: string;
+  trackerName?: string;
+  status: TorrentDownloadStatus;
+  progress: number;
+  downloadSpeed: number;
+  uploaded: number;
+  downloaded: number;
+  length: number;
+  savePath: string;
+  error?: string;
+  files: TorrentDownloadFile[];
+  addedAt: number;
+  updatedAt: number;
+}
+
+export interface TorrentAddPayload {
+  magnet: string;
+  title: string;
+  mediaId?: string;
+  mediaTitle?: string;
+  posterUrl?: string;
+  quality?: number | null;
+  sizeName?: string;
+  trackerName?: string;
+}
+
+export type TorrentAddResult =
+  | { ok: true; torrent: TorrentDownloadRecord }
   | { ok: false; error: string };
 
 export interface ElectronApi {
@@ -260,6 +320,15 @@ export interface ElectronApi {
     getStatus: (mediaId: string) => Promise<WatchStatus | null>;
     clear: (status?: WatchStatus) => Promise<WatchStatusRecord[]>;
     onChanged: (callback: () => void) => Unsubscribe;
+  };
+  torrents: {
+    list: () => Promise<TorrentDownloadRecord[]>;
+    add: (payload: TorrentAddPayload) => Promise<TorrentAddResult>;
+    remove: (id: string, deleteFiles?: boolean) => Promise<TorrentDownloadRecord[]>;
+    openFile: (id: string) => Promise<{ ok: boolean; error?: string }>;
+    openFolder: () => Promise<{ ok: boolean; error?: string }>;
+    getFolderPath: () => Promise<string>;
+    onChanged: (callback: (items: TorrentDownloadRecord[]) => void) => Unsubscribe;
   };
   sidebar: {
     onToggle: (callback: () => void) => Unsubscribe;

@@ -33,7 +33,8 @@
     "better-sqlite3": "^12.11.1",
     "lucide-react": "^1.23.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "webtorrent": "^3.0.16"
   },
   "build": {
     "appId": "com.vodomerka.app",
@@ -42,7 +43,8 @@
       "output": "release"
     },
     "asarUnpack": [
-      "**/node_modules/better-sqlite3/**"
+      "**/node_modules/better-sqlite3/**",
+      "**/node_modules/webtorrent/**"
     ],
     "extraResources": [
       {

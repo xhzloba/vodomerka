@@ -17,6 +17,7 @@ import { configureAppBranding, APP_NAME } from './branding';
 import { registerAppMenu } from './menu';
 import { registerWindowChromeIpc, getMacTrafficLightPosition } from './ipc/windowChrome';
 import { registerSystemIpc } from './ipc/system';
+import { registerTorrentsIpc, shutdownTorrentsIpc } from './ipc/torrents';
 
 if (process.platform === 'darwin') {
   app.setName(APP_NAME);
@@ -120,6 +121,7 @@ app.whenReady().then(() => {
   registerDetailIpc();
   registerWindowChromeIpc(() => mainWindow);
   registerSystemIpc();
+  registerTorrentsIpc();
   registerAppMenu(() => mainWindow);
   createWindow();
 });
@@ -135,5 +137,6 @@ app.on('activate', () => {
 });
 
 app.on('will-quit', () => {
+  void shutdownTorrentsIpc();
   closeDatabase();
 });

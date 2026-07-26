@@ -262,6 +262,14 @@ export function DownloadIcon(props: IconProps) {
   );
 }
 
+export function FolderIcon(props: IconProps) {
+  return (
+    <StrokeIcon {...props}>
+      <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H9l1.5 2H18.5A1.5 1.5 0 0 1 20 10.5v7A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z" />
+    </StrokeIcon>
+  );
+}
+
 export function InfoIcon(props: IconProps) {
   return (
     <StrokeIcon {...props}>
