@@ -5,7 +5,6 @@ import { formatPlaybackTitle, hasMultipleEpisodes } from '@/shared/domain/torren
 import { EpisodePickerDialog } from '@/shared/ui/EpisodePickerDialog/EpisodePickerDialog';
 import {
   CaptionsIcon,
-  CloseIcon,
   FullscreenExitIcon,
   FullscreenIcon,
   LayersIcon,
@@ -462,15 +461,6 @@ export function NativePlayer() {
         )}
 
         <div className="vp__chrome">
-          <button
-            type="button"
-            className="vp__close"
-            aria-label="Закрыть"
-            onClick={handleClosePlayer}
-          >
-            <CloseIcon size={18} strokeWidth={2.25} />
-          </button>
-
           {isPreparing ? (
             <div className="vp__status">
               <div className="vp__spinner" aria-hidden="true" />

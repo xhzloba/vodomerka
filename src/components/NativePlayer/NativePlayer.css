@@ -54,7 +54,6 @@
   pointer-events: none;
 }
 
-.vp__close,
 .vp__dock,
 .vp__hud,
 .vp__status,
@@ -63,34 +62,6 @@
 .vp__scrub,
 .vp__volume-flyout {
   pointer-events: auto;
-}
-
-.vp__close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.4);
-  color: rgba(255, 255, 255, 0.92);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  opacity: 0;
-  transition:
-    opacity 160ms ease,
-    background 140ms ease;
-}
-
-.vp--controls .vp__close,
-.vp:not(:has(.vp__video:not(.vp__video--empty))) .vp__close {
-  opacity: 1;
-}
-
-.vp__close:hover {
-  background: rgba(0, 0, 0, 0.62);
 }
 
 .vp__hud {
