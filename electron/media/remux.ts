@@ -59,6 +59,9 @@ async function pathExists(filePath: string): Promise<boolean> {
   }
 }
 
+const backgroundFfmpeg = new Set<ReturnType<typeof spawn>>();
+const remuxJobs = new Set<string>();
+
 /** Fast duration probe via `ffmpeg -i` stderr (no ffprobe required). */
 export function probeMediaDuration(filePath: string, timeoutMs = 8_000): Promise<number | null> {
   const ffmpeg = resolveFfmpegPath();
@@ -70,6 +73,7 @@ export function probeMediaDuration(filePath: string, timeoutMs = 8_000): Promise
     const child = spawn(ffmpeg, ['-hide_banner', '-i', filePath], {
       stdio: ['ignore', 'ignore', 'pipe'],
     });
+    backgroundFfmpeg.add(child);
     let stderr = '';
     let settled = false;
     const finish = (value: number | null) => {
@@ -77,6 +81,7 @@ export function probeMediaDuration(filePath: string, timeoutMs = 8_000): Promise
         return;
       }
       settled = true;
+      backgroundFfmpeg.delete(child);
       try {
         child.kill('SIGKILL');
       } catch {
@@ -129,9 +134,6 @@ export function getPlayableCachePath(sourcePath: string): string {
   const hash = createHash('sha1').update(`v2-aac:${sourcePath}`).digest('hex').slice(0, 20);
   return path.join(getTorrentsRoot(), '.playcache', `${hash}.mp4`);
 }
-
-const backgroundFfmpeg = new Set<ReturnType<typeof spawn>>();
-const remuxJobs = new Set<string>();
 
 function runFfmpeg(args: string[]): Promise<void> {
   const ffmpeg = resolveFfmpegPath();

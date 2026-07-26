@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { TorrentDownloadFile } from '../../../../contracts/ipc';
 import {
@@ -20,6 +20,27 @@ interface EpisodePickerDialogProps {
   onConfirm: (filePath: string) => void;
 }
 
+function normalizePath(value: string): string {
+  return value.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+}
+
+function sameMediaPath(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) {
+    return false;
+  }
+  if (a === b) {
+    return true;
+  }
+  const left = normalizePath(a);
+  const right = normalizePath(b);
+  if (left === right) {
+    return true;
+  }
+  const leftName = left.split('/').pop() ?? left;
+  const rightName = right.split('/').pop() ?? right;
+  return leftName.length > 0 && leftName === rightName;
+}
+
 export function EpisodePickerDialog({
   open,
   title = 'Выбор серии',
@@ -32,18 +53,26 @@ export function EpisodePickerDialog({
   const groups = useMemo(() => groupTorrentEpisodes(files), [files]);
   const [seasonKey, setSeasonKey] = useState<string>('0');
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const wasOpenRef = useRef(false);
 
+  // Init selection only when the dialog opens — not on every torrent progress tick
+  // (progress updates were resetting the highlight back to episode 1).
   useEffect(() => {
     if (!open) {
+      wasOpenRef.current = false;
       return;
     }
+    if (wasOpenRef.current) {
+      return;
+    }
+    wasOpenRef.current = true;
 
     const initialGroup =
       groups.find((group) =>
-        group.episodes.some((item) => item.file.path === currentFilePath),
+        group.episodes.some((item) => sameMediaPath(item.file.path, currentFilePath)),
       ) ?? groups[0];
     const initialEpisode =
-      initialGroup?.episodes.find((item) => item.file.path === currentFilePath) ??
+      initialGroup?.episodes.find((item) => sameMediaPath(item.file.path, currentFilePath)) ??
       initialGroup?.episodes[0];
 
     setSeasonKey(initialGroup?.season == null ? 'other' : String(initialGroup.season));
@@ -142,7 +171,7 @@ export function EpisodePickerDialog({
 
         <div className="episode-picker__list" role="listbox" aria-label="Серии">
           {(activeGroup?.episodes ?? []).map((item) => {
-            const selected = selectedPath === item.file.path;
+            const selected = sameMediaPath(selectedPath, item.file.path);
             const progress = getFileProgress(item.file);
             const percent = getFileProgressPercent(item.file);
             const progressLabel = formatFileProgressLabel(item.file);

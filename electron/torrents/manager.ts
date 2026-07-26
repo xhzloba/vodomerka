@@ -11,7 +11,11 @@ import type {
 } from '../../contracts/ipc';
 import { ensureTorrentsDirs, getTorrentsDownloadsDir, getTorrentsRoot } from './paths';
 import { loadTorrentState, saveTorrentState } from './store';
-import { isFileDownloadComplete, sortVideoFilesByEpisode } from './episodeOrder';
+import {
+  formatPlaybackTitle,
+  isFileDownloadComplete,
+  sortVideoFilesByEpisode,
+} from './episodeOrder';
 import { listInstalledMediaPlayers, openFileWithPlayer } from '../media/players';
 
 type WebTorrentFile = {
@@ -878,8 +882,7 @@ export function getTorrentPlaybackSource(
   const target = preferred.path;
 
   const baseTitle = record.mediaTitle || record.title || 'Видео';
-  const episodeTitle =
-    preferred.name && preferred.name !== baseTitle ? `${baseTitle} · ${preferred.name}` : baseTitle;
+  const episodeTitle = formatPlaybackTitle(baseTitle, preferred.name);
 
   // Per-file completeness — series can be mid-season while S01E01 is already 100%.
   const fileProgress = Math.min(1, Math.max(0, preferred.progress ?? 0));
@@ -1055,30 +1058,60 @@ export async function openTorrentsFolder(): Promise<{ ok: boolean; error?: strin
   return { ok: true };
 }
 
+function withTimeout(promise: Promise<void>, ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    void promise.finally(() => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+}
+
 export async function destroyTorrentManager(): Promise<void> {
+  const activeIds = [...activeTorrents.keys()];
+  await Promise.all(
+    activeIds.map((id) => withTimeout(destroyActiveTorrent(id, false), 1500)),
+  );
+  activeTorrents.clear();
+  playbackFocusById.clear();
+
   if (webTorrentServer) {
     try {
-      await new Promise<void>((resolve) => {
-        webTorrentServer?.destroy(() => resolve());
-      });
+      await withTimeout(
+        new Promise<void>((resolve) => {
+          try {
+            webTorrentServer?.destroy(() => resolve());
+          } catch {
+            resolve();
+          }
+        }),
+        1500,
+      );
     } catch {
       // ignore
     }
-    webTorrentServer = null;
-    webTorrentServerPort = null;
   }
+  webTorrentServer = null;
+  webTorrentServerPort = null;
 
   if (!clientPromise) {
     return;
   }
   try {
     const client = await clientPromise;
-    await new Promise<void>((resolve) => {
-      client.destroy(() => resolve());
-    });
+    await withTimeout(
+      new Promise<void>((resolve) => {
+        try {
+          client.destroy(() => resolve());
+        } catch {
+          resolve();
+        }
+      }),
+      2000,
+    );
   } catch {
     // ignore
   }
   clientPromise = null;
-  activeTorrents.clear();
 }

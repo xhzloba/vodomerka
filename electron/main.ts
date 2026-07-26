@@ -48,6 +48,7 @@ process.env.DIST = path.join(__dirname, '../dist');
 process.env.VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 
 let mainWindow: BrowserWindow | null = null;
+let isShuttingDown = false;
 
 const MAIN_WINDOW_MIN_WIDTH = 1280;
 const MAIN_WINDOW_MIN_HEIGHT = 840;
@@ -164,8 +165,33 @@ app.whenReady().then(() => {
   createWindow();
 });
 
-app.on('before-quit', () => {
+app.on('before-quit', (event) => {
+  if (isShuttingDown) {
+    return;
+  }
+  // Await WebTorrent/ffmpeg teardown — otherwise the process stays alive after the window closes.
+  event.preventDefault();
+  isShuttingDown = true;
   markAppQuitting();
+
+  const forceTimer = setTimeout(() => {
+    console.warn('[main] shutdown timed out, forcing exit');
+    app.exit(0);
+  }, 4000);
+
+  void Promise.allSettled([shutdownMediaIpc(), shutdownTorrentsIpc()])
+    .catch((error) => {
+      console.warn('[main] shutdown failed', error);
+    })
+    .finally(() => {
+      clearTimeout(forceTimer);
+      try {
+        closeDatabase();
+      } catch {
+        // ignore
+      }
+      app.exit(0);
+    });
 });
 
 app.on('window-all-closed', () => {
@@ -173,15 +199,12 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
+  if (isShuttingDown) {
+    return;
+  }
   if (!mainWindow || mainWindow.isDestroyed()) {
     createWindow();
     return;
   }
   focusMainWindow();
-});
-
-app.on('will-quit', () => {
-  void shutdownTorrentsIpc();
-  void shutdownMediaIpc();
-  closeDatabase();
 });

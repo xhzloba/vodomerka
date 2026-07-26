@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePlayer } from '@/shared/domain/PlayerContext';
 import { useTorrents } from '@/shared/domain/TorrentsContext';
-import { hasMultipleEpisodes } from '@/shared/domain/torrentEpisodes';
+import { formatPlaybackTitle, hasMultipleEpisodes } from '@/shared/domain/torrentEpisodes';
 import { EpisodePickerDialog } from '@/shared/ui/EpisodePickerDialog/EpisodePickerDialog';
 import {
   CaptionsIcon,
@@ -79,6 +79,33 @@ export function NativePlayer() {
   const canPickEpisode = Boolean(
     sessionTorrent && hasMultipleEpisodes(sessionTorrent.files),
   );
+
+  const displayTitle = useMemo(() => {
+    const mediaTitle =
+      sessionTorrent?.mediaTitle ||
+      sessionTorrent?.title ||
+      session?.title ||
+      'Vodomerka Player';
+    const sourcePath = session?.sourcePath || session?.filePath;
+    const match = sessionTorrent?.files.find((file) => {
+      if (!sourcePath) {
+        return false;
+      }
+      if (file.path === sourcePath) {
+        return true;
+      }
+      const left = file.path.replace(/\\/g, '/').toLowerCase();
+      const right = sourcePath.replace(/\\/g, '/').toLowerCase();
+      if (left === right) {
+        return true;
+      }
+      const leftName = left.split('/').pop() ?? '';
+      const rightName = right.split('/').pop() ?? '';
+      return leftName.length > 0 && leftName === rightName;
+    });
+    const fileName = match?.name || (sourcePath ? sourcePath.split(/[/\\]/).pop() : null);
+    return formatPlaybackTitle(mediaTitle, fileName);
+  }, [session, sessionTorrent]);
 
   const visible = Boolean(session) || isPreparing || Boolean(prepareError);
   const knownDuration = session?.durationSeconds ?? 0;
@@ -344,7 +371,7 @@ export function NativePlayer() {
   const effectiveDuration = duration > 0 ? duration : knownDuration;
   const progress = effectiveDuration > 0 ? (currentTime / effectiveDuration) * 100 : 0;
   const bufferedPct = effectiveDuration > 0 ? (buffered / effectiveDuration) * 100 : 0;
-  const title = session?.title || 'Vodomerka Player';
+  const title = displayTitle;
   const timeLabel =
     effectiveDuration > 0
       ? `${formatTime(currentTime)} / ${formatTime(effectiveDuration)}`
@@ -678,16 +705,13 @@ export function NativePlayer() {
         if (!session?.torrentId) {
           return;
         }
+        const torrentId = session.torrentId;
+        // Close immediately so progress ticks / prepare can't trap a disabled modal.
+        setEpisodePickerOpen(false);
         setSwitchingEpisode(true);
-        void playTorrent(session.torrentId, filePath)
-          .then((result) => {
-            if (result.ok) {
-              setEpisodePickerOpen(false);
-            }
-          })
-          .finally(() => {
-            setSwitchingEpisode(false);
-          });
+        void playTorrent(torrentId, filePath).finally(() => {
+          setSwitchingEpisode(false);
+        });
       }}
     />
     </>

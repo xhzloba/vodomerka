@@ -73,6 +73,26 @@ export function formatEpisodeLabel(
   return fileName.replace(VIDEO_EXT, '');
 }
 
+/** «Пацаны · Сезон 1 · 2 серия» — same language as the episode picker. */
+export function formatPlaybackTitle(mediaTitle: string, fileName?: string | null): string {
+  const base = mediaTitle.trim() || 'Видео';
+  if (!fileName) {
+    return base;
+  }
+  const { season, episode } = parseEpisodeFromName(fileName);
+  if (season == null && episode == null) {
+    return base;
+  }
+  const parts = [base];
+  if (season != null) {
+    parts.push(`Сезон ${season}`);
+  }
+  if (episode != null) {
+    parts.push(formatEpisodeLabel(season, episode, fileName));
+  }
+  return parts.join(' · ');
+}
+
 export function buildTorrentEpisodes(files: TorrentDownloadFile[]): TorrentEpisode[] {
   return listVideoTorrentFiles(files).map((file, index) => {
     const { season, episode } = parseEpisodeFromName(file.name);
