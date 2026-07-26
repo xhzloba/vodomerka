@@ -64,3 +64,26 @@ export interface VokinoListResponse {
   channels: VokinoChannelItem[];
   page?: VokinoListPage;
 }
+
+export interface VokinoTorrentChannel {
+  title: string;
+  subtitle?: string;
+  magnet: string;
+  quality?: number;
+  sizeName?: string;
+  size?: number;
+  voice?: string;
+  trackerName?: string;
+  sid?: number;
+  pir?: number;
+  bitrate?: string;
+  createTime?: string;
+  seasons?: unknown[];
+  videoInfo?: { video?: string; audio?: string };
+}
+
+export interface VokinoTorrentsResponse {
+  type: 'torrents' | string;
+  channels: VokinoTorrentChannel[];
+  details?: { poster?: string };
+}

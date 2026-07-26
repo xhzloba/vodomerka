@@ -252,6 +252,16 @@ export function CopyIcon(props: IconProps) {
   );
 }
 
+export function DownloadIcon(props: IconProps) {
+  return (
+    <StrokeIcon {...props}>
+      <path d="M12 4v10.5" />
+      <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
+      <path d="M5 18.5h14" />
+    </StrokeIcon>
+  );
+}
+
 export function InfoIcon(props: IconProps) {
   return (
     <StrokeIcon {...props}>

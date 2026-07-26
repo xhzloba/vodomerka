@@ -175,6 +175,7 @@ export const IPC_CHANNELS = {
   },
   system: {
     getUserDisplayName: 'system:getUserDisplayName',
+    openExternal: 'system:openExternal',
   },
   detail: {
     tryFocus: 'detail:tryFocus',
@@ -198,6 +199,10 @@ export interface PluginInstallProgressEvent {
 export type BackupResult =
   | { ok: true; settings?: AppSettings }
   | { ok: false; cancelled?: true; error?: string };
+
+export type OpenExternalResult =
+  | { ok: true; via?: string }
+  | { ok: false; error: string };
 
 export interface ElectronApi {
   platform: string;
@@ -267,6 +272,7 @@ export interface ElectronApi {
   };
   system: {
     getUserDisplayName: () => Promise<string | null>;
+    openExternal: (url: string) => Promise<OpenExternalResult>;
   };
   detail: {
     tryFocus: (mediaId: string) => Promise<boolean>;

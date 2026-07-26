@@ -7,6 +7,7 @@ import {
   type InstalledSidebarAnimationPlugin,
   type InstalledThemePlugin,
   type MediaOverridesMap,
+  type OpenExternalResult,
   type PluginInstallProgressEvent,
   type PluginResult,
   type StoredMediaItem,
@@ -141,6 +142,8 @@ const electronApi: ElectronApi = {
   system: {
     getUserDisplayName: (): Promise<string | null> =>
       ipcRenderer.invoke(IPC_CHANNELS.system.getUserDisplayName),
+    openExternal: (url: string): Promise<OpenExternalResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.system.openExternal, url),
   },
   detail: {
     tryFocus: (mediaId: string): Promise<boolean> =>

@@ -13,6 +13,7 @@ import {
 } from '@/shared/ui/mediaContextMenu';
 import { MediaCoverPlaceholder } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
 import { MediaDescriptionDialog } from '@/shared/ui/MediaDescriptionDialog/MediaDescriptionDialog';
+import { MediaTorrentsDialog } from '@/shared/ui/MediaTorrentsDialog/MediaTorrentsDialog';
 import { HeroRating } from '@/shared/ui/HeroRating/HeroRating';
 import { copyText } from '@/shared/lib/copyText';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
@@ -54,6 +55,7 @@ export function MediaCard({
   const watchStatus = getStatus(item.id);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [torrentsOpen, setTorrentsOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const closeContextMenu = useCallback(() => {
@@ -84,6 +86,9 @@ export function MediaCard({
           if (item.description || item.genres.length > 0) {
             setDescriptionOpen(true);
           }
+          break;
+        case 'download':
+          setTorrentsOpen(true);
           break;
         case 'copy-id':
           void copyMediaId();
@@ -411,6 +416,17 @@ export function MediaCard({
         description={item.description}
         genres={item.genres}
         onClose={() => setDescriptionOpen(false)}
+      />
+
+      <MediaTorrentsDialog
+        open={torrentsOpen}
+        mediaId={item.id}
+        title={item.title}
+        subtitle={item.subtitle}
+        year={item.year}
+        type={item.type}
+        posterUrl={showImage ? src : undefined}
+        onClose={() => setTorrentsOpen(false)}
       />
     </>
   );

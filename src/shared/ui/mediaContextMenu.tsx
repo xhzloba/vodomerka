@@ -10,6 +10,7 @@ import {
   BanIcon,
   BookOpenIcon,
   CopyIcon,
+  DownloadIcon,
   EyeIcon,
   FavoritesIcon,
   InfoIcon,
@@ -83,10 +84,15 @@ export function getMediaContextMenuItems(
       disabled: !item.description && item.genres.length === 0,
     },
     {
+      id: 'download',
+      label: 'Скачать',
+      icon: <DownloadIcon size={15} />,
+      separatorBefore: true,
+    },
+    {
       id: 'copy-id',
       label: 'Скопировать ID',
       icon: <CopyIcon size={15} />,
-      separatorBefore: true,
     },
     {
       id: 'favorite',

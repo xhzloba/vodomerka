@@ -14,6 +14,7 @@ export {
   CompilationsIcon,
   CopyIcon,
   CoverSpacingIcon,
+  DownloadIcon,
   EyeIcon,
   EyeOffIcon,
   FavoritesIcon,
