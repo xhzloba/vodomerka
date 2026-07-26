@@ -179,12 +179,27 @@ export function bindMainWindowChrome(win: BrowserWindow): void {
     }
   });
 
-  // Крестик = полное закрытие приложения (как раньше). Без hide в Dock.
-  win.on('close', () => {
-    if (!appQuitting) {
-      markAppQuitting();
-      app.quit();
+  // Плеер открыт → крестик / Cmd+W закрывают только плеер.
+  // Без плеера → полное закрытие приложения (уходит из Dock).
+  win.on('close', (event) => {
+    if (appQuitting) {
+      return;
     }
+
+    if (playerOverlayOpen) {
+      event.preventDefault();
+      exitAllFullscreenModes(win);
+      if (win.isMaximized()) {
+        win.unmaximize();
+      }
+      win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, false);
+      win.webContents.send(IPC_CHANNELS.windowChrome.closePlayer);
+      forceRevealMainWindow(win);
+      return;
+    }
+
+    markAppQuitting();
+    app.quit();
   });
 }
 
