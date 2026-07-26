@@ -129,6 +129,9 @@ export function MainAppShell() {
 
   const closeSearchOverlay = useCallback(() => {
     setSearchOverlayOpen(false);
+  }, []);
+
+  const handleSearchOverlayExited = useCallback(() => {
     setSearchQuery('');
   }, [setSearchQuery]);
 
@@ -138,7 +141,6 @@ export function MainAppShell() {
         const nextOpen = !wasOpen;
 
         if (!nextOpen) {
-          setSearchQuery('');
           return false;
         }
 
@@ -154,7 +156,7 @@ export function MainAppShell() {
         return true;
       });
     },
-    [settings.dismissedTipIds, setSearchQuery, updateSettings],
+    [settings.dismissedTipIds, updateSettings],
   );
 
   const showSetupWelcome = setupWelcomeVisible;
@@ -401,6 +403,7 @@ export function MainAppShell() {
         onQueryChange={setSearchQuery}
         onMediaSelect={handleMediaSelect}
         onClose={closeSearchOverlay}
+        onExited={handleSearchOverlayExited}
       />
     </div>
   );

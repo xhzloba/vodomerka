@@ -13,6 +13,7 @@ interface SearchOverlayProps {
   onQueryChange: (query: string) => void;
   onMediaSelect: (item: MediaItem) => void;
   onClose: () => void;
+  onExited?: () => void;
 }
 
 const SPOTLIGHT_ORBS: {
@@ -23,6 +24,8 @@ const SPOTLIGHT_ORBS: {
   { id: 'movie', label: 'Фильмы', icon: <FilmIcon size={22} strokeWidth={1.75} /> },
   { id: 'serial', label: 'Сериалы', icon: <TvIcon size={22} strokeWidth={1.75} /> },
 ];
+
+const EXIT_MS = 200;
 
 function getPageScroller(): HTMLElement | null {
   return document.querySelector(
@@ -45,20 +48,55 @@ export function SearchOverlay({
   onQueryChange,
   onMediaSelect,
   onClose,
+  onExited,
 }: SearchOverlayProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useOverlayScroll<HTMLDivElement>();
+  const queryRef = useRef(query);
+  const [mounted, setMounted] = useState(open);
+  const [closing, setClosing] = useState(false);
   const [typeFilter, setTypeFilter] = useState<SearchTypeFilter>('all');
   const [revealOrbs, setRevealOrbs] = useState(false);
-  const trimmed = query.trim();
+  const [exitQuery, setExitQuery] = useState(query);
+  const trimmed = (closing ? exitQuery : query).trim();
   const showResultsChrome = trimmed.length > 0;
+  const visible = mounted;
+
+  queryRef.current = query;
 
   useEffect(() => {
-    if (!open) {
-      setTypeFilter('all');
-      setRevealOrbs(false);
+    if (open) {
+      setMounted(true);
+      setClosing(false);
       return;
     }
+
+    if (!mounted) {
+      return;
+    }
+
+    setExitQuery(queryRef.current);
+    setClosing(true);
+
+    const timer = window.setTimeout(() => {
+      setMounted(false);
+      setClosing(false);
+      setTypeFilter('all');
+      setRevealOrbs(false);
+      onExited?.();
+    }, EXIT_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [open, mounted, onExited]);
+
+  useEffect(() => {
+    if (!open || closing) {
+      return;
+    }
+
+    setRevealOrbs(false);
 
     const timer = window.setTimeout(() => {
       setRevealOrbs(true);
@@ -67,10 +105,10 @@ export function SearchOverlay({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [open]);
+  }, [open, closing]);
 
   useEffect(() => {
-    if (!open) {
+    if (!open || closing) {
       return;
     }
 
@@ -86,15 +124,10 @@ export function SearchOverlay({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, onClose]);
+  }, [open, closing, onClose]);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const root = rootRef.current;
-    if (!root) {
+    if (!open || closing || !mounted) {
       return;
     }
 
@@ -108,20 +141,29 @@ export function SearchOverlay({
         return;
       }
 
-      scroller.scrollTop += event.deltaY;
+      let delta = event.deltaY;
+      if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+        delta *= 16;
+      } else if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+        delta *= scroller.clientHeight;
+      }
+
+      scroller.scrollTop += delta;
       event.preventDefault();
     };
 
-    root.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
 
     return () => {
-      root.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('wheel', handleWheel, { capture: true });
     };
-  }, [open]);
+  }, [open, closing, mounted]);
 
-  if (!open) {
+  if (!visible) {
     return null;
   }
+
+  const displayQuery = closing ? exitQuery : query;
 
   const handleMediaSelect = (item: MediaItem) => {
     onClose();
@@ -133,12 +175,17 @@ export function SearchOverlay({
   };
 
   return createPortal(
-    <div ref={rootRef} className="search-overlay" role="presentation">
+    <div
+      ref={rootRef}
+      className={`search-overlay${closing ? ' search-overlay--closing' : ''}`}
+      role="presentation"
+    >
       <button
         type="button"
         className="search-overlay__backdrop"
         aria-label="Закрыть поиск"
         onClick={onClose}
+        disabled={closing}
       />
 
       <div
@@ -152,11 +199,11 @@ export function SearchOverlay({
       >
         <div
           className="search-overlay__orbs"
-          aria-hidden={!revealOrbs || showResultsChrome}
+          aria-hidden={!revealOrbs || showResultsChrome || closing}
         >
           {SPOTLIGHT_ORBS.map((orb, index) => {
             const active = typeFilter === orb.id;
-            const orbsInteractive = revealOrbs && !showResultsChrome;
+            const orbsInteractive = revealOrbs && !showResultsChrome && !closing;
 
             return (
               <button
@@ -167,6 +214,7 @@ export function SearchOverlay({
                 aria-pressed={active}
                 aria-label={orb.label}
                 tabIndex={orbsInteractive ? 0 : -1}
+                disabled={closing}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => toggleFilter(orb.id)}
               >
@@ -187,10 +235,10 @@ export function SearchOverlay({
           aria-label="Быстрый поиск"
         >
           <SearchPanel
-            query={query}
+            query={displayQuery}
             onQueryChange={onQueryChange}
             onMediaSelect={handleMediaSelect}
-            autoFocus
+            autoFocus={!closing}
             variant="overlay"
             inputId="search-overlay-input"
             typeFilter={typeFilter}
