@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
+import { useCallback, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
+import { useContinueWatching } from '@/shared/domain/ContinueWatchingContext';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { useMediaDrag } from '@/shared/domain/MediaDragContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
@@ -17,8 +18,46 @@ import { MediaTorrentsDialog } from '@/shared/ui/MediaTorrentsDialog/MediaTorren
 import { HeroRating } from '@/shared/ui/HeroRating/HeroRating';
 import { copyText } from '@/shared/lib/copyText';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
-import { BanIcon, EyeOffIcon, FavoritesIcon, PauseCircleIcon, PlayOverlayIcon, WatchingIcon } from '@/shared/ui/icons';
+import {
+  BanIcon,
+  CloseIcon,
+  EyeOffIcon,
+  FavoritesIcon,
+  PauseCircleIcon,
+  PlayOverlayIcon,
+  WatchingIcon,
+} from '@/shared/ui/icons';
 import './MediaCard.css';
+
+function formatContinueTime(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return '0 сек';
+  }
+
+  const total = Math.floor(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const parts: string[] = [];
+
+  if (h > 0) {
+    parts.push(`${h} ч`);
+    if (m > 0) {
+      parts.push(`${m} мин`);
+    }
+    // С часами секунды не показываем: «1 ч 30 мин»
+    return parts.join(' ');
+  }
+
+  if (m > 0) {
+    parts.push(`${m} мин`);
+  }
+  if (s > 0 || parts.length === 0) {
+    parts.push(`${s} сек`);
+  }
+
+  return parts.join(' ');
+}
 
 interface MediaCardProps {
   item: MediaItem;
@@ -41,6 +80,7 @@ export function MediaCard({
   const { settings } = useAppSettings();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { getStatus, toggleStatus } = useWatched();
+  const { findByMediaId, removeProgress } = useContinueWatching();
   const { beginMediaDrag, updatePointer, releasePointer } = useMediaDrag();
   const { showToast } = useToast();
   const cardRef = useRef<HTMLElement>(null);
@@ -53,6 +93,45 @@ export function MediaCard({
   } | null>(null);
   const inFavorites = isFavorite(item.id);
   const watchStatus = getStatus(item.id);
+  const continueProgress = useMemo(() => {
+    const record = findByMediaId(item.id);
+    if (!record || !Number.isFinite(record.positionSeconds) || record.positionSeconds <= 0) {
+      return null;
+    }
+    const timeLabel = formatContinueTime(record.positionSeconds);
+    const duration = record.durationSeconds;
+    const percent =
+      duration && Number.isFinite(duration) && duration > 0
+        ? Math.min(100, Math.max(0, (record.positionSeconds / duration) * 100))
+        : 0;
+    return {
+      id: record.id,
+      mediaId: record.mediaId,
+      percent,
+      timeLabel,
+    };
+  }, [findByMediaId, item.id]);
+
+  const handleRemoveContinue = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!continueProgress) {
+        return;
+      }
+      suppressClickRef.current = true;
+      void removeProgress(continueProgress.id).then(() => {
+        showToast(`«${item.title}» убрано из «Продолжить просмотр»`, {
+          kind: 'hide',
+          title: 'Убрано',
+        });
+      });
+      window.setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 0);
+    },
+    [continueProgress, item.title, removeProgress, showToast],
+  );
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   const [torrentsOpen, setTorrentsOpen] = useState(false);
@@ -374,6 +453,38 @@ export function MediaCard({
             <div className="media-card__play">
               <PlayOverlayIcon size={54} />
             </div>
+            {continueProgress ? (
+              <>
+                <button
+                  type="button"
+                  className="media-card__continue-remove"
+                  aria-label="Убрать из «Продолжить просмотр»"
+                  title="Убрать из «Продолжить просмотр»"
+                  onClick={handleRemoveContinue}
+                  onPointerDown={(event) => {
+                    event.stopPropagation();
+                  }}
+                >
+                  <CloseIcon size={14} strokeWidth={2.2} />
+                </button>
+                <div
+                  className="media-card__continue"
+                  role="progressbar"
+                  aria-label={`Просмотрено до ${continueProgress.timeLabel}`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(continueProgress.percent)}
+                >
+                  <span className="media-card__continue-time">{continueProgress.timeLabel}</span>
+                  <div className="media-card__continue-track" aria-hidden="true">
+                    <div
+                      className="media-card__continue-fill"
+                      style={{ width: `${continueProgress.percent}%` }}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
 

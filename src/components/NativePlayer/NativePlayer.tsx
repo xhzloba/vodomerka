@@ -185,33 +185,38 @@ export function NativePlayer() {
   }, [session?.url, session?.durationSeconds, session?.startSeconds, session?.serverSeek]);
 
   const persistContinueProgress = useCallback(
-    async (force = false) => {
+    async (force = false, options?: { ended?: boolean }) => {
       if (!session) {
         return;
       }
-      const position = currentTimeRef.current;
       const total =
         durationRef.current > 0
           ? durationRef.current
           : session.durationSeconds && session.durationSeconds > 0
             ? session.durationSeconds
             : 0;
+      const position = options?.ended && total > 0 ? total : currentTimeRef.current;
 
-      if (!shouldPersistContinueProgress(position, total)) {
+      if (!options?.ended && !shouldPersistContinueProgress(position, total)) {
         return;
       }
 
       const now = Date.now();
-      if (!force && now - lastUpsertAtRef.current < CONTINUE_UPSERT_THROTTLE_MS) {
+      if (!force && !options?.ended && now - lastUpsertAtRef.current < CONTINUE_UPSERT_THROTTLE_MS) {
         return;
       }
       lastUpsertAtRef.current = now;
 
       const id = continueWatchingIdForSession(session, sessionTorrent);
-      if (isContinueProgressComplete(position, total)) {
+      const completed =
+        Boolean(options?.ended && total > 0) || isContinueProgressComplete(position, total);
+
+      if (completed) {
         await removeProgress(id);
         const item = buildContinueUpsertPayload(session, position, total, sessionTorrent).item;
-        if (!item.id.startsWith('torrent:')) {
+        // Фильмы → «Просмотренное». У сериалов (несколько серий) только убираем из «Продолжить».
+        const isSeries = Boolean(sessionTorrent && hasMultipleEpisodes(sessionTorrent.files));
+        if (!isSeries && item.id && !item.id.startsWith('torrent:')) {
           await setStatus(item, 'watched', { silent: true });
         }
         return;
@@ -524,6 +529,20 @@ export function NativePlayer() {
             onPause={() => {
               setPlaying(false);
               void persistContinueProgress(true);
+            }}
+            onEnded={() => {
+              setPlaying(false);
+              const total =
+                durationRef.current > 0
+                  ? durationRef.current
+                  : session.durationSeconds && session.durationSeconds > 0
+                    ? session.durationSeconds
+                    : 0;
+              if (total > 0) {
+                currentTimeRef.current = total;
+                setCurrentTime(total);
+              }
+              void persistContinueProgress(true, { ended: true });
             }}
             onTimeUpdate={(event) => {
               const next = seekOrigin + event.currentTarget.currentTime;
