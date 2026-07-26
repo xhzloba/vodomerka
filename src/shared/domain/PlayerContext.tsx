@@ -33,6 +33,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (typeof document !== 'undefined' && document.fullscreenElement) {
       void document.exitFullscreen().catch(() => undefined);
     }
+    void window.electronAPI?.media?.stopPlayback?.();
     void window.electronAPI?.windowChrome?.setFullScreen?.(false);
     void window.electronAPI?.windowChrome?.setPlayerOpen?.(false);
     void window.electronAPI?.windowChrome?.focusMain?.();

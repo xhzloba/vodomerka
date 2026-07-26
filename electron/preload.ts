@@ -149,6 +149,7 @@ const electronApi: ElectronApi = {
   media: {
     prepareTorrentPlayback: (torrentId: string): Promise<MediaPreparePlaybackResult> =>
       ipcRenderer.invoke(IPC_CHANNELS.media.prepareTorrentPlayback, torrentId),
+    stopPlayback: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.media.stopPlayback),
   },
   sidebar: {
     onToggle: (callback: () => void) => {

@@ -33,6 +33,28 @@ type MediaToken = FileToken | LiveRemuxToken | FileRemuxToken;
 let server: Server | null = null;
 let port: number | null = null;
 const tokens = new Map<string, MediaToken>();
+const activeFfmpeg = new Set<ChildProcessWithoutNullStreams>();
+
+function trackFfmpeg(child: ChildProcessWithoutNullStreams): void {
+  activeFfmpeg.add(child);
+  const forget = () => {
+    activeFfmpeg.delete(child);
+  };
+  child.once('close', forget);
+  child.once('exit', forget);
+  child.once('error', forget);
+}
+
+function killActiveFfmpeg(): void {
+  for (const child of [...activeFfmpeg]) {
+    try {
+      child.kill('SIGKILL');
+    } catch {
+      // ignore
+    }
+  }
+  activeFfmpeg.clear();
+}
 
 function isPathInside(root: string, target: string): boolean {
   const resolvedRoot = path.resolve(root);
@@ -124,6 +146,7 @@ function pipeFileRemux(token: FileRemuxToken, res: ServerResponse, startSeconds 
   ];
 
   const child = spawn(ffmpegPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+  trackFfmpeg(child);
   attachFfmpegToResponse(child, res);
 }
 
@@ -160,6 +183,7 @@ function pipeLiveRemux(token: LiveRemuxToken, res: ServerResponse) {
     );
 
     input.pipe(child.stdin);
+    trackFfmpeg(child);
     attachFfmpegToResponse(child, res, () => {
       try {
         input?.destroy();
@@ -306,8 +330,13 @@ export function buildMediaUrl(token: string, listenPort: number, startSeconds?: 
   return base;
 }
 
-export async function shutdownMediaServer(): Promise<void> {
+export function stopActivePlayback(): void {
   tokens.clear();
+  killActiveFfmpeg();
+}
+
+export async function shutdownMediaServer(): Promise<void> {
+  stopActivePlayback();
   if (!server) {
     return;
   }

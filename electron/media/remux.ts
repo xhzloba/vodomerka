@@ -65,6 +65,9 @@ export function getPlayableCachePath(sourcePath: string): string {
   return path.join(getTorrentsRoot(), '.playcache', `${hash}.mp4`);
 }
 
+const backgroundFfmpeg = new Set<ReturnType<typeof spawn>>();
+const remuxJobs = new Set<string>();
+
 function runFfmpeg(args: string[]): Promise<void> {
   const ffmpeg = resolveFfmpegPath();
   if (!ffmpeg) {
@@ -73,6 +76,7 @@ function runFfmpeg(args: string[]): Promise<void> {
 
   return new Promise((resolve, reject) => {
     const child = spawn(ffmpeg, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    backgroundFfmpeg.add(child);
     let stderr = '';
     child.stderr?.on('data', (chunk: Buffer) => {
       stderr += chunk.toString('utf8');
@@ -80,8 +84,15 @@ function runFfmpeg(args: string[]): Promise<void> {
         stderr = stderr.slice(-4000);
       }
     });
-    child.on('error', reject);
+    const forget = () => {
+      backgroundFfmpeg.delete(child);
+    };
+    child.on('error', (error) => {
+      forget();
+      reject(error);
+    });
     child.on('close', (code) => {
+      forget();
       if (code === 0) {
         resolve();
         return;
@@ -89,6 +100,18 @@ function runFfmpeg(args: string[]): Promise<void> {
       reject(new Error(stderr.trim().split('\n').slice(-3).join(' ') || `ffmpeg exit ${code}`));
     });
   });
+}
+
+export function cancelBackgroundRemuxJobs(): void {
+  remuxJobs.clear();
+  for (const child of [...backgroundFfmpeg]) {
+    try {
+      child.kill('SIGKILL');
+    } catch {
+      // ignore
+    }
+  }
+  backgroundFfmpeg.clear();
 }
 
 export function canDirectPlay(filePath: string): boolean {
@@ -132,8 +155,6 @@ export async function getExistingPlayableCache(sourcePath: string): Promise<stri
   }
   return null;
 }
-
-const remuxJobs = new Set<string>();
 
 /** Build seekable AAC cache in background (does not block playback). */
 export function startBackgroundPlayableCache(sourcePath: string): void {

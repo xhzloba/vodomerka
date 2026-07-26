@@ -561,6 +561,74 @@ export function PictureInPictureIcon({ size = 24, className, ...props }: IconPro
   );
 }
 
+export function SkipBack10Icon({ size = 36, className, ...props }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 36 36"
+      width={size}
+      height={size}
+      className={className ? `app-icon ${className}` : 'app-icon'}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden={props['aria-label'] ? undefined : true}
+      {...props}
+    >
+      <path d="M18 7.2a10.8 10.8 0 1 0 9.4 5.4" />
+      <path d="M18 7.2 14.2 3.6M18 7.2l-2.2 4.8" />
+      <text
+        x="18"
+        y="21.2"
+        textAnchor="middle"
+        fill="currentColor"
+        stroke="none"
+        fontSize="10.5"
+        fontWeight="650"
+        fontFamily="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"
+        letterSpacing="-0.04em"
+      >
+        10
+      </text>
+    </svg>
+  );
+}
+
+export function SkipForward10Icon({ size = 36, className, ...props }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 36 36"
+      width={size}
+      height={size}
+      className={className ? `app-icon ${className}` : 'app-icon'}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden={props['aria-label'] ? undefined : true}
+      {...props}
+    >
+      <path d="M18 7.2a10.8 10.8 0 1 1 -9.4 5.4" />
+      <path d="M18 7.2 21.8 3.6M18 7.2l2.2 4.8" />
+      <text
+        x="18"
+        y="21.2"
+        textAnchor="middle"
+        fill="currentColor"
+        stroke="none"
+        fontSize="10.5"
+        fontWeight="650"
+        fontFamily="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"
+        letterSpacing="-0.04em"
+      >
+        10
+      </text>
+    </svg>
+  );
+}
+
 export function PlayOverlayIcon({ size = 56, className, ...props }: IconProps) {
   return (
     <svg

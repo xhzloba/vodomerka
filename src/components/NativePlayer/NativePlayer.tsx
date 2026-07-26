@@ -9,6 +9,8 @@ import {
   PauseBarsIcon,
   PictureInPictureIcon,
   PlayIcon,
+  SkipBack10Icon,
+  SkipForward10Icon,
   VolumeIcon,
   VolumeMutedIcon,
 } from '@/shared/ui/icons';
@@ -116,6 +118,19 @@ export function NativePlayer() {
     bumpControls();
   }, [bumpControls]);
 
+  const seekBy = useCallback(
+    (deltaSeconds: number) => {
+      const video = videoRef.current;
+      if (!video || !canSeek) {
+        return;
+      }
+      const next = Math.max(0, Math.min(video.duration || Infinity, video.currentTime + deltaSeconds));
+      video.currentTime = next;
+      bumpControls();
+    },
+    [bumpControls, canSeek],
+  );
+
   const seekTo = useCallback(
     (ratio: number) => {
       const video = videoRef.current;
@@ -206,13 +221,13 @@ export function NativePlayer() {
 
       if ((event.key === 'ArrowRight' || event.key === 'l' || event.key === 'L') && canSeek) {
         event.preventDefault();
-        video.currentTime = Math.min(video.duration || Infinity, video.currentTime + 10);
+        seekBy(10);
         return;
       }
 
       if ((event.key === 'ArrowLeft' || event.key === 'j' || event.key === 'J') && canSeek) {
         event.preventDefault();
-        video.currentTime = Math.max(0, video.currentTime - 10);
+        seekBy(-10);
         return;
       }
 
@@ -255,6 +270,7 @@ export function NativePlayer() {
     togglePlay,
     toggleMute,
     toggleFullscreen,
+    seekBy,
     isFullscreen,
   ]);
 
@@ -284,224 +300,270 @@ export function NativePlayer() {
         }
       }}
     >
-      {session ? (
-        <video
-          ref={videoRef}
-          className="vp__video"
-          src={session.url}
-          poster={session.posterUrl}
-          autoPlay
-          playsInline
-          onLoadedMetadata={(event) => {
-            setHasTextTracks(event.currentTarget.textTracks.length > 0);
-          }}
-          onPlay={() => setPlaying(true)}
-          onPause={() => setPlaying(false)}
-          onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
-          onDurationChange={(event) => setDuration(event.currentTarget.duration || 0)}
-          onProgress={(event) => {
-            const media = event.currentTarget;
-            if (media.buffered.length > 0) {
-              setBuffered(media.buffered.end(media.buffered.length - 1));
-            }
-          }}
-          onVolumeChange={(event) => {
-            setVolume(event.currentTarget.volume);
-            setMuted(event.currentTarget.muted || event.currentTarget.volume === 0);
-          }}
-          onError={() => {
-            const mediaError = videoRef.current?.error;
-            const detail =
-              mediaError?.code === 4
-                ? 'Источник заблокирован или формат не поддержан'
-                : mediaError?.code === 3
-                  ? 'Ошибка декодирования'
-                  : mediaError?.code === 2
-                    ? 'Сеть/поток оборвался'
-                    : 'Неизвестная ошибка';
-            setPlaybackError(`${detail}. Открой во внешнем плеере, если повторится.`);
-          }}
-          onClick={(event) => {
-            event.stopPropagation();
-            togglePlay();
-          }}
-          onDoubleClick={(event) => {
-            event.stopPropagation();
-            void toggleFullscreen();
-          }}
-        />
-      ) : (
-        <div className="vp__video vp__video--empty" />
-      )}
+      <div className="vp__stage">
+        {session ? (
+          <video
+            ref={videoRef}
+            className="vp__video"
+            src={session.url}
+            poster={session.posterUrl}
+            autoPlay
+            playsInline
+            onLoadedMetadata={(event) => {
+              setHasTextTracks(event.currentTarget.textTracks.length > 0);
+            }}
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+            onDurationChange={(event) => setDuration(event.currentTarget.duration || 0)}
+            onProgress={(event) => {
+              const media = event.currentTarget;
+              if (media.buffered.length > 0) {
+                setBuffered(media.buffered.end(media.buffered.length - 1));
+              }
+            }}
+            onVolumeChange={(event) => {
+              setVolume(event.currentTarget.volume);
+              setMuted(event.currentTarget.muted || event.currentTarget.volume === 0);
+            }}
+            onError={() => {
+              const mediaError = videoRef.current?.error;
+              const detail =
+                mediaError?.code === 4
+                  ? 'Источник заблокирован или формат не поддержан'
+                  : mediaError?.code === 3
+                    ? 'Ошибка декодирования'
+                    : mediaError?.code === 2
+                      ? 'Сеть/поток оборвался'
+                      : 'Неизвестная ошибка';
+              setPlaybackError(`${detail}. Открой во внешнем плеере, если повторится.`);
+            }}
+            onClick={(event) => {
+              event.stopPropagation();
+              togglePlay();
+            }}
+            onDoubleClick={(event) => {
+              event.stopPropagation();
+              void toggleFullscreen();
+            }}
+          />
+        ) : (
+          <div className="vp__video vp__video--empty" />
+        )}
 
-      <div className="vp__chrome">
-        <button
-          type="button"
-          className="vp__close"
-          aria-label="Закрыть"
-          onClick={handleClosePlayer}
-        >
-          <CloseIcon size={18} strokeWidth={2.25} />
-        </button>
+        <div className="vp__chrome">
+          <button
+            type="button"
+            className="vp__close"
+            aria-label="Закрыть"
+            onClick={handleClosePlayer}
+          >
+            <CloseIcon size={18} strokeWidth={2.25} />
+          </button>
 
-        {isPreparing ? (
-          <div className="vp__status">
-            <div className="vp__spinner" aria-hidden="true" />
-            <p>Запуск Vodomerka Player…</p>
-          </div>
-        ) : null}
-
-        {prepareError ? (
-          <div className="vp__status vp__status--error">
-            <p>{prepareError}</p>
-            <button type="button" className="vp__text-btn" onClick={handleClosePlayer}>
-              Закрыть
-            </button>
-          </div>
-        ) : null}
-
-        {playbackError && session ? (
-          <div className="vp__status vp__status--error">
-            <p>{playbackError}</p>
-            <button
-              type="button"
-              className="vp__text-btn"
-              onClick={() => void openTorrentFile(session.torrentId)}
-            >
-              Открыть во внешнем плеере
-            </button>
-          </div>
-        ) : null}
-
-        {session && !playbackError ? (
-          <div className="vp__dock">
-            <div
-              className={`vp__scrub ${canSeek ? '' : 'is-disabled'}`}
-              role="slider"
-              aria-label="Прогресс"
-              aria-valuemin={0}
-              aria-valuemax={Math.floor(duration || 0)}
-              aria-valuenow={Math.floor(currentTime)}
-              tabIndex={canSeek ? 0 : -1}
-              onClick={(event) => {
-                if (!canSeek) {
-                  return;
-                }
-                const rect = event.currentTarget.getBoundingClientRect();
-                seekTo((event.clientX - rect.left) / rect.width);
-              }}
-              onKeyDown={(event) => {
-                if (!canSeek || !videoRef.current) {
-                  return;
-                }
-                if (event.key === 'ArrowRight') {
-                  videoRef.current.currentTime += 5;
-                }
-                if (event.key === 'ArrowLeft') {
-                  videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 5);
-                }
-              }}
-            >
-              <span className="vp__scrub-track" />
-              <span className="vp__scrub-buffer" style={{ width: `${bufferedPct}%` }} />
-              <span className="vp__scrub-progress" style={{ width: `${progress}%` }} />
-              {canSeek ? (
-                <span className="vp__scrub-knob" style={{ left: `${progress}%` }} />
-              ) : null}
+          {isPreparing ? (
+            <div className="vp__status">
+              <div className="vp__spinner" aria-hidden="true" />
+              <p>Запуск Vodomerka Player…</p>
             </div>
+          ) : null}
 
-            <div className="vp__bar">
-              <div className="vp__bar-left">
+          {prepareError ? (
+            <div className="vp__status vp__status--error">
+              <p>{prepareError}</p>
+              <button type="button" className="vp__text-btn" onClick={handleClosePlayer}>
+                Закрыть
+              </button>
+            </div>
+          ) : null}
+
+          {playbackError && session ? (
+            <div className="vp__status vp__status--error">
+              <p>{playbackError}</p>
+              <button
+                type="button"
+                className="vp__text-btn"
+                onClick={() => void openTorrentFile(session.torrentId)}
+              >
+                Открыть во внешнем плеере
+              </button>
+            </div>
+          ) : null}
+
+          {session && !playbackError ? (
+            <>
+              <div className="vp__hud" aria-hidden={!controlsVisible}>
                 <button
                   type="button"
-                  className="vp__btn"
-                  aria-label={playing ? 'Пауза' : 'Играть'}
-                  onClick={togglePlay}
+                  className="vp__hud-skip"
+                  aria-label="Назад 10 секунд"
+                  disabled={!canSeek}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    seekBy(-10);
+                  }}
                 >
-                  {playing ? <PauseBarsIcon size={22} /> : <PlayIcon size={22} />}
+                  <SkipBack10Icon size={40} />
                 </button>
-
-                <div
-                  className={`vp__volume ${volumeOpen ? 'is-open' : ''}`}
-                  onMouseEnter={() => setVolumeOpen(true)}
-                  onMouseLeave={() => setVolumeOpen(false)}
+                <button
+                  type="button"
+                  className="vp__hud-play"
+                  aria-label={playing ? 'Пауза' : 'Играть'}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    togglePlay();
+                  }}
                 >
+                  {playing ? (
+                    <PauseBarsIcon size={28} />
+                  ) : (
+                    <PlayIcon size={28} className="vp__hud-play-triangle" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="vp__hud-skip"
+                  aria-label="Вперёд 10 секунд"
+                  disabled={!canSeek}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    seekBy(10);
+                  }}
+                >
+                  <SkipForward10Icon size={40} />
+                </button>
+              </div>
+
+              <div className="vp__dock">
+              <div
+                className={`vp__scrub ${canSeek ? '' : 'is-disabled'}`}
+                role="slider"
+                aria-label="Прогресс"
+                aria-valuemin={0}
+                aria-valuemax={Math.floor(duration || 0)}
+                aria-valuenow={Math.floor(currentTime)}
+                tabIndex={canSeek ? 0 : -1}
+                onClick={(event) => {
+                  if (!canSeek) {
+                    return;
+                  }
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  seekTo((event.clientX - rect.left) / rect.width);
+                }}
+                onKeyDown={(event) => {
+                  if (!canSeek || !videoRef.current) {
+                    return;
+                  }
+                  if (event.key === 'ArrowRight') {
+                    seekBy(10);
+                  }
+                  if (event.key === 'ArrowLeft') {
+                    seekBy(-10);
+                  }
+                }}
+              >
+                <span className="vp__scrub-track" />
+                <span className="vp__scrub-buffer" style={{ width: `${bufferedPct}%` }} />
+                <span className="vp__scrub-progress" style={{ width: `${progress}%` }} />
+                {canSeek ? (
+                  <span className="vp__scrub-knob" style={{ left: `${progress}%` }} />
+                ) : null}
+              </div>
+
+              <div className="vp__bar">
+                <div className="vp__bar-left">
                   <button
                     type="button"
                     className="vp__btn"
-                    aria-label={muted || volume === 0 ? 'Включить звук' : 'Выключить звук'}
-                    onClick={toggleMute}
+                    aria-label={playing ? 'Пауза' : 'Играть'}
+                    onClick={togglePlay}
                   >
-                    {muted || volume === 0 ? (
-                      <VolumeMutedIcon size={22} strokeWidth={1.9} />
-                    ) : (
-                      <VolumeIcon size={22} strokeWidth={1.9} />
-                    )}
+                    {playing ? <PauseBarsIcon size={22} /> : <PlayIcon size={22} />}
                   </button>
-                  <div className="vp__volume-flyout">
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={muted ? 0 : volume}
-                      aria-label="Громкость"
-                      onChange={(event) => {
-                        const next = Number(event.target.value);
-                        const video = videoRef.current;
-                        setVolume(next);
-                        if (video) {
-                          video.volume = next;
-                          video.muted = next === 0;
-                        }
-                        setMuted(next === 0);
-                      }}
-                    />
+
+                  <div
+                    className={`vp__volume ${volumeOpen ? 'is-open' : ''}`}
+                    onMouseEnter={() => setVolumeOpen(true)}
+                    onMouseLeave={() => setVolumeOpen(false)}
+                  >
+                    <button
+                      type="button"
+                      className="vp__btn"
+                      aria-label={muted || volume === 0 ? 'Включить звук' : 'Выключить звук'}
+                      onClick={toggleMute}
+                    >
+                      {muted || volume === 0 ? (
+                        <VolumeMutedIcon size={22} strokeWidth={1.9} />
+                      ) : (
+                        <VolumeIcon size={22} strokeWidth={1.9} />
+                      )}
+                    </button>
+                    <div className="vp__volume-flyout">
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={muted ? 0 : volume}
+                        aria-label="Громкость"
+                        onChange={(event) => {
+                          const next = Number(event.target.value);
+                          const video = videoRef.current;
+                          setVolume(next);
+                          if (video) {
+                            video.volume = next;
+                            video.muted = next === 0;
+                          }
+                          setMuted(next === 0);
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="vp__meta" title={title}>
+                    <span className="vp__time">{timeLabel}</span>
+                    <span className="vp__title">{title}</span>
                   </div>
                 </div>
 
-                <div className="vp__meta" title={title}>
-                  <span className="vp__time">{timeLabel}</span>
-                  <span className="vp__title">{title}</span>
+                <div className="vp__bar-right">
+                  <button
+                    type="button"
+                    className="vp__btn"
+                    aria-label="Картинка в картинке"
+                    title="Картинка в картинке"
+                    onClick={() => void togglePip()}
+                  >
+                    <PictureInPictureIcon size={21} strokeWidth={1.9} />
+                  </button>
+                  <button
+                    type="button"
+                    className={`vp__btn ${captionsOn ? 'is-active' : ''}`}
+                    aria-label="Субтитры"
+                    title={hasTextTracks ? 'Субтитры' : 'Субтитры недоступны'}
+                    disabled={!hasTextTracks && !captionsOn}
+                    onClick={toggleCaptions}
+                  >
+                    <CaptionsIcon size={21} strokeWidth={1.9} />
+                  </button>
+                  <button
+                    type="button"
+                    className="vp__btn"
+                    aria-label={isFullscreen ? 'Выйти из полного экрана' : 'Полный экран'}
+                    onClick={() => void toggleFullscreen()}
+                  >
+                    {isFullscreen ? (
+                      <FullscreenExitIcon size={21} strokeWidth={1.9} />
+                    ) : (
+                      <FullscreenIcon size={21} strokeWidth={1.9} />
+                    )}
+                  </button>
                 </div>
               </div>
-
-              <div className="vp__bar-right">
-                <button
-                  type="button"
-                  className="vp__btn"
-                  aria-label="Картинка в картинке"
-                  title="Картинка в картинке"
-                  onClick={() => void togglePip()}
-                >
-                  <PictureInPictureIcon size={21} strokeWidth={1.9} />
-                </button>
-                <button
-                  type="button"
-                  className={`vp__btn ${captionsOn ? 'is-active' : ''}`}
-                  aria-label="Субтитры"
-                  title={hasTextTracks ? 'Субтитры' : 'Субтитры недоступны'}
-                  disabled={!hasTextTracks && !captionsOn}
-                  onClick={toggleCaptions}
-                >
-                  <CaptionsIcon size={21} strokeWidth={1.9} />
-                </button>
-                <button
-                  type="button"
-                  className="vp__btn"
-                  aria-label={isFullscreen ? 'Выйти из полного экрана' : 'Полный экран'}
-                  onClick={() => void toggleFullscreen()}
-                >
-                  {isFullscreen ? (
-                    <FullscreenExitIcon size={21} strokeWidth={1.9} />
-                  ) : (
-                    <FullscreenIcon size={21} strokeWidth={1.9} />
-                  )}
-                </button>
-              </div>
             </div>
-          </div>
-        ) : null}
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );

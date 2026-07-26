@@ -197,6 +197,7 @@ export const IPC_CHANNELS = {
   },
   media: {
     prepareTorrentPlayback: 'media:prepareTorrentPlayback',
+    stopPlayback: 'media:stopPlayback',
   },
   detail: {
     tryFocus: 'detail:tryFocus',
@@ -374,6 +375,7 @@ export interface ElectronApi {
   };
   media: {
     prepareTorrentPlayback: (torrentId: string) => Promise<MediaPreparePlaybackResult>;
+    stopPlayback: () => Promise<void>;
   };
   sidebar: {
     onToggle: (callback: () => void) => Unsubscribe;

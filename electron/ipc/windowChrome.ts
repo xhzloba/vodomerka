@@ -8,48 +8,97 @@ const MAC_TRAFFIC_LIGHT_POSITION = {
 } as const;
 
 let playerOverlayOpen = false;
-let isAppQuitting = false;
+let appQuitting = false;
+let getMainWindow: (() => BrowserWindow | null) | null = null;
 
-function isWindowFullscreen(win: BrowserWindow): boolean {
-  if (process.platform === 'darwin') {
-    return win.isSimpleFullScreen() || win.isFullScreen();
-  }
-  return win.isFullScreen();
+export function isAppQuitting(): boolean {
+  return appQuitting;
 }
 
-function applyFullscreen(win: BrowserWindow, fullScreen: boolean): boolean {
-  // На Mac native setFullScreen уводит окно в отдельный Space — «пропадает».
-  // simpleFullScreen остаётся на том же рабочем столе.
-  if (process.platform === 'darwin') {
-    if (win.isFullScreen()) {
-      win.setFullScreen(false);
-    }
-    win.setSimpleFullScreen(Boolean(fullScreen));
-    return win.isSimpleFullScreen();
-  }
-
-  win.setFullScreen(Boolean(fullScreen));
-  return win.isFullScreen();
+export function markAppQuitting(): void {
+  appQuitting = true;
 }
 
-function restoreAndFocus(win: BrowserWindow): void {
+function exitAllFullscreenModes(win: BrowserWindow): void {
   if (win.isDestroyed()) {
     return;
   }
-  if (isWindowFullscreen(win)) {
-    applyFullscreen(win, false);
+  try {
+    if (win.isFullScreen()) {
+      win.setFullScreen(false);
+    }
+  } catch {
+    // ignore
   }
+  if (process.platform === 'darwin') {
+    try {
+      if (win.isSimpleFullScreen()) {
+        win.setSimpleFullScreen(false);
+      }
+    } catch {
+      // ignore
+    }
+  }
+}
+
+/**
+ * Жёстко достаёт окно наружу: из minimize / hide / любого fullscreen.
+ */
+export function forceRevealMainWindow(win: BrowserWindow | null = getMainWindow?.() ?? null): void {
+  if (!win || win.isDestroyed()) {
+    return;
+  }
+
+  exitAllFullscreenModes(win);
+
   if (win.isMinimized()) {
     win.restore();
   }
+
+  if (process.platform === 'darwin') {
+    try {
+      win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    } catch {
+      // ignore
+    }
+  }
+
   win.show();
+  win.moveTop();
   win.focus();
+
+  if (process.platform === 'darwin') {
+    app.focus({ steal: true });
+    app.dock?.show();
+    setTimeout(() => {
+      if (!win.isDestroyed()) {
+        try {
+          win.setVisibleOnAllWorkspaces(false);
+        } catch {
+          // ignore
+        }
+      }
+    }, 400);
+  }
+}
+
+function applyPlayerFullscreen(win: BrowserWindow, fullScreen: boolean): boolean {
+  // Не используем setFullScreen / setSimpleFullScreen — на Mac окно теряется.
+  exitAllFullscreenModes(win);
+
+  if (fullScreen) {
+    if (!win.isMaximized()) {
+      win.maximize();
+    }
+  } else if (win.isMaximized()) {
+    win.unmaximize();
+  }
+
+  return win.isMaximized();
 }
 
 export function registerWindowChromeIpc(getWindow: () => BrowserWindow | null): void {
-  app.on('before-quit', () => {
-    isAppQuitting = true;
-  });
+  getMainWindow = getWindow;
 
   ipcMain.handle(IPC_CHANNELS.windowChrome.setSidebarCollapsed, (_event, collapsed: boolean) => {
     if (process.platform !== 'darwin') {
@@ -71,37 +120,43 @@ export function registerWindowChromeIpc(getWindow: () => BrowserWindow | null): 
     if (!win || win.isDestroyed()) {
       return false;
     }
-    const applied = applyFullscreen(win, Boolean(fullScreen));
+    const applied = applyPlayerFullscreen(win, Boolean(fullScreen));
     if (!fullScreen) {
-      restoreAndFocus(win);
+      forceRevealMainWindow(win);
+    } else {
+      win.show();
+      win.focus();
     }
     win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, applied);
     return applied;
   });
 
   ipcMain.handle(IPC_CHANNELS.windowChrome.focusMain, () => {
-    const win = getWindow();
-    if (!win || win.isDestroyed()) {
-      return;
-    }
-    restoreAndFocus(win);
+    forceRevealMainWindow(getWindow());
   });
 
   ipcMain.handle(IPC_CHANNELS.windowChrome.setPlayerOpen, (_event, open: boolean) => {
     playerOverlayOpen = Boolean(open);
+    if (open) {
+      forceRevealMainWindow(getWindow());
+    }
   });
 }
 
-/** Bind close/minimize/fullscreen so player ≠ app quit and Mac Space не «съедает» окно. */
 export function bindMainWindowChrome(win: BrowserWindow): void {
   win.on('enter-full-screen', () => {
+    if (playerOverlayOpen) {
+      exitAllFullscreenModes(win);
+      win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, win.isMaximized());
+      forceRevealMainWindow(win);
+      return;
+    }
     win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, true);
   });
   win.on('leave-full-screen', () => {
     win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, false);
   });
   win.on('enter-html-full-screen', () => {
-    // Блокируем HTML fullscreen — уводит окно в странное состояние на Mac.
     if (win.isDestroyed()) {
       return;
     }
@@ -111,37 +166,24 @@ export function bindMainWindowChrome(win: BrowserWindow): void {
   });
 
   win.on('minimize', () => {
-    // Из fullscreen-Space minimize делает окно невидимым — сначала выходим.
-    if (isWindowFullscreen(win)) {
-      applyFullscreen(win, false);
-      win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, false);
+    exitAllFullscreenModes(win);
+    win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, false);
+
+    // Пока играет плеер — не даём окну пропасть в никуда.
+    if (playerOverlayOpen) {
+      setTimeout(() => {
+        if (!win.isDestroyed() && playerOverlayOpen) {
+          forceRevealMainWindow(win);
+        }
+      }, 0);
     }
   });
 
-  win.on('close', (event) => {
-    if (isAppQuitting) {
-      return;
-    }
-
-    // Пока открыт плеер — красный крестик / Cmd+W закрывают только плеер.
-    if (playerOverlayOpen) {
-      event.preventDefault();
-      applyFullscreen(win, false);
-      win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, false);
-      win.webContents.send(IPC_CHANNELS.windowChrome.closePlayer);
-      win.show();
-      win.focus();
-      return;
-    }
-
-    // macOS: hide вместо destroy — окно не «пропадает», Dock вернёт.
-    if (process.platform === 'darwin') {
-      event.preventDefault();
-      if (isWindowFullscreen(win)) {
-        applyFullscreen(win, false);
-        win.webContents.send(IPC_CHANNELS.windowChrome.fullScreenChanged, false);
-      }
-      win.hide();
+  // Крестик = полное закрытие приложения (как раньше). Без hide в Dock.
+  win.on('close', () => {
+    if (!appQuitting) {
+      markAppQuitting();
+      app.quit();
     }
   });
 }

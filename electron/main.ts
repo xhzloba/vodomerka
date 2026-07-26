@@ -15,7 +15,13 @@ import { registerPluginsIpc } from './ipc/plugins';
 import { registerDetailIpc } from './ipc/detail';
 import { configureAppBranding, APP_NAME } from './branding';
 import { registerAppMenu } from './menu';
-import { registerWindowChromeIpc, getMacTrafficLightPosition, bindMainWindowChrome } from './ipc/windowChrome';
+import {
+  registerWindowChromeIpc,
+  getMacTrafficLightPosition,
+  bindMainWindowChrome,
+  markAppQuitting,
+  forceRevealMainWindow,
+} from './ipc/windowChrome';
 import { registerSystemIpc } from './ipc/system';
 import { registerTorrentsIpc, shutdownTorrentsIpc } from './ipc/torrents';
 import { registerMediaIpc, shutdownMediaIpc } from './ipc/media';
@@ -52,11 +58,7 @@ function focusMainWindow(): void {
   if (!mainWindow || mainWindow.isDestroyed()) {
     return;
   }
-  if (mainWindow.isMinimized()) {
-    mainWindow.restore();
-  }
-  mainWindow.show();
-  mainWindow.focus();
+  forceRevealMainWindow(mainWindow);
 }
 
 function applyWindowTitle(win: BrowserWindow): void {
@@ -135,7 +137,7 @@ function createWindow() {
 }
 
 app.on('second-instance', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
+  if (!mainWindow || mainWindow.isDestroyed()) {
     createWindow();
     return;
   }
@@ -162,19 +164,20 @@ app.whenReady().then(() => {
   createWindow();
 });
 
+app.on('before-quit', () => {
+  markAppQuitting();
+});
+
 app.on('window-all-closed', () => {
-  // На Mac окно скрываем (hide), процесс живёт — иначе «пропало и не найти».
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  app.quit();
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
+  if (!mainWindow || mainWindow.isDestroyed()) {
     createWindow();
-  } else {
-    focusMainWindow();
+    return;
   }
+  focusMainWindow();
 });
 
 app.on('will-quit', () => {

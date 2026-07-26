@@ -34,6 +34,8 @@ export {
   FullscreenExitIcon,
   CaptionsIcon,
   PictureInPictureIcon,
+  SkipBack10Icon,
+  SkipForward10Icon,
   SearchIcon,
   FilterIcon,
   LayersIcon,

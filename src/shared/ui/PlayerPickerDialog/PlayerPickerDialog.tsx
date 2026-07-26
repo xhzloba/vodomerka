@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { MediaPlayerOption } from '../../../../contracts/ipc';
-import { CloseIcon } from '@/shared/ui/icons';
+import { CheckIcon, CloseIcon } from '@/shared/ui/icons';
 import './PlayerPickerDialog.css';
 
 interface PlayerPickerDialogProps {
@@ -15,10 +15,10 @@ interface PlayerPickerDialogProps {
 
 function playerKindLabel(kind: MediaPlayerOption['kind']): string {
   if (kind === 'builtin') {
-    return 'Встроенный · по умолчанию';
+    return 'В приложении';
   }
   if (kind === 'system') {
-    return 'Через ассоциации ОС';
+    return 'Плеер по умолчанию';
   }
   return 'Установлен в системе';
 }
@@ -124,7 +124,7 @@ export function PlayerPickerDialog({
                 {title}
               </h2>
               <p id="player-picker-hint" className="player-picker__hint">
-                Чем открыть скачанный файл?
+                Чем открыть файл?
               </p>
             </div>
             <button
@@ -134,50 +134,50 @@ export function PlayerPickerDialog({
               onClick={onCancel}
               disabled={isOpening}
             >
-              <CloseIcon size={18} />
+              <CloseIcon size={15} strokeWidth={2.25} />
             </button>
           </div>
 
           <div className="player-picker__list" role="radiogroup" aria-label="Плееры">
             {loading ? (
-              <p className="player-picker__loading">Ищем установленные плееры…</p>
+              <p className="player-picker__loading">Ищем плееры…</p>
             ) : (
-              players.map((player) => {
+              players.map((player, index) => {
                 const selected = selectedId === player.id;
                 return (
                   <button
                     key={player.id}
                     type="button"
                     className={`player-picker__option${selected ? ' is-selected' : ''}${
-                      player.kind === 'builtin' ? ' is-builtin' : ''
-                    }`}
+                      index === 0 ? ' is-first' : ''
+                    }${index === players.length - 1 ? ' is-last' : ''}`}
                     role="radio"
                     aria-checked={selected}
                     onClick={() => setSelectedId(player.id)}
                     disabled={isOpening}
                   >
-                    <span className="player-picker__radio" aria-hidden="true" />
                     <span className="player-picker__meta">
                       <span className="player-picker__name">{player.name}</span>
                       <span className="player-picker__kind">{playerKindLabel(player.kind)}</span>
                     </span>
-                    {player.kind === 'builtin' ? (
-                      <span className="player-picker__badge">Встроенный</span>
-                    ) : null}
+                    <span className="player-picker__check" aria-hidden="true">
+                      {selected ? <CheckIcon size={15} strokeWidth={2.5} /> : null}
+                    </span>
                   </button>
                 );
               })
             )}
           </div>
 
-          <label className="player-picker__remember">
+          <label className={`player-picker__remember${remember ? ' is-on' : ''}`}>
             <input
               type="checkbox"
               checked={remember}
               onChange={(event) => setRemember(event.target.checked)}
               disabled={isOpening}
             />
-            <span>Запомнить как плеер по умолчанию</span>
+            <span className="player-picker__switch" aria-hidden="true" />
+            <span className="player-picker__remember-label">Запомнить выбор</span>
           </label>
 
           <div className="player-picker__actions">
