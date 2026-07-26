@@ -5,6 +5,7 @@ import {
   CONTINUE_UPSERT_THROTTLE_MS,
   continueWatchingIdForSession,
   isContinueProgressComplete,
+  isContinueSerialPlayback,
   shouldPersistContinueProgress,
 } from '@/shared/domain/continueWatchingProgress';
 import { usePlayer } from '@/shared/domain/PlayerContext';
@@ -213,11 +214,13 @@ export function NativePlayer() {
 
       if (completed) {
         await removeProgress(id);
-        const item = buildContinueUpsertPayload(session, position, total, sessionTorrent).item;
-        // Фильмы → «Просмотренное». У сериалов (несколько серий) только убираем из «Продолжить».
-        const isSeries = Boolean(sessionTorrent && hasMultipleEpisodes(sessionTorrent.files));
-        if (!isSeries && item.id && !item.id.startsWith('torrent:')) {
-          await setStatus(item, 'watched', { silent: true });
+        // Сериалы (сезоны/серии) — только убрать из «Продолжить», в watched не кидаем.
+        // Раньше ловили лишь «несколько файлов», и одна скачанная серия уезжала в «Фильмы».
+        if (!isContinueSerialPlayback(session, sessionTorrent)) {
+          const item = buildContinueUpsertPayload(session, position, total, sessionTorrent).item;
+          if (item.id && !item.id.startsWith('torrent:') && item.type === 'movie') {
+            await setStatus(item, 'watched', { silent: true });
+          }
         }
         return;
       }

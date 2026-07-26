@@ -103,6 +103,19 @@ export function isContinueSerialRecord(record: ContinueWatchingRecord): boolean 
   return season != null || episode != null;
 }
 
+/** Сериал: SxxExx в пути, type=serial, или несколько видеофайлов в торренте. */
+export function isContinueSerialPlayback(
+  session: Pick<MediaPlaybackSession, 'sourcePath' | 'filePath'>,
+  torrent?: TorrentDownloadRecord | null,
+): boolean {
+  const filePath = session.sourcePath || session.filePath;
+  const { season, episode } = getContinueEpisodeInfo(filePath);
+  if (season != null || episode != null) {
+    return true;
+  }
+  return Boolean(torrent && hasMultipleEpisodes(torrent.files));
+}
+
 export function buildContinueMediaItem(
   session: MediaPlaybackSession,
   torrent?: TorrentDownloadRecord | null,
@@ -113,12 +126,7 @@ export function buildContinueMediaItem(
     (session.torrentId ? `torrent:${session.torrentId}` : 'unknown');
   const title = torrent?.mediaTitle || torrent?.title || session.title || 'Видео';
   const poster = session.posterUrl || torrent?.posterUrl || '';
-  const filePath = session.sourcePath || session.filePath;
-  const { season, episode } = getContinueEpisodeInfo(filePath);
-  const isSerial =
-    season != null ||
-    episode != null ||
-    Boolean(torrent && hasMultipleEpisodes(torrent.files));
+  const isSerial = isContinueSerialPlayback(session, torrent);
 
   return {
     id: mediaId,
