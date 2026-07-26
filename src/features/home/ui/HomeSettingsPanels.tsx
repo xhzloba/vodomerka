@@ -6,19 +6,21 @@ import {
   getHeroSliderSourceRows,
   resolveHeroSourceSectionIds,
   restoreHomeSection,
+  HOME_CONTINUE_SECTION_TITLE,
   HOME_RECENTLY_VIEWED_SECTION_TITLE,
 } from '@/shared/domain/homeSections';
 import {
   clampHeroSlideIntervalSec,
   HERO_SLIDE_INTERVAL_MAX_SEC,
   HERO_SLIDE_INTERVAL_MIN_SEC,
+  HOME_CONTINUE_WATCHING_SECTION_MODE_OPTIONS,
   HOME_FAVORITES_SECTION_MODE_OPTIONS,
   HOME_RECENTLY_VIEWED_SECTION_MODE_OPTIONS,
 } from '@/shared/settings/types';
 import { SettingsCheckbox } from '@/shared/ui/SettingsControls/SettingsCheckbox';
 import { SettingsGlyph } from '@/shared/ui/SettingsControls/SettingsGlyph';
 import { SettingsSwitch } from '@/shared/ui/SettingsControls/SettingsSwitch';
-import { FavoritesIcon, HistoryIcon, HomeIcon, TrendingIcon } from '@/shared/ui/icons';
+import { FavoritesIcon, HistoryIcon, HomeIcon, PlayIcon, TrendingIcon } from '@/shared/ui/icons';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import '@/components/SettingsView/SettingsView.css';
 import './HomeSettingsPanels.css';
@@ -90,6 +92,46 @@ export function HomeSettingsPanels({ variant = 'settings' }: HomeSettingsPanelsP
         </div>
         <p className="settings-group__footer">
           Большой hero-баннер: backdrop, метаданные и кнопки «Смотреть» / «Подробнее».
+        </p>
+      </section>
+
+      <section className="settings-group" aria-labelledby="home-settings-continue-title">
+        <h2 id="home-settings-continue-title" className="settings-group__title">
+          {HOME_CONTINUE_SECTION_TITLE}
+        </h2>
+        <div className="settings-panel">
+          <div
+            className="settings-choice-list"
+            role="radiogroup"
+            aria-label={`Режим секции «${HOME_CONTINUE_SECTION_TITLE}»`}
+          >
+            {HOME_CONTINUE_WATCHING_SECTION_MODE_OPTIONS.map((option) => {
+              const isActive = settings.homeContinueWatchingSection === option.id;
+
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  className={`settings-choice${isActive ? ' settings-choice--active' : ''}`}
+                  onClick={() => void updateSettings({ homeContinueWatchingSection: option.id })}
+                >
+                  <SettingsGlyph tone="pink">
+                    <PlayIcon size={15} />
+                  </SettingsGlyph>
+                  <span className="settings-choice__body">
+                    <span className="settings-choice__label">{option.label}</span>
+                    <span className="settings-choice__hint">{option.hint}</span>
+                  </span>
+                  <SettingsCheckbox checked={isActive} decorative />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <p className="settings-group__footer">
+          Незавершённые просмотры из Vodomerka Player — клик продолжит с позиции.
         </p>
       </section>
 

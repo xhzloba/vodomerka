@@ -1,14 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TOP250_COMPILATION_TARGET, type CompilationNavigationTarget } from '@/app/navigation/compilationTarget';
 import { useHomePage } from '@/features/home/model/useHomePage';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
+import { useContinueWatching } from '@/shared/domain/ContinueWatchingContext';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
+import { usePlayer } from '@/shared/domain/PlayerContext';
 import { useRecentlyViewed } from '@/shared/domain/RecentlyViewedContext';
+import { useTorrents } from '@/shared/domain/TorrentsContext';
 import type { ContentRow as ContentRowData, MediaItem } from '@/shared/domain/media';
 import {
   getHiddenHomeSectionIds,
   hideHomeSection,
+  HOME_CONTINUE_SECTION_ID,
+  HOME_CONTINUE_SECTION_TITLE,
   HOME_FAVORITES_SECTION_ID,
   HOME_FAVORITES_SECTION_TITLE,
   HOME_RECENTLY_VIEWED_SECTION_ID,
@@ -18,12 +23,13 @@ import {
   orderVisibleHomeRows,
   resolveHeroItems,
   resolveHeroSourceSectionIds,
+  shouldShowHomeContinueSection,
   shouldShowHomeFavoritesSection,
   shouldShowHomeRecentlyViewedSection,
 } from '@/shared/domain/homeSections';
 import { playSubmenuSound } from '@/shared/audio/uiSounds';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
-import { FavoritesIcon, HistoryIcon } from '@/shared/ui/icons';
+import { FavoritesIcon, HistoryIcon, PlayIcon } from '@/shared/ui/icons';
 import { useAppTopProgress } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog/ConfirmDialog';
 import { PageError, PageLoading } from '@/shared/ui/PageState';
@@ -44,6 +50,9 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
   const { showToast } = useToast();
   const { favorites } = useFavorites();
   const { recentlyViewed } = useRecentlyViewed();
+  const { items: continueItems, records: continueRecords, findByMediaId } = useContinueWatching();
+  const { torrents } = useTorrents();
+  const { playTorrent } = usePlayer();
   const { data, isLoading, isError, error, reload, isRefreshing } = useHomePage();
 
   useAppTopProgress(
@@ -93,6 +102,12 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
     [data?.rows, hiddenSectionIds, settings.homeSectionRestoreOrder],
   );
 
+  const showContinueSection = shouldShowHomeContinueSection(
+    settings.homeContinueWatchingSection,
+    continueItems.length,
+    hiddenSectionIds,
+  );
+
   const showFavoritesSection = shouldShowHomeFavoritesSection(
     settings.homeFavoritesSection,
     favorites.length,
@@ -103,6 +118,44 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
     settings.homeRecentlyViewedSection,
     recentlyViewed.length,
     hiddenSectionIds,
+  );
+
+  const handleContinueSelect = useCallback(
+    async (item: MediaItem) => {
+      const record =
+        continueRecords.find((entry) => entry.item.id === item.id) ?? findByMediaId(item.id);
+      if (!record?.torrentId) {
+        onMediaSelect(item);
+        return;
+      }
+
+      const torrent = torrents.find((entry) => entry.id === record.torrentId);
+      if (!torrent) {
+        onMediaSelect(item);
+        return;
+      }
+
+      const result = await playTorrent(
+        record.torrentId,
+        record.filePath,
+        record.positionSeconds > 0 ? record.positionSeconds : undefined,
+      );
+      if (!result.ok) {
+        showToast(result.error || 'Не удалось продолжить просмотр', {
+          kind: 'error',
+          title: 'Плеер',
+        });
+        onMediaSelect(item);
+      }
+    },
+    [
+      continueRecords,
+      findByMediaId,
+      onMediaSelect,
+      playTorrent,
+      showToast,
+      torrents,
+    ],
   );
 
   const heroItems = useMemo(
@@ -186,6 +239,23 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
       <div
         className={`home-view__content${settings.heroEnabled ? '' : ' home-view__content--no-hero'}`}
       >
+        {showContinueSection ? (
+          <ContentRow
+            title={HOME_CONTINUE_SECTION_TITLE}
+            icon={<PlayIcon size={22} />}
+            items={continueItems}
+            onMediaSelect={(item) => {
+              void handleContinueSelect(item);
+            }}
+            onHide={() =>
+              requestHideSection({
+                id: HOME_CONTINUE_SECTION_ID,
+                title: HOME_CONTINUE_SECTION_TITLE,
+              })
+            }
+          />
+        ) : null}
+
         {showFavoritesSection ? (
           <ContentRow
             title={HOME_FAVORITES_SECTION_TITLE}

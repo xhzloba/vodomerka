@@ -1,6 +1,10 @@
 import type { ContentRow, MediaItem } from '@/shared/domain/media';
 import type { HiddenHomeSection, HomeFavoritesSectionMode } from '@/shared/settings/types';
 
+export const HOME_CONTINUE_SECTION_ID = '__home_continue__';
+export const HOME_CONTINUE_SECTION_TITLE = 'Продолжить просмотр';
+export const HOME_CONTINUE_AUTO_MIN_COUNT = 1;
+
 export const HOME_FAVORITES_SECTION_ID = '__home_favorites__';
 export const HOME_FAVORITES_SECTION_TITLE = 'Избранное';
 export const HOME_FAVORITES_AUTO_MIN_COUNT = 3;
@@ -26,6 +30,10 @@ export const DEFAULT_HIDDEN_BUILTIN_HOME_SECTIONS: HiddenHomeSection[] = [
   { id: HOME_MOVIE_UPDATES_SECTION_ID, title: HOME_MOVIE_UPDATES_SECTION_TITLE },
   { id: HOME_MULTFILM_SECTION_ID, title: HOME_MULTFILM_SECTION_TITLE },
 ];
+
+export function isHomeContinueSectionId(id: string): boolean {
+  return id === HOME_CONTINUE_SECTION_ID;
+}
 
 export function isHomeFavoritesSectionId(id: string): boolean {
   return id === HOME_FAVORITES_SECTION_ID;
@@ -234,6 +242,30 @@ export function orderVisibleHomeRows(
   );
 
   return [...trending, ...natural, ...restored];
+}
+
+export function shouldShowHomeContinueSection(
+  mode: HomeFavoritesSectionMode,
+  continueCount: number,
+  hiddenIds: ReadonlySet<string>,
+): boolean {
+  if (continueCount === 0) {
+    return false;
+  }
+
+  if (hiddenIds.has(HOME_CONTINUE_SECTION_ID)) {
+    return false;
+  }
+
+  if (mode === 'off') {
+    return false;
+  }
+
+  if (mode === 'on') {
+    return true;
+  }
+
+  return continueCount >= HOME_CONTINUE_AUTO_MIN_COUNT;
 }
 
 export function shouldShowHomeFavoritesSection(

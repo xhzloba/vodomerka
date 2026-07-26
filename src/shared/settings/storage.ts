@@ -11,6 +11,7 @@ import {
   normalizeHomeSectionRestoreOrder,
   normalizeHomeFavoritesSection,
   normalizeHomeRecentlyViewedSection,
+  normalizeHomeContinueWatchingSection,
   normalizePosterSize,
   normalizeSidebarMenuAnimation,
   normalizeSidebarStyle,
@@ -136,6 +137,9 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     homeSectionRestoreOrder: normalizeHomeSectionRestoreOrder(value.homeSectionRestoreOrder),
     homeFavoritesSection: normalizeHomeFavoritesSection(value.homeFavoritesSection),
     homeRecentlyViewedSection: normalizeHomeRecentlyViewedSection(value.homeRecentlyViewedSection),
+    homeContinueWatchingSection: normalizeHomeContinueWatchingSection(
+      value.homeContinueWatchingSection,
+    ),
     setupWelcomeDismissed: value.setupWelcomeDismissed ?? true,
     browseCategoryHintDismissed: value.browseCategoryHintDismissed ?? false,
     autoTipsEnabled: value.autoTipsEnabled ?? DEFAULT_APP_SETTINGS.autoTipsEnabled,

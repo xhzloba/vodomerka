@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from 'react';
+import { ContinueWatchingProvider } from '@/shared/domain/ContinueWatchingContext';
 import { FavoritesProvider } from '@/shared/domain/FavoritesContext';
 import { MediaDragProvider } from '@/shared/domain/MediaDragContext';
 import { PlayerProvider } from '@/shared/domain/PlayerContext';
@@ -15,16 +16,18 @@ export function AppProviders({ children }: PropsWithChildren) {
       <FavoritesProvider>
         <WatchedProvider>
           <RecentlyViewedProvider>
-            <TorrentsProvider>
-              <PlayerProvider>
-                <ToastProvider>
-                  <MediaDragProvider>
-                    {children}
-                    <NativePlayer />
-                  </MediaDragProvider>
-                </ToastProvider>
-              </PlayerProvider>
-            </TorrentsProvider>
+            <ContinueWatchingProvider>
+              <TorrentsProvider>
+                <PlayerProvider>
+                  <ToastProvider>
+                    <MediaDragProvider>
+                      {children}
+                      <NativePlayer />
+                    </MediaDragProvider>
+                  </ToastProvider>
+                </PlayerProvider>
+              </TorrentsProvider>
+            </ContinueWatchingProvider>
           </RecentlyViewedProvider>
         </WatchedProvider>
       </FavoritesProvider>

@@ -10,6 +10,7 @@ function broadcastCollectionsChanged(): void {
 
     window.webContents.send(IPC_CHANNELS.favorites.changed);
     window.webContents.send(IPC_CHANNELS.recentlyViewed.changed);
+    window.webContents.send(IPC_CHANNELS.continueWatching.changed);
     window.webContents.send(IPC_CHANNELS.watched.changed);
   }
 }

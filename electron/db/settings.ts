@@ -29,6 +29,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   homeSectionRestoreOrder: [],
   homeFavoritesSection: 'auto',
   homeRecentlyViewedSection: 'auto',
+  homeContinueWatchingSection: 'auto',
   setupWelcomeDismissed: false,
   browseCategoryHintDismissed: false,
   autoTipsEnabled: true,
@@ -65,6 +66,7 @@ const SETTING_KEYS = {
   homeSectionRestoreOrder: 'home_section_restore_order',
   homeFavoritesSection: 'home_favorites_section',
   homeRecentlyViewedSection: 'home_recently_viewed_section',
+  homeContinueWatchingSection: 'home_continue_watching_section',
   setupWelcomeDismissed: 'setup_welcome_dismissed',
   browseCategoryHintDismissed: 'browse_category_hint_dismissed',
   autoTipsEnabled: 'auto_tips_enabled',
@@ -235,6 +237,10 @@ function getDefaultSettingEntries(): Array<{ key: string; value: string }> {
       value: DEFAULT_SETTINGS.homeRecentlyViewedSection,
     },
     {
+      key: SETTING_KEYS.homeContinueWatchingSection,
+      value: DEFAULT_SETTINGS.homeContinueWatchingSection,
+    },
+    {
       key: SETTING_KEYS.setupWelcomeDismissed,
       value: DEFAULT_SETTINGS.setupWelcomeDismissed ? '1' : '0',
     },
@@ -349,6 +355,16 @@ function normalizeHomeRecentlyViewedSection(
   }
 
   return DEFAULT_SETTINGS.homeRecentlyViewedSection;
+}
+
+function normalizeHomeContinueWatchingSection(
+  value: string | undefined,
+): AppSettings['homeContinueWatchingSection'] {
+  if (value === 'on' || value === 'off') {
+    return value;
+  }
+
+  return DEFAULT_SETTINGS.homeContinueWatchingSection;
 }
 
 function normalizeCatalogRowGap(value: string | undefined): AppSettings['catalogRowGap'] {
@@ -559,6 +575,10 @@ function parseSettings(database: Database.Database): AppSettings {
   const homeSectionRestoreOrderRaw = readSetting(database, SETTING_KEYS.homeSectionRestoreOrder);
   const homeFavoritesSectionRaw = readSetting(database, SETTING_KEYS.homeFavoritesSection);
   const homeRecentlyViewedSectionRaw = readSetting(database, SETTING_KEYS.homeRecentlyViewedSection);
+  const homeContinueWatchingSectionRaw = readSetting(
+    database,
+    SETTING_KEYS.homeContinueWatchingSection,
+  );
   const setupWelcomeDismissedRaw = readSetting(database, SETTING_KEYS.setupWelcomeDismissed);
   const browseCategoryHintDismissedRaw = readSetting(database, SETTING_KEYS.browseCategoryHintDismissed);
   const autoTipsEnabledRaw = readSetting(database, SETTING_KEYS.autoTipsEnabled);
@@ -587,6 +607,9 @@ function parseSettings(database: Database.Database): AppSettings {
     homeSectionRestoreOrder: parseHomeSectionRestoreOrder(homeSectionRestoreOrderRaw),
     homeFavoritesSection: normalizeHomeFavoritesSection(homeFavoritesSectionRaw),
     homeRecentlyViewedSection: normalizeHomeRecentlyViewedSection(homeRecentlyViewedSectionRaw),
+    homeContinueWatchingSection: normalizeHomeContinueWatchingSection(
+      homeContinueWatchingSectionRaw,
+    ),
     setupWelcomeDismissed: setupWelcomeDismissedRaw === '1',
     browseCategoryHintDismissed: browseCategoryHintDismissedRaw === '1',
     autoTipsEnabled: autoTipsEnabledRaw !== '0',
@@ -741,6 +764,13 @@ export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
     upsert.run({
       key: SETTING_KEYS.homeRecentlyViewedSection,
       value: normalizeHomeRecentlyViewedSection(patch.homeRecentlyViewedSection),
+    });
+  }
+
+  if (patch.homeContinueWatchingSection !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.homeContinueWatchingSection,
+      value: normalizeHomeContinueWatchingSection(patch.homeContinueWatchingSection),
     });
   }
 

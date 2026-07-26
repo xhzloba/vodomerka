@@ -40,6 +40,20 @@ export function getDatabase(): Database.Database {
       watched_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
       status TEXT NOT NULL DEFAULT 'watched'
     );
+
+    CREATE TABLE IF NOT EXISTS continue_watching (
+      id TEXT PRIMARY KEY NOT NULL,
+      media_id TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      torrent_id TEXT,
+      file_path TEXT,
+      position_seconds REAL NOT NULL,
+      duration_seconds REAL,
+      updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_continue_watching_updated_at
+      ON continue_watching (updated_at DESC);
   `);
 
   // Legacy DBs created before status column.

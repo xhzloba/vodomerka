@@ -13,6 +13,8 @@ import {
   type OpenInPlayerResult,
   type PluginInstallProgressEvent,
   type PluginResult,
+  type ContinueWatchingRecord,
+  type ContinueWatchingUpsertPayload,
   type StoredMediaItem,
   type ThemeCatalog,
   type TorrentAddPayload,
@@ -102,6 +104,23 @@ const electronApi: ElectronApi = {
       ipcRenderer.on(IPC_CHANNELS.recentlyViewed.changed, listener);
       return () => {
         ipcRenderer.removeListener(IPC_CHANNELS.recentlyViewed.changed, listener);
+      };
+    },
+  },
+  continueWatching: {
+    list: (): Promise<ContinueWatchingRecord[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.continueWatching.list),
+    upsert: (payload: ContinueWatchingUpsertPayload): Promise<ContinueWatchingRecord[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.continueWatching.upsert, payload),
+    remove: (id: string): Promise<ContinueWatchingRecord[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.continueWatching.remove, id),
+    clear: (): Promise<ContinueWatchingRecord[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.continueWatching.clear),
+    onChanged: (callback: () => void) => {
+      const listener = () => callback();
+      ipcRenderer.on(IPC_CHANNELS.continueWatching.changed, listener);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.continueWatching.changed, listener);
       };
     },
   },

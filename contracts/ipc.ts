@@ -68,6 +68,7 @@ export interface AppSettings {
   homeSectionRestoreOrder: string[];
   homeFavoritesSection: HomeSectionMode;
   homeRecentlyViewedSection: HomeSectionMode;
+  homeContinueWatchingSection: HomeSectionMode;
   setupWelcomeDismissed: boolean;
   browseCategoryHintDismissed: boolean;
   autoTipsEnabled: boolean;
@@ -101,6 +102,26 @@ export interface StoredMediaItem {
 export interface WatchStatusRecord {
   item: StoredMediaItem;
   status: WatchStatus;
+}
+
+export interface ContinueWatchingRecord {
+  id: string;
+  mediaId: string;
+  item: StoredMediaItem;
+  torrentId?: string;
+  filePath?: string;
+  positionSeconds: number;
+  durationSeconds?: number;
+  updatedAt: number;
+}
+
+export interface ContinueWatchingUpsertPayload {
+  mediaId?: string;
+  item: StoredMediaItem;
+  torrentId?: string;
+  filePath?: string;
+  positionSeconds: number;
+  durationSeconds?: number;
 }
 
 export interface MediaOverride {
@@ -157,6 +178,13 @@ export const IPC_CHANNELS = {
     track: 'recentlyViewed:track',
     clear: 'recentlyViewed:clear',
     changed: 'recentlyViewed:changed',
+  },
+  continueWatching: {
+    list: 'continueWatching:list',
+    upsert: 'continueWatching:upsert',
+    remove: 'continueWatching:remove',
+    clear: 'continueWatching:clear',
+    changed: 'continueWatching:changed',
   },
   watched: {
     list: 'watched:list',
@@ -285,6 +313,8 @@ export interface MediaPlaybackSession {
   torrentId: string;
   title: string;
   posterUrl?: string;
+  /** Catalog / detail media id when known (manual magnets may omit). */
+  mediaId?: string;
   url: string;
   filePath: string;
   sourcePath: string;
@@ -296,6 +326,8 @@ export interface MediaPlaybackSession {
   durationSeconds?: number;
   /** Seek by restarting the remux at ?t=seconds (complete files on disk). */
   serverSeek?: boolean;
+  /** Resume position applied once after metadata loads. */
+  startSeconds?: number;
 }
 
 export type MediaPreparePlaybackResult =
@@ -361,6 +393,13 @@ export interface ElectronApi {
     list: () => Promise<StoredMediaItem[]>;
     track: (item: StoredMediaItem) => Promise<StoredMediaItem[]>;
     clear: () => Promise<StoredMediaItem[]>;
+    onChanged: (callback: () => void) => Unsubscribe;
+  };
+  continueWatching: {
+    list: () => Promise<ContinueWatchingRecord[]>;
+    upsert: (payload: ContinueWatchingUpsertPayload) => Promise<ContinueWatchingRecord[]>;
+    remove: (id: string) => Promise<ContinueWatchingRecord[]>;
+    clear: () => Promise<ContinueWatchingRecord[]>;
     onChanged: (callback: () => void) => Unsubscribe;
   };
   watched: {

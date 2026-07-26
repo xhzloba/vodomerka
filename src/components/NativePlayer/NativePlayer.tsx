@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useContinueWatching } from '@/shared/domain/ContinueWatchingContext';
+import {
+  buildContinueUpsertPayload,
+  CONTINUE_UPSERT_THROTTLE_MS,
+  continueWatchingIdForSession,
+  isContinueProgressComplete,
+  shouldPersistContinueProgress,
+} from '@/shared/domain/continueWatchingProgress';
 import { usePlayer } from '@/shared/domain/PlayerContext';
 import { useTorrents } from '@/shared/domain/TorrentsContext';
 import { formatPlaybackTitle, hasMultipleEpisodes } from '@/shared/domain/torrentEpisodes';
+import { useWatched } from '@/shared/domain/WatchedContext';
 import { EpisodePickerDialog } from '@/shared/ui/EpisodePickerDialog/EpisodePickerDialog';
 import {
   CaptionsIcon,
@@ -50,10 +59,15 @@ function withSeekQuery(url: string, seconds: number): string {
 export function NativePlayer() {
   const { session, isPreparing, prepareError, playTorrent, closePlayer } = usePlayer();
   const { torrents, openTorrentFile } = useTorrents();
+  const { upsertProgress, removeProgress } = useContinueWatching();
+  const { setStatus } = useWatched();
   const rootRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hideTimerRef = useRef<number | null>(null);
   const currentTimeRef = useRef(0);
+  const durationRef = useRef(0);
+  const lastUpsertAtRef = useRef(0);
+  const resumeAppliedKeyRef = useRef<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -140,14 +154,92 @@ export function NativePlayer() {
   useEffect(() => {
     setPlaybackError(null);
     setCurrentTime(0);
-    setSeekOrigin(0);
-    setVideoSrc(session?.url ?? '');
-    setBuffered(0);
+    currentTimeRef.current = 0;
+    lastUpsertAtRef.current = 0;
+    resumeAppliedKeyRef.current = null;
+
+    const start =
+      typeof session?.startSeconds === 'number' && session.startSeconds > 0
+        ? session.startSeconds
+        : 0;
+    const known = session?.durationSeconds && session.durationSeconds > 0 ? session.durationSeconds : 0;
+    const canServerResume = Boolean(session?.serverSeek && known > 0 && start > 0);
+
+    if (canServerResume && session) {
+      setSeekOrigin(start);
+      setCurrentTime(start);
+      currentTimeRef.current = start;
+      setVideoSrc(withSeekQuery(session.url, start));
+      resumeAppliedKeyRef.current = session.url;
+    } else {
+      setSeekOrigin(0);
+      setVideoSrc(session?.url ?? '');
+    }
+
+    setBuffered(canServerResume ? start : 0);
     setPlaying(false);
     setCaptionsOn(false);
     setHasTextTracks(false);
-    setDuration(session?.durationSeconds && session.durationSeconds > 0 ? session.durationSeconds : 0);
-  }, [session?.url, session?.durationSeconds]);
+    setDuration(known);
+    durationRef.current = known;
+  }, [session?.url, session?.durationSeconds, session?.startSeconds, session?.serverSeek]);
+
+  const persistContinueProgress = useCallback(
+    async (force = false) => {
+      if (!session) {
+        return;
+      }
+      const position = currentTimeRef.current;
+      const total =
+        durationRef.current > 0
+          ? durationRef.current
+          : session.durationSeconds && session.durationSeconds > 0
+            ? session.durationSeconds
+            : 0;
+
+      if (!shouldPersistContinueProgress(position, total)) {
+        return;
+      }
+
+      const now = Date.now();
+      if (!force && now - lastUpsertAtRef.current < CONTINUE_UPSERT_THROTTLE_MS) {
+        return;
+      }
+      lastUpsertAtRef.current = now;
+
+      const id = continueWatchingIdForSession(session, sessionTorrent);
+      if (isContinueProgressComplete(position, total)) {
+        await removeProgress(id);
+        const item = buildContinueUpsertPayload(session, position, total, sessionTorrent).item;
+        if (!item.id.startsWith('torrent:')) {
+          await setStatus(item, 'watched', { silent: true });
+        }
+        return;
+      }
+
+      await upsertProgress(buildContinueUpsertPayload(session, position, total, sessionTorrent));
+    },
+    [removeProgress, session, sessionTorrent, setStatus, upsertProgress],
+  );
+
+  useEffect(() => {
+    durationRef.current = duration;
+  }, [duration]);
+
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+    void persistContinueProgress(false);
+  }, [currentTime, persistContinueProgress, session]);
+
+  useEffect(() => {
+    return () => {
+      void persistContinueProgress(true);
+    };
+    // Final flush when player unmounts / session tears down via close.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally session-scoped
+  }, [session?.torrentId, session?.sourcePath]);
 
   const toggleFullscreen = useCallback(async () => {
     // Только Electron window fullscreen — не document.requestFullscreen (теряется окно на Mac).
@@ -164,9 +256,11 @@ export function NativePlayer() {
   }, []);
 
   const handleClosePlayer = useCallback(() => {
-    setIsFullscreen(false);
-    closePlayer();
-  }, [closePlayer]);
+    void persistContinueProgress(true).finally(() => {
+      setIsFullscreen(false);
+      closePlayer();
+    });
+  }, [closePlayer, persistContinueProgress]);
 
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
@@ -405,11 +499,32 @@ export function NativePlayer() {
               setHasTextTracks(event.currentTarget.textTracks.length > 0);
               if (useServerSeek && knownDuration > 0) {
                 setDuration(knownDuration);
+                durationRef.current = knownDuration;
+              }
+              const start = session.startSeconds;
+              const resumeKey = `${session.url}|${start ?? 0}`;
+              if (
+                start != null &&
+                start > 0 &&
+                !useServerSeek &&
+                resumeAppliedKeyRef.current !== resumeKey
+              ) {
+                resumeAppliedKeyRef.current = resumeKey;
+                try {
+                  event.currentTarget.currentTime = start;
+                  currentTimeRef.current = start;
+                  setCurrentTime(start);
+                } catch {
+                  // ignore seek failures on live streams
+                }
               }
               void event.currentTarget.play().catch(() => undefined);
             }}
             onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
+            onPause={() => {
+              setPlaying(false);
+              void persistContinueProgress(true);
+            }}
             onTimeUpdate={(event) => {
               const next = seekOrigin + event.currentTarget.currentTime;
               currentTimeRef.current = next;
@@ -418,11 +533,13 @@ export function NativePlayer() {
             onDurationChange={(event) => {
               if (useServerSeek && knownDuration > 0) {
                 setDuration(knownDuration);
+                durationRef.current = knownDuration;
                 return;
               }
               const next = event.currentTarget.duration;
               if (Number.isFinite(next) && next > 0) {
                 setDuration(next);
+                durationRef.current = next;
               }
             }}
             onProgress={(event) => {

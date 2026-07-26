@@ -6,6 +6,7 @@ import { applyThemeWindowChrome } from './themeChrome';
 import { registerApiIpc } from './ipc/api';
 import { registerFavoritesIpc } from './ipc/favorites';
 import { registerRecentlyViewedIpc } from './ipc/recentlyViewed';
+import { registerContinueWatchingIpc } from './ipc/continueWatching';
 import { registerWatchedIpc } from './ipc/watched';
 import { registerImagesIpc } from './ipc/images';
 import { registerOverridesIpc } from './ipc/overrides';
@@ -152,6 +153,7 @@ app.whenReady().then(() => {
   registerPluginsIpc(() => mainWindow);
   registerFavoritesIpc();
   registerRecentlyViewedIpc();
+  registerContinueWatchingIpc();
   registerWatchedIpc();
   registerApiIpc();
   registerImagesIpc();

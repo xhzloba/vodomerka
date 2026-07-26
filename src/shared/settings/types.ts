@@ -71,6 +71,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   homeSectionRestoreOrder: [],
   homeFavoritesSection: 'auto',
   homeRecentlyViewedSection: 'auto',
+  homeContinueWatchingSection: 'auto',
   setupWelcomeDismissed: false,
   browseCategoryHintDismissed: false,
   autoTipsEnabled: true,
@@ -206,6 +207,14 @@ export function normalizeHomeRecentlyViewedSection(value: unknown): HomeFavorite
   return DEFAULT_APP_SETTINGS.homeRecentlyViewedSection;
 }
 
+export function normalizeHomeContinueWatchingSection(value: unknown): HomeFavoritesSectionMode {
+  if (value === 'on' || value === 'off') {
+    return value;
+  }
+
+  return DEFAULT_APP_SETTINGS.homeContinueWatchingSection;
+}
+
 export function normalizeApiServer(value: unknown): ApiServerId {
   if (value === '2') {
     return '2';
@@ -249,6 +258,16 @@ export const HOME_FAVORITES_SECTION_MODE_OPTIONS: Array<{
 ];
 
 export const HOME_RECENTLY_VIEWED_SECTION_MODE_OPTIONS = HOME_FAVORITES_SECTION_MODE_OPTIONS;
+
+export const HOME_CONTINUE_WATCHING_SECTION_MODE_OPTIONS: Array<{
+  id: HomeFavoritesSectionMode;
+  label: string;
+  hint: string;
+}> = [
+  { id: 'auto', label: 'Авто', hint: 'Показывать, если есть незавершённые' },
+  { id: 'on', label: 'Всегда', hint: 'Показывать при любом количестве' },
+  { id: 'off', label: 'Скрыто', hint: 'Не показывать на главной' },
+];
 
 export const API_SERVER_OPTIONS: Array<{
   id: ApiServerId;

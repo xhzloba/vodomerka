@@ -16,6 +16,7 @@ interface PlayerContextValue {
   playTorrent: (
     torrentId: string,
     filePath?: string,
+    startSeconds?: number,
   ) => Promise<{ ok: true } | { ok: false; error: string }>;
   closePlayer: () => void;
 }
@@ -53,39 +54,48 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     });
   }, [closePlayer]);
 
-  const playTorrent = useCallback(async (torrentId: string, filePath?: string) => {
-    if (!window.electronAPI?.media?.prepareTorrentPlayback) {
-      const error = 'Плеер доступен только в приложении';
-      setPrepareError(error);
-      setIsPreparing(false);
-      setSession(null);
-      return { ok: false as const, error };
-    }
-
-    setIsPreparing(true);
-    setPrepareError(null);
-    setSession(null);
-
-    try {
-      const result = await window.electronAPI.media.prepareTorrentPlayback(
-        torrentId,
-        filePath,
-      );
-      if (!result.ok) {
-        setPrepareError(result.error);
+  const playTorrent = useCallback(
+    async (torrentId: string, filePath?: string, startSeconds?: number) => {
+      if (!window.electronAPI?.media?.prepareTorrentPlayback) {
+        const error = 'Плеер доступен только в приложении';
+        setPrepareError(error);
         setIsPreparing(false);
-        return { ok: false as const, error: result.error };
+        setSession(null);
+        return { ok: false as const, error };
       }
-      setSession(result.session);
-      setIsPreparing(false);
-      return { ok: true as const };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Ошибка плеера';
-      setPrepareError(message);
-      setIsPreparing(false);
-      return { ok: false as const, error: message };
-    }
-  }, []);
+
+      setIsPreparing(true);
+      setPrepareError(null);
+      setSession(null);
+
+      try {
+        const result = await window.electronAPI.media.prepareTorrentPlayback(
+          torrentId,
+          filePath,
+        );
+        if (!result.ok) {
+          setPrepareError(result.error);
+          setIsPreparing(false);
+          return { ok: false as const, error: result.error };
+        }
+        const resumeAt =
+          typeof startSeconds === 'number' && Number.isFinite(startSeconds) && startSeconds > 0
+            ? startSeconds
+            : undefined;
+        setSession(
+          resumeAt != null ? { ...result.session, startSeconds: resumeAt } : result.session,
+        );
+        setIsPreparing(false);
+        return { ok: true as const };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Ошибка плеера';
+        setPrepareError(message);
+        setIsPreparing(false);
+        return { ok: false as const, error: message };
+      }
+    },
+    [],
+  );
 
   const value = useMemo(
     () => ({

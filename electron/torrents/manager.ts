@@ -1112,6 +1112,7 @@ export function getTorrentPlaybackSource(
       filePath: string;
       title: string;
       posterUrl?: string;
+      mediaId?: string;
       done: boolean;
       progress: number;
       fileName: string;
@@ -1166,6 +1167,7 @@ export function getTorrentPlaybackSource(
     fileName: preferred.name || path.basename(target),
     title: episodeTitle,
     posterUrl: record.posterUrl,
+    mediaId: record.mediaId,
     done: torrentDone || liveDone,
     progress: liveProgress,
   };
