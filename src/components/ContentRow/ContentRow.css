@@ -29,16 +29,12 @@
   min-width: 0;
 }
 
-/* Match content-row slider nav height, with inset active pill. */
-.content-row__header-extra .ui-tabs--segmented {
-  --ui-segmented-pad: 3px;
-  --ui-segmented-radius: 999px;
-  --ui-segmented-pill-radius: 999px;
-
+.content-row__type-filter {
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
-  flex-wrap: nowrap;
   height: 36px;
-  padding: var(--ui-segmented-pad);
+  padding: 3px;
   border-radius: 999px;
   border: 1px solid var(--chrome-border);
   background: var(--chrome-surface);
@@ -46,29 +42,31 @@
   overflow: hidden;
 }
 
-.content-row__header-extra .ui-tabs--segmented .ui-tabs__tab {
-  min-height: 0;
+.content-row__type-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 30px;
   padding: 0 12px;
+  border: none;
   border-radius: 999px;
+  background: transparent;
+  color: var(--chrome-muted);
   font-size: 0.8125rem;
   font-weight: 510;
   letter-spacing: -0.01em;
-  color: var(--chrome-muted);
+  white-space: nowrap;
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
 }
 
-.content-row__header-extra .ui-tabs--segmented .ui-tabs__tab:hover {
-  color: var(--chrome-strong);
-  background: transparent;
-}
-
-.content-row__header-extra .ui-tabs--segmented .ui-tabs__tab--active,
-.content-row__header-extra .ui-tabs--segmented .ui-tabs__tab--active:hover {
+.content-row__type-filter-btn:hover {
   color: var(--chrome-strong);
 }
 
-.content-row__header-extra .ui-tabs__indicator--segmented {
-  border-radius: 999px;
+.content-row__type-filter-btn--active {
+  color: var(--chrome-strong);
   background: var(--chrome-surface-hover);
   box-shadow: inset 0 1px 0 var(--chrome-inset);
 }

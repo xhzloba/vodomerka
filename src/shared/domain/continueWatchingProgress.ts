@@ -95,6 +95,61 @@ export function formatContinueEpisodeBadge(filePath?: string | null): string | n
   return parts.join(' · ');
 }
 
+export function formatContinueTime(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return '0 сек';
+  }
+
+  const total = Math.floor(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const parts: string[] = [];
+
+  if (h > 0) {
+    parts.push(`${h} ч`);
+    if (m > 0) {
+      parts.push(`${m} мин`);
+    }
+    return parts.join(' ');
+  }
+
+  if (m > 0) {
+    parts.push(`${m} мин`);
+  }
+  if (s > 0 || parts.length === 0) {
+    parts.push(`${s} сек`);
+  }
+
+  return parts.join(' ');
+}
+
+export interface ContinueCardProgress {
+  id: string;
+  percent: number;
+  timeLabel: string;
+  episodeBadge: string | null;
+}
+
+export function continueRecordToCardProgress(
+  record: ContinueWatchingRecord,
+): ContinueCardProgress | null {
+  if (!Number.isFinite(record.positionSeconds) || record.positionSeconds <= 0) {
+    return null;
+  }
+  const duration = record.durationSeconds;
+  const percent =
+    duration && Number.isFinite(duration) && duration > 0
+      ? Math.min(100, Math.max(0, (record.positionSeconds / duration) * 100))
+      : 0;
+  return {
+    id: record.id,
+    percent,
+    timeLabel: formatContinueTime(record.positionSeconds),
+    episodeBadge: formatContinueEpisodeBadge(record.filePath),
+  };
+}
+
 export function isContinueSerialRecord(record: ContinueWatchingRecord): boolean {
   if (record.item.type === 'serial') {
     return true;

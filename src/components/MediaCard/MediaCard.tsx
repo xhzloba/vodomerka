@@ -1,7 +1,6 @@
-import { useCallback, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
+import { useCallback, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
-import { useContinueWatching } from '@/shared/domain/ContinueWatchingContext';
-import { formatContinueEpisodeBadge } from '@/shared/domain/continueWatchingProgress';
+import type { ContinueCardProgress } from '@/shared/domain/continueWatchingProgress';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { useMediaDrag } from '@/shared/domain/MediaDragContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
@@ -30,42 +29,15 @@ import {
 } from '@/shared/ui/icons';
 import './MediaCard.css';
 
-function formatContinueTime(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds <= 0) {
-    return '0 сек';
-  }
-
-  const total = Math.floor(seconds);
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  const parts: string[] = [];
-
-  if (h > 0) {
-    parts.push(`${h} ч`);
-    if (m > 0) {
-      parts.push(`${m} мин`);
-    }
-    // С часами секунды не показываем: «1 ч 30 мин»
-    return parts.join(' ');
-  }
-
-  if (m > 0) {
-    parts.push(`${m} мин`);
-  }
-  if (s > 0 || parts.length === 0) {
-    parts.push(`${s} сек`);
-  }
-
-  return parts.join(' ');
-}
-
 interface MediaCardProps {
   item: MediaItem;
   variant?: 'poster' | 'wide';
   isFocused?: boolean;
   /** In horizontal sliders: island drag only on upward pull so left-drag can scroll the row. */
   islandDragFrom?: 'any' | 'up';
+  /** Only pass from «Продолжить просмотр» — keeps other home cards off ContinueWatchingContext. */
+  continueProgress?: ContinueCardProgress | null;
+  onRemoveContinue?: (continueId: string) => void;
   onSelect: (item: MediaItem) => void;
 }
 
@@ -76,12 +48,13 @@ export function MediaCard({
   variant = 'poster',
   isFocused,
   islandDragFrom = 'any',
+  continueProgress = null,
+  onRemoveContinue,
   onSelect,
 }: MediaCardProps) {
   const { settings } = useAppSettings();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { getStatus, toggleStatus } = useWatched();
-  const { findByMediaId, removeProgress } = useContinueWatching();
   const { beginMediaDrag, updatePointer, releasePointer } = useMediaDrag();
   const { showToast } = useToast();
   const cardRef = useRef<HTMLElement>(null);
@@ -94,45 +67,25 @@ export function MediaCard({
   } | null>(null);
   const inFavorites = isFavorite(item.id);
   const watchStatus = getStatus(item.id);
-  const continueProgress = useMemo(() => {
-    const record = findByMediaId(item.id);
-    if (!record || !Number.isFinite(record.positionSeconds) || record.positionSeconds <= 0) {
-      return null;
-    }
-    const timeLabel = formatContinueTime(record.positionSeconds);
-    const duration = record.durationSeconds;
-    const percent =
-      duration && Number.isFinite(duration) && duration > 0
-        ? Math.min(100, Math.max(0, (record.positionSeconds / duration) * 100))
-        : 0;
-    return {
-      id: record.id,
-      mediaId: record.mediaId,
-      percent,
-      timeLabel,
-      episodeBadge: formatContinueEpisodeBadge(record.filePath),
-    };
-  }, [findByMediaId, item.id]);
 
   const handleRemoveContinue = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      if (!continueProgress) {
+      if (!continueProgress || !onRemoveContinue) {
         return;
       }
       suppressClickRef.current = true;
-      void removeProgress(continueProgress.id).then(() => {
-        showToast(`«${item.title}» убрано из «Продолжить просмотр»`, {
-          kind: 'hide',
-          title: 'Убрано',
-        });
+      onRemoveContinue(continueProgress.id);
+      showToast(`«${item.title}» убрано из «Продолжить просмотр»`, {
+        kind: 'hide',
+        title: 'Убрано',
       });
       window.setTimeout(() => {
         suppressClickRef.current = false;
       }, 0);
     },
-    [continueProgress, item.title, removeProgress, showToast],
+    [continueProgress, item.title, onRemoveContinue, showToast],
   );
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
@@ -469,18 +422,20 @@ export function MediaCard({
             </div>
             {continueProgress ? (
               <>
-                <button
-                  type="button"
-                  className="media-card__continue-remove"
-                  aria-label="Убрать из «Продолжить просмотр»"
-                  title="Убрать из «Продолжить просмотр»"
-                  onClick={handleRemoveContinue}
-                  onPointerDown={(event) => {
-                    event.stopPropagation();
-                  }}
-                >
-                  <CloseIcon size={14} strokeWidth={2.2} />
-                </button>
+                {onRemoveContinue ? (
+                  <button
+                    type="button"
+                    className="media-card__continue-remove"
+                    aria-label="Убрать из «Продолжить просмотр»"
+                    title="Убрать из «Продолжить просмотр»"
+                    onClick={handleRemoveContinue}
+                    onPointerDown={(event) => {
+                      event.stopPropagation();
+                    }}
+                  >
+                    <CloseIcon size={14} strokeWidth={2.2} />
+                  </button>
+                ) : null}
                 <div
                   className="media-card__continue"
                   role="progressbar"

@@ -4,7 +4,11 @@ import { useHomePage } from '@/features/home/model/useHomePage';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { useContinueWatching } from '@/shared/domain/ContinueWatchingContext';
-import { isContinueSerialRecord } from '@/shared/domain/continueWatchingProgress';
+import {
+  continueRecordToCardProgress,
+  isContinueSerialRecord,
+  type ContinueCardProgress,
+} from '@/shared/domain/continueWatchingProgress';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { usePlayer } from '@/shared/domain/PlayerContext';
 import { useRecentlyViewed } from '@/shared/domain/RecentlyViewedContext';
@@ -30,23 +34,18 @@ import {
 } from '@/shared/domain/homeSections';
 import { playSubmenuSound } from '@/shared/audio/uiSounds';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
-import { Tabs } from '@/shared/ui/Tabs';
 import { FavoritesIcon, HistoryIcon, PlayIcon } from '@/shared/ui/icons';
 import { useAppTopProgress } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog/ConfirmDialog';
 import { PageError, PageLoading } from '@/shared/ui/PageState';
 import { HeroBanner } from '../HeroBanner/HeroBanner';
 import { ContentRow } from '../ContentRow/ContentRow';
+import {
+  ContentRowTypeFilter,
+  type MediaTypeFilter,
+} from '../ContentRow/ContentRowTypeFilter';
 import { getHomeRowIcon } from './homeRowIcon';
 import './HomeView.css';
-
-type MediaTypeFilter = 'all' | 'movie' | 'serial';
-
-const MEDIA_TYPE_FILTER_TABS: Array<{ id: MediaTypeFilter; label: string }> = [
-  { id: 'all', label: 'Все' },
-  { id: 'movie', label: 'Фильмы' },
-  { id: 'serial', label: 'Сериалы' },
-];
 
 function isSerialMediaItem(item: MediaItem): boolean {
   return item.type === 'serial' || /serial|сериал/i.test(item.type);
@@ -64,7 +63,12 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
   const { showToast } = useToast();
   const { favorites } = useFavorites();
   const { recentlyViewed } = useRecentlyViewed();
-  const { items: continueItems, records: continueRecords, findByMediaId } = useContinueWatching();
+  const {
+    items: continueItems,
+    records: continueRecords,
+    findByMediaId,
+    removeProgress,
+  } = useContinueWatching();
   const { torrents } = useTorrents();
   const { playTorrent } = usePlayer();
   const { data, isLoading, isError, error, reload, isRefreshing } = useHomePage();
@@ -147,6 +151,24 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
       })
       .map((record) => record.item);
   }, [continueItems, continueRecords, continueTypeFilter]);
+
+  const continueByItemId = useMemo(() => {
+    const map = new Map<string, ContinueCardProgress>();
+    for (const record of continueRecords) {
+      const progress = continueRecordToCardProgress(record);
+      if (progress) {
+        map.set(record.item.id, progress);
+      }
+    }
+    return map;
+  }, [continueRecords]);
+
+  const handleRemoveContinue = useCallback(
+    (continueId: string) => {
+      void removeProgress(continueId);
+    },
+    [removeProgress],
+  );
 
   const filteredRecentlyViewed = useMemo(() => {
     if (recentTypeFilter === 'all') {
@@ -282,13 +304,13 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
             title={HOME_CONTINUE_SECTION_TITLE}
             icon={<PlayIcon size={22} />}
             items={filteredContinueItems}
+            continueByItemId={continueByItemId}
+            onRemoveContinue={handleRemoveContinue}
             headerExtra={
-              <Tabs
-                items={MEDIA_TYPE_FILTER_TABS}
-                activeId={continueTypeFilter}
-                onChange={(id) => setContinueTypeFilter(id as MediaTypeFilter)}
+              <ContentRowTypeFilter
+                value={continueTypeFilter}
+                onChange={setContinueTypeFilter}
                 ariaLabel="Фильтр продолжить просмотр"
-                variant="segmented"
               />
             }
             onMediaSelect={(item) => {
@@ -324,12 +346,10 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
             icon={<HistoryIcon size={22} />}
             items={filteredRecentlyViewed}
             headerExtra={
-              <Tabs
-                items={MEDIA_TYPE_FILTER_TABS}
-                activeId={recentTypeFilter}
-                onChange={(id) => setRecentTypeFilter(id as MediaTypeFilter)}
+              <ContentRowTypeFilter
+                value={recentTypeFilter}
+                onChange={setRecentTypeFilter}
                 ariaLabel="Фильтр истории просмотров"
-                variant="segmented"
               />
             }
             onMediaSelect={onMediaSelect}

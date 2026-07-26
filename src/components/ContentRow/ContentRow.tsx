@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { ContinueCardProgress } from '@/shared/domain/continueWatchingProgress';
 import type { MediaItem } from '@/shared/domain/media';
 import { useHorizontalDragScroll } from '@/shared/hooks/useHorizontalDragScroll';
 import { ChevronLeftIcon, ChevronRightIcon, EyeOffIcon } from '@/shared/ui/icons';
@@ -14,6 +15,8 @@ interface ContentRowProps {
   icon?: ReactNode;
   titleCount?: number;
   headerExtra?: ReactNode;
+  continueByItemId?: ReadonlyMap<string, ContinueCardProgress>;
+  onRemoveContinue?: (continueId: string) => void;
   onTitleClick?: () => void;
   onHide?: () => void;
   onMediaSelect: (item: MediaItem) => void;
@@ -32,6 +35,8 @@ export function ContentRow({
   icon,
   titleCount,
   headerExtra,
+  continueByItemId,
+  onRemoveContinue,
   onTitleClick,
   onHide,
   onMediaSelect,
@@ -223,6 +228,8 @@ export function ContentRow({
                 item={item}
                 variant={variant}
                 islandDragFrom="up"
+                continueProgress={continueByItemId?.get(item.id) ?? null}
+                onRemoveContinue={onRemoveContinue}
                 onSelect={onMediaSelect}
               />
             ))}
@@ -236,6 +243,8 @@ export function ContentRow({
               item={item}
               variant={variant}
               islandDragFrom="up"
+              continueProgress={continueByItemId?.get(item.id) ?? null}
+              onRemoveContinue={onRemoveContinue}
               onSelect={onMediaSelect}
             />
           ))}
