@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -12,6 +13,7 @@ import type {
   TorrentAddResult,
   TorrentDownloadRecord,
 } from '../../../contracts/ipc';
+import { fetchMediaById } from '@/shared/api/vokino/media';
 
 interface TorrentsContextValue {
   torrents: TorrentDownloadRecord[];
@@ -77,6 +79,52 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
       unsubscribe?.();
     };
   }, []);
+
+  // Catalog type for older downloads that only stored mediaId.
+  const mediaTypeBackfillRef = useRef(new Set<string>());
+  useEffect(() => {
+    const setMediaType = window.electronAPI?.torrents?.setMediaType;
+    if (!setMediaType) {
+      return;
+    }
+
+    const missing = torrents.filter(
+      (item) =>
+        item.mediaId &&
+        !item.mediaType &&
+        !mediaTypeBackfillRef.current.has(item.id),
+    );
+    if (missing.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      for (const item of missing) {
+        if (cancelled || !item.mediaId) {
+          break;
+        }
+        mediaTypeBackfillRef.current.add(item.id);
+        try {
+          const media = await fetchMediaById(item.mediaId);
+          if (cancelled || !media?.type) {
+            continue;
+          }
+          const next = await setMediaType(item.id, media.type);
+          if (!cancelled) {
+            setTorrents(next);
+          }
+        } catch {
+          // best-effort; next app open can retry
+          mediaTypeBackfillRef.current.delete(item.id);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [torrents]);
 
   const addTorrent = useCallback(async (payload: TorrentAddPayload) => {
     if (!window.electronAPI?.torrents) {

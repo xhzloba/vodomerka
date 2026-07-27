@@ -6,6 +6,7 @@ import {
 } from '../../contracts/ipc';
 import {
   addTorrent,
+  backfillMissingMediaTypes,
   destroyTorrentManager,
   getTorrentsFolderPath,
   initTorrentManager,
@@ -17,6 +18,7 @@ import {
   pauseTorrent,
   removeTorrent,
   resumeTorrentDownload,
+  setTorrentMediaType,
 } from '../torrents/manager';
 import { ensureTorrentsDirs } from '../torrents/paths';
 import { probeTorrentConnectivity } from '../torrents/probeConnectivity';
@@ -52,8 +54,19 @@ export function registerTorrentsIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.torrents.list, async () => {
     await initTorrentManager();
+    await backfillMissingMediaTypes();
     return listTorrents();
   });
+
+  ipcMain.handle(
+    IPC_CHANNELS.torrents.setMediaType,
+    async (_event, id: string, mediaType: string) => {
+      if (typeof id !== 'string' || !id.trim() || typeof mediaType !== 'string') {
+        return listTorrents();
+      }
+      return setTorrentMediaType(id.trim(), mediaType);
+    },
+  );
 
   ipcMain.handle(IPC_CHANNELS.torrents.add, async (_event, payload: TorrentAddPayload) =>
     addTorrent(payload),

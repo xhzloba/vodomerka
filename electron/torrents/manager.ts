@@ -17,6 +17,10 @@ import {
   sortVideoFilesByEpisode,
 } from './episodeOrder';
 import { listInstalledMediaPlayers, openFileWithPlayer } from '../media/players';
+import {
+  lookupStoredMediaType,
+  normalizeMediaType,
+} from '../db/lookupMediaType';
 
 type WebTorrentFile = {
   name: string;
@@ -732,6 +736,62 @@ export function onTorrentsChanged(listener: (items: TorrentDownloadRecord[]) => 
   };
 }
 
+function resolveMediaType(
+  mediaType: unknown,
+  mediaId: string | undefined,
+): string | undefined {
+  return (
+    normalizeMediaType(mediaType) ??
+    (typeof mediaId === 'string' && mediaId.trim()
+      ? lookupStoredMediaType(mediaId)
+      : undefined)
+  );
+}
+
+/** Fill missing mediaType from local library payloads (favorites / recent / etc.). */
+export async function backfillMissingMediaTypes(): Promise<boolean> {
+  await initTorrentManager();
+  let changed = false;
+  const now = Date.now();
+  for (const item of records) {
+    if (normalizeMediaType(item.mediaType)) {
+      continue;
+    }
+    const resolved = resolveMediaType(undefined, item.mediaId);
+    if (!resolved) {
+      continue;
+    }
+    item.mediaType = resolved;
+    item.updatedAt = now;
+    changed = true;
+  }
+  if (changed) {
+    await persist();
+    emit();
+  }
+  return changed;
+}
+
+export async function setTorrentMediaType(
+  id: string,
+  mediaType: string,
+): Promise<TorrentDownloadRecord[]> {
+  await initTorrentManager();
+  const normalized = normalizeMediaType(mediaType);
+  if (!normalized) {
+    return listTorrents();
+  }
+  const record = records.find((item) => item.id === id);
+  if (!record || record.mediaType === normalized) {
+    return listTorrents();
+  }
+  record.mediaType = normalized;
+  record.updatedAt = Date.now();
+  await persist();
+  emit();
+  return listTorrents();
+}
+
 export async function initTorrentManager(): Promise<void> {
   if (ready) {
     return;
@@ -750,6 +810,7 @@ export async function initTorrentManager(): Promise<void> {
   for (const item of pending) {
     patchRecord(item.id, { status: 'queued', downloadSpeed: 0 });
   }
+  await backfillMissingMediaTypes();
   void persist();
   emit();
   void pumpDownloadQueue();
@@ -838,8 +899,16 @@ export async function addTorrent(payload: TorrentAddPayload): Promise<TorrentAdd
 
   const magnet = enrichMagnet(payload.magnet);
   const key = magnetKey(magnet);
+  const mediaType = resolveMediaType(payload.mediaType, payload.mediaId);
+
   const existing = records.find((item) => magnetKey(item.magnet) === key);
   if (existing) {
+    if (!normalizeMediaType(existing.mediaType) && mediaType) {
+      existing.mediaType = mediaType;
+      existing.updatedAt = Date.now();
+      await persist();
+      emit();
+    }
     if (
       existing.status === 'paused' ||
       existing.status === 'error' ||
@@ -867,6 +936,7 @@ export async function addTorrent(payload: TorrentAddPayload): Promise<TorrentAdd
     title,
     mediaId: payload.mediaId,
     mediaTitle: payload.mediaTitle,
+    mediaType,
     posterUrl: sanitizePosterUrl(payload.posterUrl),
     quality: payload.quality ?? null,
     sizeName: payload.sizeName,

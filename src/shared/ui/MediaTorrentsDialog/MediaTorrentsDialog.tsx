@@ -5,6 +5,7 @@ import {
   formatTorrentQuality,
   type TorrentOffer,
 } from '@/shared/api/vokino/torrents';
+import { fetchMediaById } from '@/shared/api/vokino/media';
 import { getMediaTypeLabel } from '@/shared/domain/media';
 import { useTorrents } from '@/shared/domain/TorrentsContext';
 import { copyText } from '@/shared/lib/copyText';
@@ -185,16 +186,29 @@ export function MediaTorrentsDialog({
 
   const startDownload = useCallback(
     (torrent: TorrentOffer) => {
-      void addTorrent({
-        magnet: torrent.magnet,
-        title: torrent.title,
-        mediaId,
-        mediaTitle: title,
-        posterUrl,
-        quality: torrent.quality,
-        sizeName: torrent.sizeName,
-        trackerName: torrent.trackerName,
-      }).then((result) => {
+      void (async () => {
+        let mediaType = type?.trim() || undefined;
+        if (!mediaType && mediaId) {
+          try {
+            const media = await fetchMediaById(mediaId);
+            mediaType = media?.type?.trim() || undefined;
+          } catch {
+            // keep undefined — manager may still resolve from local DB
+          }
+        }
+
+        const result = await addTorrent({
+          magnet: torrent.magnet,
+          title: torrent.title,
+          mediaId,
+          mediaTitle: title,
+          mediaType,
+          posterUrl,
+          quality: torrent.quality,
+          sizeName: torrent.sizeName,
+          trackerName: torrent.trackerName,
+        });
+
         if (result.ok) {
           showToast(`${formatTorrentQuality(torrent.quality)} · ${torrent.sizeName}`, {
             kind: 'restore',
@@ -204,20 +218,19 @@ export function MediaTorrentsDialog({
           return;
         }
 
-        void copyText(torrent.magnet).then((copied) => {
-          showToast(
-            copied
-              ? `${result.error}. Magnet скопирован`
-              : (result.error ?? 'Не удалось добавить торрент'),
-            {
-              kind: 'hide',
-              title: 'Ошибка загрузки',
-            },
-          );
-        });
-      });
+        const copied = await copyText(torrent.magnet);
+        showToast(
+          copied
+            ? `${result.error}. Magnet скопирован`
+            : (result.error ?? 'Не удалось добавить торрент'),
+          {
+            kind: 'hide',
+            title: 'Ошибка загрузки',
+          },
+        );
+      })();
     },
-    [addTorrent, mediaId, onClose, posterUrl, showToast, title],
+    [addTorrent, mediaId, onClose, posterUrl, showToast, title, type],
   );
 
   const handleDownload = (torrent: TorrentOffer) => {

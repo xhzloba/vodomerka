@@ -1,8 +1,49 @@
 /* Layout/paddings come from .library-view in BrowseView.css */
 
+.torrents-view__folder {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: min(560px, 55vw);
+}
+
+.torrents-view__folder-btn {
+  width: 36px;
+  height: 36px;
+}
+
+.torrents-view__folder-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
 .torrents-view__folder-btn:hover {
   color: var(--app-text);
   background: rgba(255, 255, 255, 0.05);
+}
+
+.torrents-view__folder-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 510;
+  letter-spacing: -0.01em;
+  color: var(--app-text-muted);
+  opacity: 0;
+  transform: translateX(-4px);
+  pointer-events: none;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.torrents-view__folder:hover .torrents-view__folder-path,
+.torrents-view__folder:focus-within .torrents-view__folder-path {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .torrents-view__list {

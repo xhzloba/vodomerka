@@ -14,6 +14,7 @@ import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import { EpisodePickerDialog } from '@/shared/ui/EpisodePickerDialog/EpisodePickerDialog';
 import { PlayerPickerDialog } from '@/shared/ui/PlayerPickerDialog/PlayerPickerDialog';
+import { Tabs } from '@/shared/ui/Tabs';
 import {
   DownloadIcon,
   FolderIcon,
@@ -24,6 +25,23 @@ import {
 import { PageLoading } from '@/shared/ui/PageState';
 import '../BrowseView/BrowseView.css';
 import './TorrentsView.css';
+
+type TorrentTypeFilter =
+  | 'all'
+  | 'movie'
+  | 'serial'
+  | 'multfilm'
+  | 'multserial'
+  | 'anime';
+
+const TORRENT_TYPE_TABS: Array<{ id: TorrentTypeFilter; label: string }> = [
+  { id: 'all', label: 'Все' },
+  { id: 'movie', label: 'Фильмы' },
+  { id: 'serial', label: 'Сериалы' },
+  { id: 'multfilm', label: 'Мультфильмы' },
+  { id: 'multserial', label: 'Мультсериалы' },
+  { id: 'anime', label: 'Аниме' },
+];
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) {
@@ -85,12 +103,19 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
   const [pickerTorrentId, setPickerTorrentId] = useState<string | null>(null);
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
   const [isOpening, setIsOpening] = useState(false);
-  const [isProbing, setIsProbing] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<TorrentTypeFilter>('all');
 
   const sorted = useMemo(
     () => [...torrents].sort((a, b) => b.addedAt - a.addedAt),
     [torrents],
   );
+
+  const filtered = useMemo(() => {
+    if (typeFilter === 'all') {
+      return sorted;
+    }
+    return sorted.filter((item) => item.mediaType === typeFilter);
+  }, [sorted, typeFilter]);
 
   const episodeTorrent = useMemo(
     () => torrents.find((item) => item.id === episodeTorrentId) ?? null,
@@ -102,7 +127,7 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
       return;
     }
     scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' });
-  }, [isActive, scrollRef]);
+  }, [isActive, scrollRef, typeFilter]);
 
   const handleOpenFolder = async () => {
     const result = await openTorrentsFolder();
@@ -111,32 +136,6 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
         kind: 'hide',
         title: 'Ошибка',
       });
-    }
-  };
-
-  const handleProbeConnectivity = async () => {
-    if (!window.electronAPI?.torrents?.probeConnectivity) {
-      showToast('Проверка доступна только в приложении', {
-        kind: 'error',
-        title: 'Сеть',
-      });
-      return;
-    }
-
-    setIsProbing(true);
-    try {
-      const result = await window.electronAPI.torrents.probeConnectivity();
-      showToast(result.message, {
-        kind: result.ok ? 'success' : 'error',
-        title: result.ok ? 'Соединение OK' : 'Проблема с сетью',
-      });
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Не удалось проверить соединение', {
-        kind: 'error',
-        title: 'Сеть',
-      });
-    } finally {
-      setIsProbing(false);
     }
   };
 
@@ -221,43 +220,52 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
       <div className="library-view__header">
         <div className="library-view__title-group">
           <h1 className="library-view__title">Торренты</h1>
-          <button
-            type="button"
-            className="library-view__clear-btn torrents-view__folder-btn"
-            onClick={() => void handleOpenFolder()}
-            aria-label="Открыть папку Torrents"
-            title={folderPath ?? 'Папка Torrents'}
-          >
-            <FolderIcon size={18} strokeWidth={1.75} />
-          </button>
-          <button
-            type="button"
-            className="library-view__clear-btn"
-            disabled={isProbing}
-            onClick={() => void handleProbeConnectivity()}
-            aria-label="Проверить соединение с трекерами"
-            title="Проверить соединение с трекерами"
-          >
-            {isProbing ? '…' : 'Сеть'}
-          </button>
+          <div className="torrents-view__folder">
+            <button
+              type="button"
+              className="library-view__clear-btn torrents-view__folder-btn"
+              onClick={() => void handleOpenFolder()}
+              aria-label={
+                folderPath ? `Открыть папку Torrents: ${folderPath}` : 'Открыть папку Torrents'
+              }
+            >
+              <FolderIcon size={24} strokeWidth={1.75} />
+            </button>
+            {folderPath ? (
+              <span className="torrents-view__folder-path" aria-hidden="true">
+                {folderPath}
+              </span>
+            ) : null}
+          </div>
+        </div>
+        <div className="library-view__header-extra">
+          <Tabs
+            items={TORRENT_TYPE_TABS}
+            activeId={typeFilter}
+            onChange={(id) => setTypeFilter(id as TorrentTypeFilter)}
+            ariaLabel="Тип контента"
+            variant="segmented"
+          />
         </div>
       </div>
 
       <div ref={scrollRef} className="library-view__scroll scroll-overlay">
         {isLoading ? (
           <PageLoading title="Загрузка торрентов..." centered />
-        ) : sorted.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="library-view__empty">
             <div className="library-view__empty-icon">
               <DownloadIcon size={48} strokeWidth={1.5} />
             </div>
             <p className="library-view__empty-text">
-              Раздачи появятся здесь после «Скачать» в меню постера
+              {sorted.length === 0
+                ? 'Раздачи появятся здесь после «Скачать» в меню постера'
+                : 'Нет торрентов в этом разделе'}
             </p>
           </div>
         ) : (
           <ul className="torrents-view__list">
-            {sorted.map((item) => {
+            {filtered.map((item) => {
               const percent = getProgressPercent(item.progress);
               const percentLabel = formatProgressPercent(item.progress);
               const meta = [

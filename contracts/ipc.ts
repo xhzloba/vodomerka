@@ -224,6 +224,7 @@ export const IPC_CHANNELS = {
     openFolder: 'torrents:openFolder',
     getFolderPath: 'torrents:getFolderPath',
     probeConnectivity: 'torrents:probeConnectivity',
+    setMediaType: 'torrents:setMediaType',
     changed: 'torrents:changed',
   },
   media: {
@@ -278,6 +279,8 @@ export interface TorrentDownloadRecord {
   title: string;
   mediaId?: string;
   mediaTitle?: string;
+  /** Vokino media type: movie | serial | multfilm | multserial | anime */
+  mediaType?: string;
   posterUrl?: string;
   quality?: number | null;
   sizeName?: string;
@@ -319,6 +322,8 @@ export interface TorrentAddPayload {
   title: string;
   mediaId?: string;
   mediaTitle?: string;
+  /** Vokino media type: movie | serial | multfilm | multserial | anime */
+  mediaType?: string;
   posterUrl?: string;
   quality?: number | null;
   sizeName?: string;
@@ -445,6 +450,7 @@ export interface ElectronApi {
     openFolder: () => Promise<{ ok: boolean; error?: string }>;
     getFolderPath: () => Promise<string>;
     probeConnectivity: () => Promise<TorrentConnectivityProbeResult>;
+    setMediaType: (id: string, mediaType: string) => Promise<TorrentDownloadRecord[]>;
     onChanged: (callback: (items: TorrentDownloadRecord[]) => void) => Unsubscribe;
   };
   media: {
