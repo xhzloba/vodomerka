@@ -317,9 +317,11 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
                       <p className="torrents-view__subtitle">{item.title}</p>
                     ) : null}
                     <p className="torrents-view__meta">{meta.join(' · ')}</p>
-                    <div className="torrents-view__progress" aria-hidden="true">
-                      <span style={{ width: `${percent}%` }} />
-                    </div>
+                    {item.status !== 'done' ? (
+                      <div className="torrents-view__progress" aria-hidden="true">
+                        <span style={{ width: `${percent}%` }} />
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="torrents-view__actions">
