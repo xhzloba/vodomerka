@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   cardShowInfo: false,
   catalogRowGap: 'normal',
   posterSize: 'medium',
+  collectionLayout: 'slider',
   sidebarCollapsed: false,
   sidebarMenuAnimation: DEFAULT_SIDEBAR_ANIMATION_ID,
   sidebarStyle: 'apple',
@@ -58,6 +59,7 @@ const SETTING_KEYS = {
   cardShowInfo: 'card_show_info',
   catalogRowGap: 'catalog_row_gap',
   posterSize: 'poster_size',
+  collectionLayout: 'collection_layout',
   sidebarCollapsed: 'sidebar_collapsed',
   sidebarMenuAnimation: 'sidebar_menu_animation',
   sidebarStyle: 'sidebar_style',
@@ -204,6 +206,7 @@ function getDefaultSettingEntries(): Array<{ key: string; value: string }> {
     { key: SETTING_KEYS.cardShowInfo, value: DEFAULT_SETTINGS.cardShowInfo ? '1' : '0' },
     { key: SETTING_KEYS.catalogRowGap, value: DEFAULT_SETTINGS.catalogRowGap },
     { key: SETTING_KEYS.posterSize, value: DEFAULT_SETTINGS.posterSize },
+    { key: SETTING_KEYS.collectionLayout, value: DEFAULT_SETTINGS.collectionLayout },
     {
       key: SETTING_KEYS.sidebarCollapsed,
       value: DEFAULT_SETTINGS.sidebarCollapsed ? '1' : '0',
@@ -381,6 +384,14 @@ function normalizePosterSize(value: string | undefined): AppSettings['posterSize
   }
 
   return DEFAULT_SETTINGS.posterSize;
+}
+
+function normalizeCollectionLayout(value: string | undefined): AppSettings['collectionLayout'] {
+  if (value === 'grid' || value === 'slider') {
+    return value;
+  }
+
+  return DEFAULT_SETTINGS.collectionLayout;
 }
 
 function normalizeSidebarMenuAnimation(
@@ -567,6 +578,7 @@ function parseSettings(database: Database.Database): AppSettings {
   const heroSourceSectionIdsRaw = readSetting(database, SETTING_KEYS.heroSourceSectionIds);
   const catalogRowGapRaw = readSetting(database, SETTING_KEYS.catalogRowGap);
   const posterSizeRaw = readSetting(database, SETTING_KEYS.posterSize);
+  const collectionLayoutRaw = readSetting(database, SETTING_KEYS.collectionLayout);
   const sidebarCollapsedRaw = readSetting(database, SETTING_KEYS.sidebarCollapsed);
   const sidebarMenuAnimationRaw = readSetting(database, SETTING_KEYS.sidebarMenuAnimation);
   const sidebarStyleRaw = readSetting(database, SETTING_KEYS.sidebarStyle);
@@ -599,6 +611,7 @@ function parseSettings(database: Database.Database): AppSettings {
     cardShowInfo: readCardShowInfo(database),
     catalogRowGap: normalizeCatalogRowGap(catalogRowGapRaw),
     posterSize: normalizePosterSize(posterSizeRaw),
+    collectionLayout: normalizeCollectionLayout(collectionLayoutRaw),
     sidebarCollapsed: sidebarCollapsedRaw === '1',
     sidebarMenuAnimation: normalizeSidebarMenuAnimation(sidebarMenuAnimationRaw),
     sidebarStyle: normalizeSidebarStyle(sidebarStyleRaw),
@@ -700,6 +713,13 @@ export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
     upsert.run({
       key: SETTING_KEYS.posterSize,
       value: normalizePosterSize(patch.posterSize),
+    });
+  }
+
+  if (patch.collectionLayout !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.collectionLayout,
+      value: normalizeCollectionLayout(patch.collectionLayout),
     });
   }
 

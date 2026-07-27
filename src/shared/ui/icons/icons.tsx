@@ -29,6 +29,17 @@ export function GridIcon(props: IconProps) {
   );
 }
 
+/** Horizontal poster row — collection slider layout. */
+export function RowsIcon(props: IconProps) {
+  return (
+    <StrokeIcon {...props}>
+      <rect x="3.5" y="5.5" width="5.5" height="13" rx="1.5" />
+      <rect x="11" y="5.5" width="5.5" height="13" rx="1.5" />
+      <rect x="18.5" y="5.5" width="2" height="13" rx="1" opacity="0.45" />
+    </StrokeIcon>
+  );
+}
+
 export function CoverSpacingIcon(props: IconProps) {
   return (
     <StrokeIcon {...props}>

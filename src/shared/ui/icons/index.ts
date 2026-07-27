@@ -21,6 +21,7 @@ export {
   FilmIcon,
   FolderIcon,
   GridIcon,
+  RowsIcon,
   HistoryIcon,
   HomeIcon,
   InfoIcon,

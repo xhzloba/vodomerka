@@ -2,6 +2,7 @@ import type {
   ApiServerId,
   AppSettings,
   CatalogRowGapPreset,
+  CollectionLayout,
   HiddenHomeSection,
   HomeSectionMode,
   PosterSizePreset,
@@ -15,6 +16,7 @@ export type {
   AppSettings,
   AppTheme,
   CatalogRowGapPreset,
+  CollectionLayout,
   HiddenHomeSection,
   HomeSectionMode as HomeFavoritesSectionMode,
   PosterSizePreset,
@@ -59,6 +61,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   cardShowInfo: false,
   catalogRowGap: 'normal',
   posterSize: 'medium',
+  collectionLayout: 'slider',
   sidebarCollapsed: false,
   sidebarMenuAnimation: DEFAULT_SIDEBAR_ANIMATION_ID,
   sidebarStyle: 'apple',
@@ -107,6 +110,14 @@ export function normalizePosterSize(value: unknown): PosterSizePreset {
   }
 
   return DEFAULT_APP_SETTINGS.posterSize;
+}
+
+export function normalizeCollectionLayout(value: unknown): CollectionLayout {
+  if (value === 'grid' || value === 'slider') {
+    return value;
+  }
+
+  return DEFAULT_APP_SETTINGS.collectionLayout;
 }
 
 export function applyPosterSizeCssVars(posterSize: PosterSizePreset): void {

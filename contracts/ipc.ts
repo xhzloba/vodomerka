@@ -37,6 +37,8 @@ export type CatalogRowGapPreset = 'compact' | 'normal' | 'relaxed' | 'spacious';
 
 export type PosterSizePreset = 'small' | 'medium' | 'large';
 
+export type CollectionLayout = 'slider' | 'grid';
+
 /** Mutually exclusive watch statuses (favorites stay separate). */
 export type WatchStatus = 'watching' | 'watched' | 'postponed' | 'dropped';
 
@@ -60,6 +62,8 @@ export interface AppSettings {
   cardShowInfo: boolean;
   catalogRowGap: CatalogRowGapPreset;
   posterSize: PosterSizePreset;
+  /** Collection / watch-status list layout. */
+  collectionLayout: CollectionLayout;
   sidebarCollapsed: boolean;
   sidebarMenuAnimation: SidebarMenuAnimation;
   sidebarStyle: SidebarStyle;
