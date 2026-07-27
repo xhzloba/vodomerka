@@ -1,20 +1,7 @@
 import { getDatabase } from './database';
+import { normalizeMediaType } from '../../contracts/mediaType';
 
-const KNOWN_MEDIA_TYPES = new Set([
-  'movie',
-  'serial',
-  'multfilm',
-  'multserial',
-  'anime',
-]);
-
-export function normalizeMediaType(value: unknown): string | undefined {
-  if (typeof value !== 'string') {
-    return undefined;
-  }
-  const type = value.trim().toLowerCase();
-  return KNOWN_MEDIA_TYPES.has(type) ? type : undefined;
-}
+export { normalizeMediaType } from '../../contracts/mediaType';
 
 /** Resolve catalog type for a mediaId from local library tables. */
 export function lookupStoredMediaType(mediaId: string): string | undefined {

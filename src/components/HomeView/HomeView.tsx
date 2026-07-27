@@ -13,6 +13,7 @@ import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { usePlayer } from '@/shared/domain/PlayerContext';
 import { useRecentlyViewed } from '@/shared/domain/RecentlyViewedContext';
 import type { ContentRow as ContentRowData, MediaItem } from '@/shared/domain/media';
+import { isSerialMedia } from '@/shared/domain/media';
 import {
   getHiddenHomeSectionIds,
   hideHomeSection,
@@ -47,7 +48,7 @@ import { getHomeRowIcon } from './homeRowIcon';
 import './HomeView.css';
 
 function isSerialMediaItem(item: MediaItem): boolean {
-  return item.type === 'serial' || /serial|сериал/i.test(item.type);
+  return isSerialMedia(item);
 }
 
 interface HomeViewProps {

@@ -1,6 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
-import { isMovieMedia, isSerialMedia } from '@/shared/domain/media';
 import { useWatched } from '@/shared/domain/WatchedContext';
 import {
   WATCH_STATUS_CLEAR_COPY,
@@ -11,7 +10,7 @@ import {
 import { playDeleteSound } from '@/shared/audio/uiSounds';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog/ConfirmDialog';
 import { LibraryCollectionView } from '../LibraryCollectionView/LibraryCollectionView';
-import { ContentRow } from '../ContentRow/ContentRow';
+import { LibraryTypeFilteredRows } from '../LibraryCollectionView/LibraryTypeFilteredRows';
 
 interface WatchStatusCollectionViewProps {
   status: WatchStatus;
@@ -31,13 +30,6 @@ export function WatchStatusCollectionView({
   const [isClearing, setIsClearing] = useState(false);
 
   const items = useMemo(() => listByStatus(status), [listByStatus, status]);
-  const { movies, serials } = useMemo(
-    () => ({
-      movies: items.filter(isMovieMedia),
-      serials: items.filter(isSerialMedia),
-    }),
-    [items],
-  );
 
   const copy = WATCH_STATUS_CLEAR_COPY[status];
   const title = WATCH_STATUS_LABELS[status];
@@ -66,23 +58,12 @@ export function WatchStatusCollectionView({
         emptyText={WATCH_STATUS_EMPTY_HINTS[status]}
         isActive={isActive}
       >
-        <ContentRow title="Все" items={items} onMediaSelect={onMediaSelect} />
-        {movies.length > 0 ? (
-          <ContentRow
-            title="Фильмы"
-            titleCount={movies.length}
-            items={movies}
-            onMediaSelect={onMediaSelect}
-          />
-        ) : null}
-        {serials.length > 0 ? (
-          <ContentRow
-            title="Сериалы"
-            titleCount={serials.length}
-            items={serials}
-            onMediaSelect={onMediaSelect}
-          />
-        ) : null}
+        <LibraryTypeFilteredRows
+          key={status}
+          items={items}
+          onMediaSelect={onMediaSelect}
+          filterAriaLabel={`Фильтр «${title}» по типу`}
+        />
       </LibraryCollectionView>
 
       <ConfirmDialog

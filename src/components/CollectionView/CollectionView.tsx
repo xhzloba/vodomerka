@@ -1,6 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
-import { isMovieMedia, isSerialMedia } from '@/shared/domain/media';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
 import {
@@ -21,7 +20,7 @@ import {
   WatchingIcon,
 } from '@/shared/ui/icons';
 import { LibraryCollectionView } from '../LibraryCollectionView/LibraryCollectionView';
-import { ContentRow } from '../ContentRow/ContentRow';
+import { LibraryTypeFilteredRows } from '../LibraryCollectionView/LibraryTypeFilteredRows';
 
 export type CollectionTab = 'favorites' | WatchStatus;
 
@@ -71,14 +70,6 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
 
   const items = tab === 'favorites' ? favorites : statusItems;
   const isLoading = tab === 'favorites' ? favoritesLoading : statusesLoading;
-
-  const { movies, serials } = useMemo(
-    () => ({
-      movies: items.filter(isMovieMedia),
-      serials: items.filter(isSerialMedia),
-    }),
-    [items],
-  );
 
   const clearCopy =
     tab === 'favorites'
@@ -134,23 +125,12 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
         emptyText={emptyText}
         isActive={isActive}
       >
-        <ContentRow title="Все" items={items} onMediaSelect={onMediaSelect} />
-        {movies.length > 0 ? (
-          <ContentRow
-            title="Фильмы"
-            titleCount={movies.length}
-            items={movies}
-            onMediaSelect={onMediaSelect}
-          />
-        ) : null}
-        {serials.length > 0 ? (
-          <ContentRow
-            title="Сериалы"
-            titleCount={serials.length}
-            items={serials}
-            onMediaSelect={onMediaSelect}
-          />
-        ) : null}
+        <LibraryTypeFilteredRows
+          key={tab}
+          items={items}
+          onMediaSelect={onMediaSelect}
+          filterAriaLabel="Фильтр коллекции по типу"
+        />
       </LibraryCollectionView>
 
       <ConfirmDialog

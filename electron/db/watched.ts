@@ -1,4 +1,5 @@
 import type { StoredMediaItem, WatchStatus, WatchStatusRecord } from '../../contracts/ipc';
+import { coerceStoredMediaType } from '../../contracts/mediaType';
 import { getDatabase } from './database';
 
 export type { StoredMediaItem, WatchStatus, WatchStatusRecord } from '../../contracts/ipc';
@@ -24,7 +25,7 @@ function parseStoredMediaItem(value: unknown): StoredMediaItem | null {
     title: item.title,
     subtitle: item.subtitle,
     year: item.year,
-    type: item.type ?? 'movie',
+    type: coerceStoredMediaType(item.type),
     genres: Array.isArray(item.genres) ? item.genres.filter((genre) => typeof genre === 'string') : [],
     rating: item.rating,
     duration: item.duration,
@@ -90,6 +91,11 @@ export function setWatchStatus(item: StoredMediaItem, status: WatchStatus): Watc
     throw new Error(`Invalid watch status: ${String(status)}`);
   }
 
+  const normalized: StoredMediaItem = {
+    ...item,
+    type: coerceStoredMediaType(item.type),
+  };
+
   ensureWatchStatusColumn();
   const database = getDatabase();
   database
@@ -102,8 +108,8 @@ export function setWatchStatus(item: StoredMediaItem, status: WatchStatus): Watc
         status = excluded.status
     `)
     .run({
-      mediaId: item.id,
-      payload: JSON.stringify(item),
+      mediaId: normalized.id,
+      payload: JSON.stringify(normalized),
       status,
     });
 

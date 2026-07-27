@@ -56,18 +56,157 @@
 }
 
 .torrents-view__item {
+  --torrents-item-radius: 16px;
+  --torrents-item-bg: color-mix(in srgb, var(--app-text) 4%, transparent);
+  --torrents-item-bg-hover: var(
+    --chrome-surface-hover,
+    color-mix(in srgb, var(--app-text) 7%, transparent)
+  );
+
+  position: relative;
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   padding: 12px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--app-text) 4%, transparent);
+  border-radius: var(--torrents-item-radius);
+  background: var(--torrents-item-bg);
+  isolation: isolate;
   transition: background var(--transition-fast);
 }
 
 .torrents-view__item:hover {
-  background: var(--chrome-surface-hover, color-mix(in srgb, var(--app-text) 7%, transparent));
+  background: var(--torrents-item-bg-hover);
+}
+
+.torrents-view__item > *:not(.torrents-view__fill) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Soft blue fill L→R while downloading (tied to progress) */
+.torrents-view__fill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.torrents-view__fill-wash {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: max(var(--torrents-fill, 0%), 2.5%);
+  /* Apple progress blue — liquid flow inside the fill */
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, #007aff 30%, transparent) 0%,
+    color-mix(in srgb, #0a84ff 46%, transparent) 18%,
+    color-mix(in srgb, #5ac8ff 34%, transparent) 36%,
+    color-mix(in srgb, #007aff 44%, transparent) 54%,
+    color-mix(in srgb, #0a84ff 32%, transparent) 72%,
+    color-mix(in srgb, #007aff 38%, transparent) 100%
+  );
+  background-size: 240% 100%;
+  background-position: 100% 0;
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: torrents-fill-flow 4.2s ease-in-out infinite;
+}
+
+.torrents-view__fill-sheen {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: max(var(--torrents-fill, 0%), 2.5%);
+  overflow: hidden;
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Soft bloom drifting through the filled area */
+.torrents-view__fill-sheen::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 70%;
+  height: 160%;
+  background: radial-gradient(
+    ellipse closest-side,
+    color-mix(in srgb, #64d2ff 26%, transparent) 0%,
+    color-mix(in srgb, #0a84ff 10%, transparent) 55%,
+    transparent 100%
+  );
+  transform: translate(-30%, -50%);
+  animation: torrents-fill-bloom 5.2s cubic-bezier(0.4, 0.05, 0.35, 1) infinite;
+}
+
+/* Breathing highlight on the progress tip */
+.torrents-view__fill-sheen::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(56px, 28%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, #5ac8ff 18%, transparent) 55%,
+    color-mix(in srgb, #64d2ff 32%, transparent) 100%
+  );
+  animation: torrents-fill-tip 2.6s ease-in-out infinite;
+}
+
+@keyframes torrents-fill-flow {
+  0%,
+  100% {
+    background-position: 100% 0;
+  }
+  50% {
+    background-position: 0% 0;
+  }
+}
+
+@keyframes torrents-fill-bloom {
+  0% {
+    transform: translate(-35%, -50%);
+    opacity: 0.35;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(95%, -50%);
+    opacity: 0.25;
+  }
+}
+
+@keyframes torrents-fill-tip {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .torrents-view__fill-wash,
+  .torrents-view__fill-sheen::before,
+  .torrents-view__fill-sheen::after {
+    animation: none;
+  }
+
+  .torrents-view__fill-sheen::before,
+  .torrents-view__fill-sheen::after {
+    opacity: 0;
+  }
+
+  .torrents-view__fill-wash,
+  .torrents-view__fill-sheen {
+    transition: none;
+  }
 }
 
 .torrents-view__poster {

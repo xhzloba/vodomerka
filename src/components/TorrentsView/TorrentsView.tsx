@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { TorrentDownloadRecord } from '../../../contracts/ipc';
 import { useTorrents } from '@/shared/domain/TorrentsContext';
 import { usePlayer } from '@/shared/domain/PlayerContext';
@@ -279,8 +279,28 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
                   : null,
               ].filter(Boolean);
 
+              const isDownloading =
+                item.status === 'downloading' || item.status === 'queued';
+
               return (
-                <li key={item.id} className="torrents-view__item">
+                <li
+                  key={item.id}
+                  className={`torrents-view__item${
+                    isDownloading ? ' torrents-view__item--loading' : ''
+                  }`}
+                  style={
+                    isDownloading
+                      ? ({ '--torrents-fill': `${percent}%` } as CSSProperties)
+                      : undefined
+                  }
+                >
+                  {isDownloading ? (
+                    <div className="torrents-view__fill" aria-hidden="true">
+                      <div className="torrents-view__fill-wash" />
+                      <div className="torrents-view__fill-sheen" />
+                    </div>
+                  ) : null}
+
                   <div className="torrents-view__poster" aria-hidden="true">
                     {item.posterUrl ? (
                       <img src={item.posterUrl} alt="" loading="lazy" decoding="async" />
@@ -312,7 +332,7 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
                     >
                       <PlayIcon size={15} />
                     </button>
-                    {item.status === 'downloading' || item.status === 'queued' ? (
+                    {isDownloading ? (
                       <button
                         type="button"
                         className="torrents-view__action"

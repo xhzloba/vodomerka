@@ -1,5 +1,6 @@
 import { getDatabase } from './database';
 import type { StoredMediaItem } from './favorites';
+import { coerceStoredMediaType } from '../../contracts/mediaType';
 
 export const RECENTLY_VIEWED_LIMIT = 15;
 
@@ -18,7 +19,7 @@ function parseStoredMediaItem(value: unknown): StoredMediaItem | null {
     title: item.title,
     subtitle: item.subtitle,
     year: item.year,
-    type: item.type ?? 'movie',
+    type: coerceStoredMediaType(item.type),
     genres: Array.isArray(item.genres) ? item.genres.filter((genre) => typeof genre === 'string') : [],
     rating: item.rating,
     duration: item.duration,

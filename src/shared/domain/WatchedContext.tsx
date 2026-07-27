@@ -7,7 +7,9 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { fetchMediaById } from '@/shared/api/vokino/media';
 import type { MediaItem } from '@/shared/domain/media';
+import { isMovieMedia, isSerialMedia } from '@/shared/domain/media';
 import { ensureMediaOverridesLoaded } from '@/shared/domain/overridesStore';
 import {
   clearWatchStatusBucket,
@@ -18,6 +20,32 @@ import {
 } from '@/shared/domain/watchedStorage';
 import { WATCH_STATUS_LABELS, type WatchStatus } from '@/shared/domain/watchStatus';
 import { playLikeSound } from '@/shared/audio/uiSounds';
+import { normalizeMediaType } from '../../../contracts/mediaType';
+
+async function resolveItemForStatus(item: MediaItem): Promise<MediaItem> {
+  const normalized = normalizeMediaType(item.type);
+  const classified = isMovieMedia(item) || isSerialMedia(item);
+
+  if (normalized && classified) {
+    return normalized === item.type ? item : { ...item, type: normalized };
+  }
+
+  if (!item.id || item.id.startsWith('torrent:')) {
+    return normalized ? { ...item, type: normalized } : item;
+  }
+
+  try {
+    const full = await fetchMediaById(item.id);
+    if (full) {
+      const fullType = normalizeMediaType(full.type) ?? full.type;
+      return { ...full, type: fullType };
+    }
+  } catch {
+    // keep local payload
+  }
+
+  return normalized ? { ...item, type: normalized } : item;
+}
 
 interface WatchedContextValue {
   entries: WatchStatusEntry[];
@@ -105,7 +133,8 @@ export function WatchedProvider({ children }: { children: ReactNode }) {
       if (!options?.silent) {
         playLikeSound();
       }
-      const next = await setWatchStatusItem(item, status);
+      const resolved = await resolveItemForStatus(item);
+      const next = await setWatchStatusItem(resolved, status);
       setEntries(next);
     },
     [],

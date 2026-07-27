@@ -5,6 +5,7 @@ import type {
   StoredMediaItem,
   TorrentDownloadRecord,
 } from '../../../contracts/ipc';
+import { isSerialMediaType } from '../../../contracts/mediaType';
 import {
   formatEpisodeLabel,
   hasMultipleEpisodes,
@@ -151,7 +152,7 @@ export function continueRecordToCardProgress(
 }
 
 export function isContinueSerialRecord(record: ContinueWatchingRecord): boolean {
-  if (record.item.type === 'serial') {
+  if (isSerialMediaType(record.item.type)) {
     return true;
   }
   const { season, episode } = getContinueEpisodeInfo(record.filePath);

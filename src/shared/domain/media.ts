@@ -1,6 +1,12 @@
 import type { VokinoChannelItem } from '@/shared/api/vokino/types';
 import { applyMediaOverrides } from '@/shared/domain/overrides';
 import { getMediaOverrides } from '@/shared/domain/overridesStore';
+import {
+  isMovieMediaType,
+  isSerialMediaType,
+  normalizeMediaType,
+  resolveMediaTypeFromDetails,
+} from '../../../contracts/mediaType';
 
 export type MediaType = 'movie' | 'serial' | string;
 
@@ -74,7 +80,7 @@ export function mapChannelItem(channel: VokinoChannelItem): MediaItem | null {
         ? details.originalname
         : undefined,
     year: details.released,
-    type: details.type,
+    type: resolveMediaTypeFromDetails(details.type, details.is_tv) ?? details.type,
     genres: details.genre
       ? details.genre.split(',').map((genre) => genre.trim()).filter(Boolean)
       : [],
@@ -101,7 +107,7 @@ export function mapVokinoChannelToMediaItem(channel: VokinoChannelItem): MediaIt
 }
 
 export function getMediaTypeLabel(type: MediaType): string {
-  switch (type) {
+  switch (normalizeMediaType(type) ?? type) {
     case 'movie':
       return 'Фильм';
     case 'serial':
@@ -118,9 +124,9 @@ export function getMediaTypeLabel(type: MediaType): string {
 }
 
 export function isMovieMedia(item: Pick<MediaItem, 'type'>): boolean {
-  return item.type === 'movie' || item.type === 'multfilm';
+  return isMovieMediaType(item.type);
 }
 
 export function isSerialMedia(item: Pick<MediaItem, 'type'>): boolean {
-  return item.type === 'serial' || item.type === 'multserial' || item.type === 'anime';
+  return isSerialMediaType(item.type);
 }

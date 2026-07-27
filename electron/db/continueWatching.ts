@@ -1,4 +1,5 @@
 import type { ContinueWatchingRecord, StoredMediaItem } from '../../contracts/ipc';
+import { coerceStoredMediaType } from '../../contracts/mediaType';
 import { getDatabase } from './database';
 
 export const CONTINUE_WATCHING_LIMIT = 20;
@@ -18,7 +19,7 @@ function parseStoredMediaItem(value: unknown): StoredMediaItem | null {
     title: item.title,
     subtitle: item.subtitle,
     year: item.year,
-    type: item.type ?? 'movie',
+    type: coerceStoredMediaType(item.type),
     genres: Array.isArray(item.genres) ? item.genres.filter((genre) => typeof genre === 'string') : [],
     rating: item.rating,
     duration: item.duration,
