@@ -1,5 +1,21 @@
 /* Layout/paddings come from .library-view in BrowseView.css */
 
+.library-view.torrents-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.library-view.torrents-view .library-view__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 .torrents-view__folder {
   display: inline-flex;
   align-items: center;
@@ -97,7 +113,7 @@
 .torrents-view__fill-wash {
   position: absolute;
   inset: 0 auto 0 0;
-  width: max(var(--torrents-fill, 0%), 2.5%);
+  width: var(--torrents-fill, 0%);
   /* Apple progress blue — liquid flow inside the fill */
   background: linear-gradient(
     105deg,
@@ -117,7 +133,7 @@
 .torrents-view__fill-sheen {
   position: absolute;
   inset: 0 auto 0 0;
-  width: max(var(--torrents-fill, 0%), 2.5%);
+  width: var(--torrents-fill, 0%);
   overflow: hidden;
   transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }

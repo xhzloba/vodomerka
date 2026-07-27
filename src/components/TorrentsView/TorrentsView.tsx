@@ -281,20 +281,22 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
 
               const isDownloading =
                 item.status === 'downloading' || item.status === 'queued';
+              // No fill strip at 0% (queued / looking for peers) — only real progress.
+              const showFill = isDownloading && percent > 0;
 
               return (
                 <li
                   key={item.id}
                   className={`torrents-view__item${
-                    isDownloading ? ' torrents-view__item--loading' : ''
+                    showFill ? ' torrents-view__item--loading' : ''
                   }`}
                   style={
-                    isDownloading
+                    showFill
                       ? ({ '--torrents-fill': `${percent}%` } as CSSProperties)
                       : undefined
                   }
                 >
-                  {isDownloading ? (
+                  {showFill ? (
                     <div className="torrents-view__fill" aria-hidden="true">
                       <div className="torrents-view__fill-wash" />
                       <div className="torrents-view__fill-sheen" />
