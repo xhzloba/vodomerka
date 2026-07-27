@@ -43,6 +43,25 @@
   z-index: 1;
 }
 
+.vp--seeking .vp__video {
+  opacity: 0.72;
+  transition: opacity 120ms ease;
+}
+
+.vp--seeking .vp__scrub-progress {
+  animation: vp-seek-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes vp-seek-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.35);
+  }
+}
+
 .vp__video--empty {
   pointer-events: none;
 }

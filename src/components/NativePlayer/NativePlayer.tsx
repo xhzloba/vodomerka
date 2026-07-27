@@ -90,9 +90,31 @@ export function NativePlayer() {
   const [switchingEpisode, setSwitchingEpisode] = useState(false);
   const [videoSrc, setVideoSrc] = useState('');
   const [seekOrigin, setSeekOrigin] = useState(0);
+  const [isServerSeeking, setIsServerSeeking] = useState(false);
   const serverSeekTimerRef = useRef<number | null>(null);
+  const serverSeekSafetyRef = useRef<number | null>(null);
   const serverSeekPendingRef = useRef(false);
   const wasPlayingBeforeSeekRef = useRef(true);
+  /** Mute only for seek transition — don't flip the user's mute toggle. */
+  const silentMuteRef = useRef(false);
+  const userMutedRef = useRef(false);
+
+  const finishServerSeek = useCallback((media: HTMLVideoElement) => {
+    serverSeekPendingRef.current = false;
+    setIsServerSeeking(false);
+    if (serverSeekSafetyRef.current != null) {
+      window.clearTimeout(serverSeekSafetyRef.current);
+      serverSeekSafetyRef.current = null;
+    }
+    if (silentMuteRef.current) {
+      silentMuteRef.current = false;
+      media.muted = userMutedRef.current;
+      setMuted(userMutedRef.current);
+    }
+    if (wasPlayingBeforeSeekRef.current) {
+      void media.play().catch(() => undefined);
+    }
+  }, []);
 
   const sessionTorrent = useMemo(
     () => torrents.find((item) => item.id === session?.torrentId) ?? null,
@@ -168,9 +190,15 @@ export function NativePlayer() {
     resumeAppliedKeyRef.current = null;
     serverSeekPendingRef.current = false;
     wasPlayingBeforeSeekRef.current = true;
+    silentMuteRef.current = false;
+    setIsServerSeeking(false);
     if (serverSeekTimerRef.current != null) {
       window.clearTimeout(serverSeekTimerRef.current);
       serverSeekTimerRef.current = null;
+    }
+    if (serverSeekSafetyRef.current != null) {
+      window.clearTimeout(serverSeekSafetyRef.current);
+      serverSeekSafetyRef.current = null;
     }
 
     const start =
@@ -203,6 +231,9 @@ export function NativePlayer() {
     return () => {
       if (serverSeekTimerRef.current != null) {
         window.clearTimeout(serverSeekTimerRef.current);
+      }
+      if (serverSeekSafetyRef.current != null) {
+        window.clearTimeout(serverSeekSafetyRef.current);
       }
     };
   }, []);
@@ -340,13 +371,20 @@ export function NativePlayer() {
       const target = Math.max(0, Math.min(total, seconds));
 
       if (useServerSeek) {
-        // Optimistic UI; debounce ffmpeg restart so scrubbing doesn't thrash.
+        // Cut audio immediately so the dying ffmpeg pipe doesn't stutter,
+        // then restart the stream after a short scrub debounce.
         setSeekOrigin(target);
         setCurrentTime(target);
         currentTimeRef.current = target;
         setBuffered(target);
         serverSeekPendingRef.current = true;
+        setIsServerSeeking(true);
         wasPlayingBeforeSeekRef.current = !video.paused;
+        if (!silentMuteRef.current) {
+          userMutedRef.current = video.muted;
+          silentMuteRef.current = true;
+          video.muted = true;
+        }
         try {
           video.pause();
         } catch {
@@ -356,10 +394,23 @@ export function NativePlayer() {
         if (serverSeekTimerRef.current != null) {
           window.clearTimeout(serverSeekTimerRef.current);
         }
+        if (serverSeekSafetyRef.current != null) {
+          window.clearTimeout(serverSeekSafetyRef.current);
+          serverSeekSafetyRef.current = null;
+        }
         serverSeekTimerRef.current = window.setTimeout(() => {
           serverSeekTimerRef.current = null;
           setVideoSrc(withSeekQuery(session.url, target));
-        }, 160);
+          // Safety: if canplay never arrives, unblock UI/audio.
+          serverSeekSafetyRef.current = window.setTimeout(() => {
+            serverSeekSafetyRef.current = null;
+            const media = videoRef.current;
+            if (!media || !serverSeekPendingRef.current) {
+              return;
+            }
+            finishServerSeek(media);
+          }, 2500);
+        }, 90);
         bumpControls();
         return;
       }
@@ -367,7 +418,7 @@ export function NativePlayer() {
       video.currentTime = target;
       bumpControls();
     },
-    [bumpControls, canSeek, knownDuration, session, useServerSeek],
+    [bumpControls, canSeek, finishServerSeek, knownDuration, session, useServerSeek],
   );
 
   const seekBy = useCallback(
@@ -536,10 +587,13 @@ export function NativePlayer() {
     <>
     <div
       ref={rootRef}
-      className={`vp ${controlsVisible ? 'vp--controls' : ''} ${isFullscreen ? 'vp--fs' : ''}`}
+      className={`vp ${controlsVisible ? 'vp--controls' : ''} ${isFullscreen ? 'vp--fs' : ''}${
+        isServerSeeking ? ' vp--seeking' : ''
+      }`}
       role="dialog"
       aria-modal="true"
       aria-label={title}
+      aria-busy={isServerSeeking || undefined}
       onMouseMove={bumpControls}
       onMouseLeave={() => {
         if (videoRef.current && !videoRef.current.paused) {
@@ -580,13 +634,23 @@ export function NativePlayer() {
                   // ignore seek failures on live streams
                 }
               }
-              serverSeekPendingRef.current = false;
-              if (wasPlayingBeforeSeekRef.current || event.currentTarget.autoplay) {
+              // Initial play / non-seek loads. Seek resume waits for canplay (audio ready).
+              if (!serverSeekPendingRef.current) {
                 void event.currentTarget.play().catch(() => undefined);
               }
             }}
+            onCanPlay={(event) => {
+              if (!serverSeekPendingRef.current) {
+                return;
+              }
+              finishServerSeek(event.currentTarget);
+            }}
             onPlay={() => setPlaying(true)}
             onPause={() => {
+              // Don't treat seek-pause as a real pause for continue-watching.
+              if (serverSeekPendingRef.current) {
+                return;
+              }
               setPlaying(false);
               void persistContinueProgress(true);
             }}
@@ -632,6 +696,9 @@ export function NativePlayer() {
               }
             }}
             onVolumeChange={(event) => {
+              if (silentMuteRef.current) {
+                return;
+              }
               setVolume(event.currentTarget.volume);
               setMuted(event.currentTarget.muted || event.currentTarget.volume === 0);
             }}

@@ -131,11 +131,11 @@ function pipeFileRemux(token: FileRemuxToken, res: ServerResponse, startSeconds 
   }
 
   // Dual -ss: coarse input seek (fast, keyframe) + fine output seek (exact).
-  // Input-only -ss with -c:v copy starts video on an earlier keyframe while AAC
-  // encodes near -ss → audio lags behind after every scrub.
+  // Keep the lookback short — large windows make every scrub feel frozen while
+  // ffmpeg decodes from the keyframe to the fine -ss point.
   const args = ['-hide_banner', '-loglevel', 'error'];
   if (startSeconds > 0) {
-    const coarse = Math.max(0, startSeconds - 20);
+    const coarse = Math.max(0, startSeconds - 6);
     const fine = startSeconds - coarse;
     if (coarse > 0) {
       args.push('-ss', coarse.toFixed(3));
