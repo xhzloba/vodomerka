@@ -189,6 +189,7 @@ export function canDirectPlay(filePath: string): boolean {
 /**
  * Chromium-safe ffmpeg maps: H.264/H.265 copy + AC3/DTS → AAC.
  * Stream-copy of AC3 fails in <video> ("не удалось декодировать").
+ * aresample=async keeps audio timestamps glued to video after seeks / remux.
  */
 export const CHROMIUM_REMUX_MAP_ARGS = [
   '-map',
@@ -197,6 +198,8 @@ export const CHROMIUM_REMUX_MAP_ARGS = [
   '0:a:0?',
   '-c:v',
   'copy',
+  '-af',
+  'aresample=async=1:first_pts=0',
   '-c:a',
   'aac',
   '-ac',

@@ -130,20 +130,36 @@ function pipeFileRemux(token: FileRemuxToken, res: ServerResponse, startSeconds 
     return;
   }
 
-  const args = [
-    '-hide_banner',
-    '-loglevel',
-    'error',
-    ...(startSeconds > 0 ? ['-ss', String(startSeconds)] : []),
-    '-i',
-    token.filePath,
+  // Dual -ss: coarse input seek (fast, keyframe) + fine output seek (exact).
+  // Input-only -ss with -c:v copy starts video on an earlier keyframe while AAC
+  // encodes near -ss → audio lags behind after every scrub.
+  const args = ['-hide_banner', '-loglevel', 'error'];
+  if (startSeconds > 0) {
+    const coarse = Math.max(0, startSeconds - 20);
+    const fine = startSeconds - coarse;
+    if (coarse > 0) {
+      args.push('-ss', coarse.toFixed(3));
+    }
+    args.push('-i', token.filePath);
+    if (fine > 0.05) {
+      args.push('-ss', fine.toFixed(3));
+    }
+  } else {
+    args.push('-i', token.filePath);
+  }
+
+  args.push(
+    '-fflags',
+    '+genpts',
+    '-avoid_negative_ts',
+    'make_zero',
     ...CHROMIUM_REMUX_MAP_ARGS,
     '-f',
     'mp4',
     '-movflags',
     'frag_keyframe+empty_moov+default_base_moof',
     'pipe:1',
-  ];
+  );
 
   const child = spawn(ffmpegPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
   trackFfmpeg(child);

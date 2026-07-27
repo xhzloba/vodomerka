@@ -46,14 +46,17 @@ function withSeekQuery(url: string, seconds: number): string {
   try {
     const parsed = new URL(url);
     if (seconds > 0) {
-      parsed.searchParams.set('t', String(Math.floor(seconds)));
+      parsed.searchParams.set('t', String(Math.max(0, seconds).toFixed(3)));
     } else {
       parsed.searchParams.delete('t');
     }
+    // Bust HTTP/media element cache so each scrub restarts ffmpeg cleanly.
+    parsed.searchParams.set('_', String(Date.now()));
     return parsed.toString();
   } catch {
     const base = url.split('?')[0] ?? url;
-    return seconds > 0 ? `${base}?t=${Math.floor(seconds)}` : base;
+    const t = seconds > 0 ? `t=${Math.max(0, seconds).toFixed(3)}&` : '';
+    return `${base}?${t}_=${Date.now()}`;
   }
 }
 
@@ -87,6 +90,9 @@ export function NativePlayer() {
   const [switchingEpisode, setSwitchingEpisode] = useState(false);
   const [videoSrc, setVideoSrc] = useState('');
   const [seekOrigin, setSeekOrigin] = useState(0);
+  const serverSeekTimerRef = useRef<number | null>(null);
+  const serverSeekPendingRef = useRef(false);
+  const wasPlayingBeforeSeekRef = useRef(true);
 
   const sessionTorrent = useMemo(
     () => torrents.find((item) => item.id === session?.torrentId) ?? null,
@@ -160,6 +166,12 @@ export function NativePlayer() {
     currentTimeRef.current = 0;
     lastUpsertAtRef.current = 0;
     resumeAppliedKeyRef.current = null;
+    serverSeekPendingRef.current = false;
+    wasPlayingBeforeSeekRef.current = true;
+    if (serverSeekTimerRef.current != null) {
+      window.clearTimeout(serverSeekTimerRef.current);
+      serverSeekTimerRef.current = null;
+    }
 
     const start =
       typeof session?.startSeconds === 'number' && session.startSeconds > 0
@@ -186,6 +198,14 @@ export function NativePlayer() {
     setDuration(known);
     durationRef.current = known;
   }, [session?.url, session?.durationSeconds, session?.startSeconds, session?.serverSeek]);
+
+  useEffect(() => {
+    return () => {
+      if (serverSeekTimerRef.current != null) {
+        window.clearTimeout(serverSeekTimerRef.current);
+      }
+    };
+  }, []);
 
   const persistContinueProgress = useCallback(
     async (force = false, options?: { ended?: boolean }) => {
@@ -320,10 +340,26 @@ export function NativePlayer() {
       const target = Math.max(0, Math.min(total, seconds));
 
       if (useServerSeek) {
+        // Optimistic UI; debounce ffmpeg restart so scrubbing doesn't thrash.
         setSeekOrigin(target);
         setCurrentTime(target);
+        currentTimeRef.current = target;
         setBuffered(target);
-        setVideoSrc(withSeekQuery(session.url, target));
+        serverSeekPendingRef.current = true;
+        wasPlayingBeforeSeekRef.current = !video.paused;
+        try {
+          video.pause();
+        } catch {
+          // ignore
+        }
+
+        if (serverSeekTimerRef.current != null) {
+          window.clearTimeout(serverSeekTimerRef.current);
+        }
+        serverSeekTimerRef.current = window.setTimeout(() => {
+          serverSeekTimerRef.current = null;
+          setVideoSrc(withSeekQuery(session.url, target));
+        }, 160);
         bumpControls();
         return;
       }
@@ -544,7 +580,10 @@ export function NativePlayer() {
                   // ignore seek failures on live streams
                 }
               }
-              void event.currentTarget.play().catch(() => undefined);
+              serverSeekPendingRef.current = false;
+              if (wasPlayingBeforeSeekRef.current || event.currentTarget.autoplay) {
+                void event.currentTarget.play().catch(() => undefined);
+              }
             }}
             onPlay={() => setPlaying(true)}
             onPause={() => {
@@ -566,6 +605,10 @@ export function NativePlayer() {
               void persistContinueProgress(true, { ended: true });
             }}
             onTimeUpdate={(event) => {
+              // Ignore stale frames from the previous ffmpeg pipe while scrubbing.
+              if (serverSeekPendingRef.current) {
+                return;
+              }
               const next = seekOrigin + event.currentTarget.currentTime;
               currentTimeRef.current = next;
               setCurrentTime(next);
