@@ -73,6 +73,8 @@
   --ui-segmented-pad: 3px;
   --ui-segmented-radius: 999px;
   --ui-segmented-pill-radius: 999px;
+  /* Outer size with border-box: pad*2 + tab + border*2 */
+  --ui-segmented-tab-size: 30px;
 
   display: inline-flex;
   flex-wrap: wrap;
@@ -80,7 +82,11 @@
   gap: 0;
   width: max-content;
   max-width: 100%;
-  height: 36px;
+  box-sizing: border-box;
+  height: auto;
+  min-height: calc(
+    var(--ui-segmented-tab-size) + (var(--ui-segmented-pad) * 2) + 2px
+  );
   padding: var(--ui-segmented-pad);
   border-radius: var(--ui-segmented-radius);
   border: 1px solid var(--ui-segmented-border);
@@ -104,8 +110,11 @@
 
 .ui-tabs--segmented .ui-tabs__tab {
   box-sizing: border-box;
-  min-height: 30px;
-  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ui-segmented-tab-size);
+  height: var(--ui-segmented-tab-size);
   padding: 0 12px;
   border-radius: var(--ui-segmented-pill-radius);
   font-size: 0.8125rem;

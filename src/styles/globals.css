@@ -251,6 +251,7 @@
   --app-page-top: 64px;
   --app-section-header-size: 40px;
   --app-section-title-size: 1.75rem;
+  --library-header-bottom-gap: 24px;
   --app-section-title-top: calc(
     var(--app-page-top) + (var(--app-section-header-size) - var(--app-section-title-size)) / 2
   );

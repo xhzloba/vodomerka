@@ -10,29 +10,48 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-  padding: var(--app-page-top) 28px 18px 18px;
   flex-shrink: 0;
+  min-height: calc(var(--app-page-top) + var(--app-section-header-size));
+  margin-bottom: var(--library-header-bottom-gap, 24px);
+  padding: var(--app-page-top) 28px 0 18px;
+  box-sizing: border-box;
 }
 
 .plugins-view__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   min-width: 0;
+  flex: 1;
 }
 
 .plugins-view__title {
-  font-size: 1.85rem;
-  font-weight: 700;
-  letter-spacing: -0.035em;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  height: var(--app-section-header-size);
+  min-height: var(--app-section-header-size);
+  font-size: var(--app-section-title-size);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
   color: var(--app-text);
 }
 
 .plugins-view__tabs {
-  margin-top: 14px;
+  margin-top: 0;
+}
+
+.plugins-view__header > .plugins-btn {
+  flex-shrink: 0;
+  height: var(--app-section-header-size);
+  min-height: var(--app-section-header-size);
 }
 
 .plugins-view__content {
   flex: 1;
   min-height: 0;
-  padding: 4px 28px 40px 18px;
+  padding: 0 28px 40px 18px;
   display: flex;
   flex-direction: column;
   gap: 36px;

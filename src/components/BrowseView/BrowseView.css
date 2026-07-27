@@ -17,6 +17,7 @@
   --library-row-header-gap: 12px;
   padding: 0 0 28px;
 }
+}
 
 .library-view:has(.library-view__scroll) {
   display: flex;
@@ -204,7 +205,10 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
-  flex: 1;
+  flex: 0 0 auto;
+  /* Fixed band so «Коллекция» / «Подборки» / «Торренты» share one title baseline. */
+  height: var(--app-section-header-size);
+  min-height: var(--app-section-header-size);
 }
 
 .library-view__header {
@@ -213,7 +217,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 12px;
   flex-shrink: 0;
   min-height: calc(var(--app-page-top) + var(--app-section-header-size));

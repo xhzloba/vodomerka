@@ -13,6 +13,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
+  /* Keep the same top band as list title («Подборки» ↔ «Коллекция»). */
+  min-height: calc(var(--app-page-top) + var(--app-section-header-size));
   margin-bottom: var(--library-header-bottom-gap);
 }
 
