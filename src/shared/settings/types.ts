@@ -47,7 +47,7 @@ export const POSTER_SIZE_OPTIONS: Array<{ id: PosterSizePreset; label: string; h
 ];
 
 export const POSTER_SIZE_VALUES: Record<PosterSizePreset, { cardWidth: number; gridMin: number }> = {
-  small: { cardWidth: 140, gridMin: 132 },
+  small: { cardWidth: 156, gridMin: 148 },
   medium: { cardWidth: 180, gridMin: 168 },
   large: { cardWidth: 220, gridMin: 200 },
 };
