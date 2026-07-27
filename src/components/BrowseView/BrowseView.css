@@ -75,24 +75,28 @@
   flex-shrink: 0;
 }
 
-/* Match Collection/Settings segmented language */
+/* Match compact home/catalog segmented language */
 .browse-view__action-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 6px;
   flex-shrink: 0;
   box-sizing: border-box;
-  min-height: 42px;
+  min-height: 36px;
+  height: 36px;
   max-width: min(240px, 42vw);
-  padding: 8px 16px;
+  padding: 0 12px;
   border: 1px solid var(--ui-segmented-border);
-  border-radius: 12px;
+  border-radius: 999px;
   background: var(--ui-segmented-bg);
   box-shadow: none;
   color: var(--app-text-muted);
   font-family: var(--font-system);
+  font-size: 0.8125rem;
+  font-weight: 510;
+  letter-spacing: -0.01em;
   cursor: pointer;
   -webkit-font-smoothing: antialiased;
   transition:
@@ -117,10 +121,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.9375rem;
-  font-weight: 590;
-  letter-spacing: -0.015em;
-  line-height: 1.2;
+  font-size: 0.8125rem;
+  font-weight: 510;
+  letter-spacing: -0.01em;
+  line-height: 1;
   color: inherit;
 }
 
@@ -538,6 +542,16 @@
   min-height: 36px;
   margin-bottom: var(--library-row-header-gap);
   padding-right: 18px;
+}
+
+/* Match home ContentRow section titles (not the page H1). */
+.library-view__rows .content-row__title,
+.library-view__rows .content-row__title-count {
+  font-size: 1.125rem;
+  font-weight: 510;
+  letter-spacing: -0.022em;
+  text-transform: none;
+  color: var(--app-text-muted);
 }
 
 .library-view__rows .content-row__scroll {

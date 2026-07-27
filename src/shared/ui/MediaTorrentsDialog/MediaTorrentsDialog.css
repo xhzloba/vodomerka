@@ -98,12 +98,14 @@
   display: none;
 }
 
+.media-torrents-panel__tabs .ui-tabs--segmented {
+  height: auto;
+  min-height: 36px;
+}
+
 .media-torrents-panel__tabs .ui-tabs--segmented .ui-tabs__tab {
   flex: 1 0 auto;
   justify-content: center;
-  min-height: 32px;
-  padding: 7px 12px;
-  font-size: 0.8125rem;
 }
 
 .media-torrents-panel__body {

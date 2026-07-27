@@ -66,7 +66,7 @@ export function WatchStatusCollectionView({
         emptyText={WATCH_STATUS_EMPTY_HINTS[status]}
         isActive={isActive}
       >
-        <ContentRow title="ВСЕ" items={items} onMediaSelect={onMediaSelect} />
+        <ContentRow title="Все" items={items} onMediaSelect={onMediaSelect} />
         {movies.length > 0 ? (
           <ContentRow
             title="Фильмы"

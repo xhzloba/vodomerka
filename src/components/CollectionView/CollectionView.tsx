@@ -134,7 +134,7 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
         emptyText={emptyText}
         isActive={isActive}
       >
-        <ContentRow title="ВСЕ" items={items} onMediaSelect={onMediaSelect} />
+        <ContentRow title="Все" items={items} onMediaSelect={onMediaSelect} />
         {movies.length > 0 ? (
           <ContentRow
             title="Фильмы"
