@@ -14,6 +14,7 @@ import { registerSettingsIpc } from './ipc/settings';
 import { registerBackupIpc } from './ipc/backup';
 import { registerPluginsIpc } from './ipc/plugins';
 import { registerDetailIpc } from './ipc/detail';
+import { registerPlayerIpc } from './ipc/player';
 import { configureAppBranding, APP_NAME } from './branding';
 import { registerAppMenu } from './menu';
 import {
@@ -160,6 +161,7 @@ app.whenReady().then(() => {
   registerImagesIpc();
   registerOverridesIpc();
   registerDetailIpc();
+  registerPlayerIpc();
   registerWindowChromeIpc(() => mainWindow);
   registerSystemIpc();
   registerTorrentsIpc();

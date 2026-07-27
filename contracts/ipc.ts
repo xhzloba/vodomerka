@@ -238,6 +238,13 @@ export const IPC_CHANNELS = {
     close: 'detail:close',
     ready: 'detail:ready',
   },
+  player: {
+    openTorrent: 'player:openTorrent',
+    get: 'player:get',
+    close: 'player:close',
+    ready: 'player:ready',
+    session: 'player:session',
+  },
 } as const;
 
 export type Unsubscribe = () => void;
@@ -357,6 +364,16 @@ export interface MediaPlaybackSession {
 
 export type MediaPreparePlaybackResult =
   | { ok: true; session: MediaPlaybackSession }
+  | { ok: false; error: string };
+
+export interface PlayerOpenTorrentPayload {
+  torrentId: string;
+  filePath?: string;
+  startSeconds?: number;
+}
+
+export type PlayerOpenTorrentResult =
+  | { ok: true }
   | { ok: false; error: string };
 
 export interface MediaPlayerOption {
@@ -486,5 +503,13 @@ export interface ElectronApi {
     close: () => Promise<void>;
     notifyReady: (mediaId: string) => void;
     onReady: (callback: () => void) => Unsubscribe;
+  };
+  player: {
+    openTorrent: (payload: PlayerOpenTorrentPayload) => Promise<PlayerOpenTorrentResult>;
+    get: () => Promise<MediaPlaybackSession | null>;
+    close: () => Promise<void>;
+    notifyReady: () => void;
+    onReady: (callback: () => void) => Unsubscribe;
+    onSession: (callback: (session: MediaPlaybackSession) => void) => Unsubscribe;
   };
 }

@@ -17,6 +17,9 @@ import {
   type ContinueWatchingUpsertPayload,
   type StoredMediaItem,
   type ThemeCatalog,
+  type MediaPlaybackSession,
+  type PlayerOpenTorrentPayload,
+  type PlayerOpenTorrentResult,
   type TorrentAddPayload,
   type TorrentAddResult,
   type TorrentConnectivityProbeResult,
@@ -255,6 +258,34 @@ const electronApi: ElectronApi = {
       ipcRenderer.once(IPC_CHANNELS.detail.ready, listener);
       return () => {
         ipcRenderer.removeListener(IPC_CHANNELS.detail.ready, listener);
+      };
+    },
+  },
+  player: {
+    openTorrent: (payload: PlayerOpenTorrentPayload): Promise<PlayerOpenTorrentResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.player.openTorrent, payload),
+    get: (): Promise<MediaPlaybackSession | null> => ipcRenderer.invoke(IPC_CHANNELS.player.get),
+    close: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.player.close),
+    notifyReady: (): void => {
+      ipcRenderer.send(IPC_CHANNELS.player.ready);
+    },
+    onReady: (callback: () => void) => {
+      const listener = () => callback();
+      ipcRenderer.once(IPC_CHANNELS.player.ready, listener);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.player.ready, listener);
+      };
+    },
+    onSession: (callback: (session: MediaPlaybackSession) => void) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        session: MediaPlaybackSession,
+      ) => {
+        callback(session);
+      };
+      ipcRenderer.on(IPC_CHANNELS.player.session, listener);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.player.session, listener);
       };
     },
   },

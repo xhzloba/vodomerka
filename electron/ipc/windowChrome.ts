@@ -1,5 +1,4 @@
-import { app, ipcMain } from 'electron';
-import type { BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../../contracts/ipc';
 
 const MAC_TRAFFIC_LIGHT_POSITION = {
@@ -131,8 +130,9 @@ export function registerWindowChromeIpc(getWindow: () => BrowserWindow | null): 
     );
   });
 
-  ipcMain.handle(IPC_CHANNELS.windowChrome.setFullScreen, (_event, fullScreen: boolean) => {
-    const win = getWindow();
+  ipcMain.handle(IPC_CHANNELS.windowChrome.setFullScreen, (event, fullScreen: boolean) => {
+    // Maximize the calling window (player window or main overlay), not always main.
+    const win = BrowserWindow.fromWebContents(event.sender) ?? getWindow();
     if (!win || win.isDestroyed()) {
       return false;
     }
@@ -154,10 +154,16 @@ export function registerWindowChromeIpc(getWindow: () => BrowserWindow | null): 
     softFocusMainWindow(getWindow());
   });
 
-  ipcMain.handle(IPC_CHANNELS.windowChrome.setPlayerOpen, (_event, open: boolean) => {
+  ipcMain.handle(IPC_CHANNELS.windowChrome.setPlayerOpen, (event, open: boolean) => {
+    const senderWindow = BrowserWindow.fromWebContents(event.sender);
+    const main = getWindow();
+    // Dedicated player BrowserWindow manages its own lifecycle — don't hijack main.
+    if (senderWindow && main && senderWindow !== main) {
+      return;
+    }
     playerOverlayOpen = Boolean(open);
     if (open) {
-      softFocusMainWindow(getWindow());
+      softFocusMainWindow(main);
     }
   });
 }

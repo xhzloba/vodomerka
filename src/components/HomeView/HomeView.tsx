@@ -180,10 +180,20 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
 
   const handleContinueSelect = useCallback(
     async (item: MediaItem) => {
+      const continueId = continueByItemId.get(item.id)?.id;
       const record =
-        continueRecords.find((entry) => entry.item.id === item.id) ?? findByMediaId(item.id);
+        (continueId
+          ? continueRecords.find((entry) => entry.id === continueId)
+          : undefined) ??
+        continueRecords.find((entry) => entry.item.id === item.id) ??
+        findByMediaId(item.id);
+
       if (!record?.torrentId) {
-        onMediaSelect(item);
+        // Continue row is for resume playback only — never open film detail here.
+        showToast('Нет раздачи для продолжения воспроизведения', {
+          kind: 'error',
+          title: 'Плеер',
+        });
         return;
       }
 
@@ -200,20 +210,45 @@ export function HomeView({ onMediaSelect, onPlay, onOpenCompilation }: HomeViewP
         return;
       }
 
-      const result = await playTorrent(
-        record.torrentId,
-        record.filePath,
-        record.positionSeconds > 0 ? record.positionSeconds : undefined,
-      );
+      const playerId = settings.torrentPlaybackPlayerId || 'vodomerka';
+      const filePath = record.filePath;
+      const startSeconds =
+        record.positionSeconds > 0 ? record.positionSeconds : undefined;
+
+      // Preferred external player → separate app window; vodomerka → in-app player.
+      // Never fall back to film detail from this row.
+      if (playerId !== 'vodomerka') {
+        const result = await window.electronAPI?.torrents?.openInPlayer?.(
+          record.torrentId,
+          playerId,
+          filePath,
+        );
+        if (!result?.ok) {
+          showToast(result?.error || 'Не удалось открыть во внешнем плеере', {
+            kind: 'error',
+            title: 'Плеер',
+          });
+        }
+        return;
+      }
+
+      const result = await playTorrent(record.torrentId, filePath, startSeconds);
       if (!result.ok) {
         showToast(result.error || 'Не удалось продолжить просмотр', {
           kind: 'error',
           title: 'Плеер',
         });
-        onMediaSelect(item);
       }
     },
-    [continueRecords, findByMediaId, onMediaSelect, playTorrent, removeProgress, showToast],
+    [
+      continueByItemId,
+      continueRecords,
+      findByMediaId,
+      playTorrent,
+      removeProgress,
+      settings.torrentPlaybackPlayerId,
+      showToast,
+    ],
   );
 
   const heroItems = useMemo(
