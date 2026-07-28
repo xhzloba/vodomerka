@@ -207,7 +207,7 @@
   gap: 8px;
   min-width: 0;
   flex: 0 0 auto;
-  /* Fixed band so «Коллекция» / «Подборки» / «Торренты» share one title baseline. */
+  /* Fixed band so «Моё» / «Подборки» / «Торренты» share one title baseline. */
   height: var(--app-section-header-size);
   min-height: var(--app-section-header-size);
 }

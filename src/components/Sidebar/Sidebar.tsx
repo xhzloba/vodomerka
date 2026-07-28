@@ -27,7 +27,7 @@ import {
   FilmIcon,
   GridIcon,
   HomeIcon,
-  LayersIcon,
+  MyStuffIcon,
   PuzzleIcon,
   SearchIcon,
   SettingsIcon,
@@ -58,7 +58,7 @@ const primaryNavItems: { id: NavItem; label: string; icon: JSX.Element }[] = [
   { id: 'home', label: 'Главная', icon: <HomeIcon size={20} /> },
   { id: 'browse', label: 'Каталог', icon: <GridIcon size={20} /> },
   { id: 'compilations', label: 'Подборки', icon: <CompilationsIcon size={20} /> },
-  { id: 'library', label: 'Коллекция', icon: <LayersIcon size={20} /> },
+  { id: 'library', label: 'Моё', icon: <MyStuffIcon size={20} /> },
   { id: 'torrents', label: 'Торренты', icon: <DownloadIcon size={20} /> },
 ];
 
@@ -344,7 +344,7 @@ export function Sidebar({
           item.id === 'library' && favoritesCount > 0
             ? `${item.label}, ${favoritesCount} в избранном`
             : item.id === 'library'
-              ? 'Коллекция: избранное и статусы просмотра'
+              ? 'Моё: избранное и статусы просмотра'
               : item.id === 'torrents' && torrentsActiveCount > 0
                 ? `${item.label}, ${torrentsActiveCount} активных`
                 : item.label

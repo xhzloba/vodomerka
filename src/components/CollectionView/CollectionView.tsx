@@ -105,13 +105,13 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
   return (
     <>
       <LibraryCollectionView
-        title="Коллекция"
+        title="Моё"
         headerExtra={
           <Tabs
             items={COLLECTION_TABS}
             activeId={tab}
             onChange={(id) => setTab(id as CollectionTab)}
-            ariaLabel="Разделы коллекции"
+            ariaLabel="Разделы в Моё"
             variant="segmented"
           />
         }
@@ -129,7 +129,7 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
           key={tab}
           items={items}
           onMediaSelect={onMediaSelect}
-          filterAriaLabel="Фильтр коллекции по типу"
+          filterAriaLabel="Фильтр Моё по типу"
         />
       </LibraryCollectionView>
 

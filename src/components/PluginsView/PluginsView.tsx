@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import type {
   InstalledSidebarAnimationPlugin,
   InstalledThemePlugin,
@@ -24,7 +24,10 @@ import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { useAppTopProgress } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
 import { PageLoading } from '@/shared/ui/PageState';
 import { Tabs } from '@/shared/ui/Tabs';
-import { ChevronDownIcon } from '@/shared/ui/icons/icons';
+import { SettingsCheckbox } from '@/shared/ui/SettingsControls/SettingsCheckbox';
+import { SettingsGlyph } from '@/shared/ui/SettingsControls/SettingsGlyph';
+import { HistoryIcon, TrashIcon } from '@/shared/ui/icons';
+import '../SettingsView/SettingsView.css';
 import './PluginsView.css';
 
 const PLUGIN_TABS = [
@@ -34,144 +37,29 @@ const PLUGIN_TABS = [
 
 type PluginTabId = (typeof PLUGIN_TABS)[number]['id'];
 
-const INSTALL_BORDER_RADIUS = 12;
-const INSTALL_STROKE = 2;
-
 function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
-}
-
-function ThemePreview({ bg, accent }: { bg: string; accent: string }) {
-  return (
-    <span className="plugins-card__preview" aria-hidden="true">
-      <span className="plugins-card__preview-field" style={{ background: bg }} />
-      <span className="plugins-card__preview-accent" style={{ background: accent }} />
-    </span>
-  );
-}
-
-function InstallBorderProgress({ progress }: { progress: number }) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  const value = clamp01(progress);
-
-  useLayoutEffect(() => {
-    const host = svgRef.current?.parentElement;
-    if (!host) {
-      return;
-    }
-
-    const update = () => {
-      const rect = host.getBoundingClientRect();
-      setSize({ width: rect.width, height: rect.height });
-    };
-
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(host);
-    return () => observer.disconnect();
-  }, []);
-
-  const inset = INSTALL_STROKE / 2;
-  const width = Math.max(0, size.width - INSTALL_STROKE);
-  const height = Math.max(0, size.height - INSTALL_STROKE);
-  const radius = Math.max(0, INSTALL_BORDER_RADIUS - inset);
-  const dashOffset = 100 * (1 - value);
-
-  return (
-    <svg ref={svgRef} className="plugins-card__install-border" aria-hidden="true">
-      {width > 0 && height > 0 ? (
-        <>
-          <rect
-            className="plugins-card__install-track"
-            x={inset}
-            y={inset}
-            width={width}
-            height={height}
-            rx={radius}
-            ry={radius}
-            pathLength={100}
-          />
-          <rect
-            className="plugins-card__install-bar"
-            x={inset}
-            y={inset}
-            width={width}
-            height={height}
-            rx={radius}
-            ry={radius}
-            pathLength={100}
-            strokeDasharray={100}
-            strokeDashoffset={dashOffset}
-          />
-        </>
-      ) : null}
-    </svg>
-  );
-}
-
-function CollapsibleInstalledSection({
-  id,
-  title,
-  hint,
-  open,
-  onToggle,
-  children,
-}: {
-  id: string;
-  title: string;
-  hint: string;
-  open: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-}) {
-  const panelId = `${id}-panel`;
-
-  return (
-    <section className="plugins-section" aria-labelledby={id}>
-      <button
-        type="button"
-        className={`plugins-section__toggle${open ? ' plugins-section__toggle--open' : ''}`}
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={onToggle}
-      >
-        <span className="plugins-section__toggle-text">
-          <span id={id} className="plugins-section__title">
-            {title}
-          </span>
-          <span className="plugins-section__hint">{hint}</span>
-        </span>
-        <ChevronDownIcon size={20} className="plugins-section__chevron" />
-      </button>
-
-      <div
-        id={panelId}
-        className={`plugins-collapse${open ? ' plugins-collapse--open' : ''}`}
-        role="region"
-        aria-labelledby={id}
-        aria-hidden={!open}
-        ref={(node) => {
-          if (!node) {
-            return;
-          }
-          if (!open) {
-            node.setAttribute('inert', '');
-          } else {
-            node.removeAttribute('inert');
-          }
-        }}
-      >
-        <div className="plugins-collapse__inner">{children}</div>
-      </div>
-    </section>
-  );
 }
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
   });
+}
+
+function PluginPreview({ bg, accent }: { bg: string; accent: string }) {
+  return (
+    <span className="settings-theme-card__preview" aria-hidden="true">
+      <span
+        className="settings-theme-card__swatch settings-theme-card__swatch--bg"
+        style={{ background: bg }}
+      />
+      <span
+        className="settings-theme-card__swatch settings-theme-card__swatch--accent"
+        style={{ background: accent }}
+      />
+    </span>
+  );
 }
 
 export function PluginsView() {
@@ -187,8 +75,6 @@ export function PluginsView() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [themesInstalledOpen, setThemesInstalledOpen] = useState(true);
-  const [sidebarInstalledOpen, setSidebarInstalledOpen] = useState(true);
   const [installProgress, setInstallProgress] = useState(0);
   const busyIdRef = useRef<string | null>(null);
 
@@ -274,6 +160,9 @@ export function PluginsView() {
   };
 
   const handleApplyTheme = async (themeId: string, label: string) => {
+    if (settings.theme === themeId) {
+      return;
+    }
     setBusyId(themeId);
     try {
       await updateSettings({ theme: themeId });
@@ -326,6 +215,9 @@ export function PluginsView() {
   };
 
   const handleApplySidebar = async (id: string, label: string) => {
+    if (settings.sidebarMenuAnimation === id) {
+      return;
+    }
     setBusyId(`sidebar:${id}`);
     try {
       await updateSettings({ sidebarMenuAnimation: id });
@@ -359,294 +251,298 @@ export function PluginsView() {
 
   if (isLoading) {
     return (
-      <div className="plugins-view page-state-shell">
+      <div className="settings-view page-state-shell">
         <PageLoading title="Загрузка плагинов..." centered />
       </div>
     );
   }
 
   return (
-    <div className="plugins-view">
-      <header className="plugins-view__header">
-        <div className="plugins-view__heading">
-          <h1 className="plugins-view__title">Плагины</h1>
+    <div className="settings-view">
+      <header className="settings-view__header">
+        <h1 className="settings-view__title">Плагины</h1>
+        <p className="settings-view__subtitle">Темы оформления и анимации бокового меню</p>
 
-          <div className="plugins-view__tabs">
-            <Tabs
-              items={[...PLUGIN_TABS]}
-              activeId={activeTab}
-              onChange={(id) => setActiveTab(id as PluginTabId)}
-              ariaLabel="Типы плагинов"
-              variant="settings"
-            />
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="plugins-btn plugins-btn--ghost"
-          disabled={isRefreshing}
-          onClick={() => void refresh({ soft: true })}
-        >
-          {isRefreshing ? 'Обновление…' : 'Обновить каталог'}
-        </button>
+        <Tabs
+          items={[...PLUGIN_TABS]}
+          activeId={activeTab}
+          onChange={(id) => setActiveTab(id as PluginTabId)}
+          ariaLabel="Типы плагинов"
+          variant="segmented"
+        />
       </header>
 
-      <div ref={scrollRef} className="plugins-view__content scroll-overlay">
+      <div ref={scrollRef} className="settings-view__content scroll-overlay">
         {activeTab === 'themes' ? (
-          <>
-            <CollapsibleInstalledSection
-              id="plugins-installed-themes-title"
-              title="Установленные темы"
-              hint={
-                installedThemes.length === 0
-                  ? 'Пока пусто — поставь тему из каталога ниже'
-                  : `${installedThemes.length} ${installedThemes.length === 1 ? 'тема' : 'тем'}`
-              }
-              open={themesInstalledOpen}
-              onToggle={() => setThemesInstalledOpen((value) => !value)}
-            >
-              {installedThemes.length === 0 ? (
-                <div className="plugins-empty">
-                  <p className="plugins-empty__title">Нет установленных тем</p>
-                  <p className="plugins-empty__text">
-                    В каталоге ниже можно скачать Оникс, Ноктюрн, Янтарь и другие.
-                  </p>
-                </div>
-              ) : (
-                <div className="plugins-grid">
-                  {installedThemes.map((theme) => {
-                    const isActive = settings.theme === theme.id;
-                    const busy = busyId === theme.id;
+          <div className="settings-panels-grid">
+            <section className="settings-group" aria-labelledby="plugins-installed-themes-title">
+              <h2 id="plugins-installed-themes-title" className="settings-group__title">
+                Установленные
+              </h2>
+              <div className="settings-panel">
+                {installedThemes.length === 0 ? (
+                  <p className="settings-hidden-empty">Нет установленных тем — поставь из каталога ниже</p>
+                ) : (
+                  <div className="settings-theme-grid" role="radiogroup" aria-label="Установленные темы">
+                    {installedThemes.map((theme) => {
+                      const isActive = settings.theme === theme.id;
+                      const busy = busyId === theme.id;
 
-                    return (
-                      <article
-                        key={theme.id}
-                        className={`plugins-card${isActive ? ' plugins-card--active' : ''}`}
-                      >
-                        <ThemePreview bg={theme.preview.bg} accent={theme.preview.accent} />
-                        <div className="plugins-card__body">
-                          <div className="plugins-card__top">
-                            <h3 className="plugins-card__name">{theme.name}</h3>
-                            {isActive ? (
-                              <span className="plugins-card__badge">Активна</span>
-                            ) : (
-                              <span className="plugins-card__badge plugins-card__badge--muted">
-                                v{theme.version}
-                              </span>
-                            )}
-                          </div>
-                          <p className="plugins-card__description">{theme.description}</p>
-                        </div>
-                        <div className="plugins-card__actions">
+                      return (
+                        <div
+                          key={theme.id}
+                          className={`plugins-item${isActive ? ' plugins-item--active' : ''}`}
+                        >
                           <button
                             type="button"
-                            className="plugins-btn plugins-btn--primary"
-                            disabled={busy || isActive}
+                            role="radio"
+                            aria-checked={isActive}
+                            className={`settings-theme-card${
+                              isActive ? ' settings-theme-card--active' : ''
+                            }`}
+                            disabled={busy}
                             onClick={() => void handleApplyTheme(theme.id, theme.name)}
                           >
-                            {isActive ? 'Выбрана' : 'Применить'}
+                            <PluginPreview bg={theme.preview.bg} accent={theme.preview.accent} />
+                            <span className="settings-theme-card__body">
+                              <span className="settings-theme-card__label">{theme.name}</span>
+                              <span className="settings-theme-card__description">
+                                {theme.description}
+                              </span>
+                            </span>
+                            <span className="settings-theme-card__check">
+                              <SettingsCheckbox checked={isActive} decorative />
+                            </span>
                           </button>
                           <button
                             type="button"
-                            className="plugins-btn plugins-btn--ghost"
+                            className="plugins-item__remove"
                             disabled={busy}
+                            aria-label={`Удалить ${theme.name}`}
                             onClick={() => void handleUninstallTheme(theme)}
                           >
-                            Удалить
+                            <TrashIcon size={15} strokeWidth={1.9} />
                           </button>
                         </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-            </CollapsibleInstalledSection>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <p className="settings-group__footer">
+                Нажми тему, чтобы применить. Встроенная — Обсидиан, в Настройки → Оформление.
+              </p>
+            </section>
 
-            <section className="plugins-section" aria-labelledby="plugins-theme-catalog-title">
-              <div className="plugins-section__head">
-                <div>
-                  <h2 id="plugins-theme-catalog-title" className="plugins-section__title">
-                    Каталог тем
-                  </h2>
-                  <p className="plugins-section__hint">
-                    Установка сохраняет тему локально. Офлайн — из встроенного каталога.
-                  </p>
+            <section className="settings-group" aria-labelledby="plugins-theme-catalog-title">
+              <h2 id="plugins-theme-catalog-title" className="settings-group__title">
+                Каталог
+              </h2>
+              <div className="settings-panel">
+                {catalogError ? (
+                  <p className="settings-hidden-empty plugins-error-text">{catalogError}</p>
+                ) : null}
+
+                {!catalogError && availableThemes.length === 0 ? (
+                  <p className="settings-hidden-empty">Всё установлено — новых тем нет</p>
+                ) : null}
+
+                {availableThemes.length > 0 ? (
+                  <div className="settings-theme-grid">
+                    {availableThemes.map((entry) => {
+                      const busy = busyId === entry.id;
+                      const percent = Math.round(installProgress * 100);
+
+                      return (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          className={`settings-theme-card plugins-catalog-card${
+                            busy ? ' plugins-catalog-card--busy' : ''
+                          }`}
+                          disabled={busy || Boolean(busyId)}
+                          onClick={() => void handleInstallTheme(entry)}
+                        >
+                          {busy ? (
+                            <span
+                              className="plugins-catalog-card__progress"
+                              style={{ width: `${percent}%` }}
+                              aria-hidden="true"
+                            />
+                          ) : null}
+                          <PluginPreview bg={entry.preview.bg} accent={entry.preview.accent} />
+                          <span className="settings-theme-card__body">
+                            <span className="settings-theme-card__label">{entry.name}</span>
+                            <span className="settings-theme-card__description">
+                              {entry.description}
+                            </span>
+                          </span>
+                          <span className="plugins-catalog-card__action">
+                            {busy ? `${percent}%` : 'Установить'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+
+                <div className="settings-data-actions">
+                  <button
+                    type="button"
+                    className="settings-action-btn"
+                    disabled={isRefreshing}
+                    onClick={() => void refresh({ soft: true })}
+                  >
+                    <SettingsGlyph tone="blue">
+                      <HistoryIcon size={15} strokeWidth={1.9} />
+                    </SettingsGlyph>
+                    {isRefreshing ? 'Обновление…' : 'Обновить каталог'}
+                  </button>
                 </div>
               </div>
-
-              {catalogError ? <p className="plugins-error">{catalogError}</p> : null}
-
-              {availableThemes.length === 0 && !catalogError ? (
-                <div className="plugins-empty">
-                  <p className="plugins-empty__title">Всё установлено</p>
-                  <p className="plugins-empty__text">В каталоге больше нет новых тем.</p>
-                </div>
-              ) : (
-                <div className="plugins-grid">
-                  {availableThemes.map((entry) => {
-                    const busy = busyId === entry.id;
-
-                    return (
-                      <article
-                        key={entry.id}
-                        className={`plugins-card${busy ? ' plugins-card--installing' : ''}`}
-                      >
-                        {busy ? <InstallBorderProgress progress={installProgress} /> : null}
-                        <ThemePreview bg={entry.preview.bg} accent={entry.preview.accent} />
-                        <div className="plugins-card__body">
-                          <div className="plugins-card__top">
-                            <h3 className="plugins-card__name">{entry.name}</h3>
-                            <span className="plugins-card__badge plugins-card__badge--muted">
-                              v{entry.version}
-                            </span>
-                          </div>
-                          <p className="plugins-card__description">{entry.description}</p>
-                        </div>
-                        <div className="plugins-card__actions">
-                          <button
-                            type="button"
-                            className="plugins-btn plugins-btn--primary"
-                            disabled={busy}
-                            onClick={() => void handleInstallTheme(entry)}
-                          >
-                            {busy ? 'Установка…' : 'Установить'}
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
+              <p className="settings-group__footer">
+                Установка сохраняет тему локально. Офлайн — из встроенного каталога.
+              </p>
             </section>
-          </>
+          </div>
         ) : (
-          <>
-            <CollapsibleInstalledSection
-              id="plugins-installed-sidebar-title"
-              title="Установленные анимации"
-              hint={
-                installedSidebar.length === 0
-                  ? 'По умолчанию доступен Водяной магнит'
-                  : `${installedSidebar.length} доп. ${installedSidebar.length === 1 ? 'анимация' : 'анимаций'}`
-              }
-              open={sidebarInstalledOpen}
-              onToggle={() => setSidebarInstalledOpen((value) => !value)}
-            >
-              {installedSidebar.length === 0 ? (
-                <div className="plugins-empty">
-                  <p className="plugins-empty__title">Нет установленных анимаций</p>
-                  <p className="plugins-empty__text">
-                    Скачай Жидкое свечение, Змейку, Магнит или Пульс из каталога.
+          <div className="settings-panels-grid">
+            <section className="settings-group" aria-labelledby="plugins-installed-sidebar-title">
+              <h2 id="plugins-installed-sidebar-title" className="settings-group__title">
+                Установленные
+              </h2>
+              <div className="settings-panel">
+                {installedSidebar.length === 0 ? (
+                  <p className="settings-hidden-empty">
+                    Нет доп. анимаций — по умолчанию Водяной магнит
                   </p>
-                </div>
-              ) : (
-                <div className="plugins-grid">
-                  {installedSidebar.map((plugin) => {
-                    const isActive = settings.sidebarMenuAnimation === plugin.id;
-                    const busy = busyId === `sidebar:${plugin.id}`;
+                ) : (
+                  <div
+                    className="settings-theme-grid"
+                    role="radiogroup"
+                    aria-label="Установленные анимации"
+                  >
+                    {installedSidebar.map((plugin) => {
+                      const isActive = settings.sidebarMenuAnimation === plugin.id;
+                      const busy = busyId === `sidebar:${plugin.id}`;
 
-                    return (
-                      <article
-                        key={plugin.id}
-                        className={`plugins-card${isActive ? ' plugins-card--active' : ''}`}
-                      >
-                        <ThemePreview bg={plugin.preview.bg} accent={plugin.preview.accent} />
-                        <div className="plugins-card__body">
-                          <div className="plugins-card__top">
-                            <h3 className="plugins-card__name">{plugin.name}</h3>
-                            {isActive ? (
-                              <span className="plugins-card__badge">Активна</span>
-                            ) : (
-                              <span className="plugins-card__badge plugins-card__badge--muted">
-                                v{plugin.version}
-                              </span>
-                            )}
-                          </div>
-                          <p className="plugins-card__description">{plugin.description}</p>
-                        </div>
-                        <div className="plugins-card__actions">
+                      return (
+                        <div
+                          key={plugin.id}
+                          className={`plugins-item${isActive ? ' plugins-item--active' : ''}`}
+                        >
                           <button
                             type="button"
-                            className="plugins-btn plugins-btn--primary"
-                            disabled={busy || isActive}
+                            role="radio"
+                            aria-checked={isActive}
+                            className={`settings-theme-card${
+                              isActive ? ' settings-theme-card--active' : ''
+                            }`}
+                            disabled={busy}
                             onClick={() => void handleApplySidebar(plugin.id, plugin.name)}
                           >
-                            {isActive ? 'Выбрана' : 'Применить'}
+                            <PluginPreview bg={plugin.preview.bg} accent={plugin.preview.accent} />
+                            <span className="settings-theme-card__body">
+                              <span className="settings-theme-card__label">{plugin.name}</span>
+                              <span className="settings-theme-card__description">
+                                {plugin.description}
+                              </span>
+                            </span>
+                            <span className="settings-theme-card__check">
+                              <SettingsCheckbox checked={isActive} decorative />
+                            </span>
                           </button>
                           <button
                             type="button"
-                            className="plugins-btn plugins-btn--ghost"
+                            className="plugins-item__remove"
                             disabled={busy}
+                            aria-label={`Удалить ${plugin.name}`}
                             onClick={() => void handleUninstallSidebar(plugin)}
                           >
-                            Удалить
+                            <TrashIcon size={15} strokeWidth={1.9} />
                           </button>
                         </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-            </CollapsibleInstalledSection>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <p className="settings-group__footer">
+                После установки анимация также появится в Настройки → Интерфейс.
+              </p>
+            </section>
 
-            <section className="plugins-section" aria-labelledby="plugins-sidebar-catalog-title">
-              <div className="plugins-section__head">
-                <div>
-                  <h2 id="plugins-sidebar-catalog-title" className="plugins-section__title">
-                    Каталог анимаций
-                  </h2>
-                  <p className="plugins-section__hint">
-                    После установки анимация появится в Настройки → Интерфейс.
-                  </p>
+            <section className="settings-group" aria-labelledby="plugins-sidebar-catalog-title">
+              <h2 id="plugins-sidebar-catalog-title" className="settings-group__title">
+                Каталог
+              </h2>
+              <div className="settings-panel">
+                {catalogError ? (
+                  <p className="settings-hidden-empty plugins-error-text">{catalogError}</p>
+                ) : null}
+
+                {!catalogError && availableSidebar.length === 0 ? (
+                  <p className="settings-hidden-empty">Всё установлено — новых анимаций нет</p>
+                ) : null}
+
+                {availableSidebar.length > 0 ? (
+                  <div className="settings-theme-grid">
+                    {availableSidebar.map((entry) => {
+                      const busy = busyId === `sidebar:${entry.id}`;
+                      const percent = Math.round(installProgress * 100);
+
+                      return (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          className={`settings-theme-card plugins-catalog-card${
+                            busy ? ' plugins-catalog-card--busy' : ''
+                          }`}
+                          disabled={busy || Boolean(busyId)}
+                          onClick={() => void handleInstallSidebar(entry)}
+                        >
+                          {busy ? (
+                            <span
+                              className="plugins-catalog-card__progress"
+                              style={{ width: `${percent}%` }}
+                              aria-hidden="true"
+                            />
+                          ) : null}
+                          <PluginPreview bg={entry.preview.bg} accent={entry.preview.accent} />
+                          <span className="settings-theme-card__body">
+                            <span className="settings-theme-card__label">{entry.name}</span>
+                            <span className="settings-theme-card__description">
+                              {entry.description}
+                            </span>
+                          </span>
+                          <span className="plugins-catalog-card__action">
+                            {busy ? `${percent}%` : 'Установить'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+
+                <div className="settings-data-actions">
+                  <button
+                    type="button"
+                    className="settings-action-btn"
+                    disabled={isRefreshing}
+                    onClick={() => void refresh({ soft: true })}
+                  >
+                    <SettingsGlyph tone="blue">
+                      <HistoryIcon size={15} strokeWidth={1.9} />
+                    </SettingsGlyph>
+                    {isRefreshing ? 'Обновление…' : 'Обновить каталог'}
+                  </button>
                 </div>
               </div>
-
-              {catalogError ? <p className="plugins-error">{catalogError}</p> : null}
-
-              {availableSidebar.length === 0 && !catalogError ? (
-                <div className="plugins-empty">
-                  <p className="plugins-empty__title">Всё установлено</p>
-                  <p className="plugins-empty__text">В каталоге больше нет новых анимаций.</p>
-                </div>
-              ) : (
-                <div className="plugins-grid">
-                  {availableSidebar.map((entry) => {
-                    const busy = busyId === `sidebar:${entry.id}`;
-
-                    return (
-                      <article
-                        key={entry.id}
-                        className={`plugins-card${busy ? ' plugins-card--installing' : ''}`}
-                      >
-                        {busy ? <InstallBorderProgress progress={installProgress} /> : null}
-                        <ThemePreview bg={entry.preview.bg} accent={entry.preview.accent} />
-                        <div className="plugins-card__body">
-                          <div className="plugins-card__top">
-                            <h3 className="plugins-card__name">{entry.name}</h3>
-                            <span className="plugins-card__badge plugins-card__badge--muted">
-                              v{entry.version}
-                            </span>
-                          </div>
-                          <p className="plugins-card__description">{entry.description}</p>
-                        </div>
-                        <div className="plugins-card__actions">
-                          <button
-                            type="button"
-                            className="plugins-btn plugins-btn--primary"
-                            disabled={busy}
-                            onClick={() => void handleInstallSidebar(entry)}
-                          >
-                            {busy ? 'Установка…' : 'Установить'}
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
+              <p className="settings-group__footer">
+                Жидкое свечение, Змейка, Магнит, Пульс и другие эффекты меню.
+              </p>
             </section>
-          </>
+          </div>
         )}
       </div>
     </div>

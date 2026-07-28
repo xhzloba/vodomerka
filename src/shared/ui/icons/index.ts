@@ -40,6 +40,7 @@ export {
   SearchIcon,
   FilterIcon,
   LayersIcon,
+  MyStuffIcon,
   SettingsIcon,
   TrashIcon,
   TrendingIcon,

@@ -65,7 +65,7 @@ export function LibraryTypeFilteredRows({
   };
 
   const layoutToggle = (
-    <div className="library-layout-toggle" role="radiogroup" aria-label="Вид коллекции">
+    <div className="library-layout-toggle" role="radiogroup" aria-label="Вид раздела Моё">
       <button
         type="button"
         role="radio"
