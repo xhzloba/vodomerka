@@ -24,14 +24,6 @@ import { LibraryTypeFilteredRows } from '../LibraryCollectionView/LibraryTypeFil
 
 export type CollectionTab = 'favorites' | WatchStatus;
 
-const COLLECTION_TABS: Array<{ id: CollectionTab; label: string }> = [
-  { id: 'favorites', label: 'Избранное' },
-  ...WATCH_STATUSES.map((status) => ({
-    id: status,
-    label: WATCH_STATUS_LABELS[status],
-  })),
-];
-
 interface CollectionViewProps {
   onMediaSelect: (item: MediaItem) => void;
   isActive?: boolean;
@@ -62,6 +54,18 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
   const [tab, setTab] = useState<CollectionTab>('favorites');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+
+  const collectionTabs = useMemo(
+    () => [
+      { id: 'favorites' as const, label: 'Избранное', count: favorites.length },
+      ...WATCH_STATUSES.map((status) => ({
+        id: status,
+        label: WATCH_STATUS_LABELS[status],
+        count: listByStatus(status).length,
+      })),
+    ],
+    [favorites.length, listByStatus],
+  );
 
   const statusItems = useMemo(
     () => (tab === 'favorites' ? [] : listByStatus(tab)),
@@ -108,7 +112,7 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
         title="Моё"
         headerExtra={
           <Tabs
-            items={COLLECTION_TABS}
+            items={collectionTabs}
             activeId={tab}
             onChange={(id) => setTab(id as CollectionTab)}
             ariaLabel="Разделы в Моё"

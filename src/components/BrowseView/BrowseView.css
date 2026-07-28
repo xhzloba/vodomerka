@@ -234,6 +234,9 @@
   min-width: 0;
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: visible;
+  padding-top: 8px;
+  margin-top: -2px;
   scrollbar-width: none;
 }
 

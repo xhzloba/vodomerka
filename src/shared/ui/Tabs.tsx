@@ -4,6 +4,7 @@ import './Tabs.css';
 export interface TabItem {
   id: string;
   label: string;
+  count?: number;
 }
 
 interface TabsProps {
@@ -136,6 +137,11 @@ export function Tabs({ items, activeId, onChange, ariaLabel, variant = 'default'
             }}
           >
             {item.label}
+            {typeof item.count === 'number' && item.count > 0 ? (
+              <span className="ui-tabs__badge" aria-hidden="true">
+                {item.count}
+              </span>
+            ) : null}
           </button>
         );
       })}
