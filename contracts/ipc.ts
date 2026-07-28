@@ -229,6 +229,7 @@ export const IPC_CHANNELS = {
     getFolderPath: 'torrents:getFolderPath',
     probeConnectivity: 'torrents:probeConnectivity',
     setMediaType: 'torrents:setMediaType',
+    setPosterUrl: 'torrents:setPosterUrl',
     changed: 'torrents:changed',
   },
   media: {
@@ -472,6 +473,7 @@ export interface ElectronApi {
     getFolderPath: () => Promise<string>;
     probeConnectivity: () => Promise<TorrentConnectivityProbeResult>;
     setMediaType: (id: string, mediaType: string) => Promise<TorrentDownloadRecord[]>;
+    setPosterUrl: (id: string, posterUrl: string) => Promise<TorrentDownloadRecord[]>;
     onChanged: (callback: (items: TorrentDownloadRecord[]) => void) => Unsubscribe;
   };
   media: {

@@ -1,4 +1,5 @@
-const IMAGE_CONCURRENCY = 8;
+/** Torrents tab can mount 10+ proxy posters at once; keep queue short. */
+const IMAGE_CONCURRENCY = 16;
 const PROXY_HOST = 'proxy.vokino.pro';
 const VOKINO_UPLOADS_HOST_PATTERN = /api\.vokino\.(?:pro|tv)\/uploads\//i;
 

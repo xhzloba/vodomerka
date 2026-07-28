@@ -12,6 +12,7 @@ import { copyText } from '@/shared/lib/copyText';
 import { CopyIcon, DownloadIcon } from '@/shared/ui/icons';
 import { SlideMenu } from '@/shared/ui/SlideMenu';
 import { Tabs } from '@/shared/ui/Tabs';
+import { TorrentPoster } from '@/shared/ui/TorrentPoster/TorrentPoster';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import './MediaTorrentsDialog.css';
 
@@ -188,10 +189,12 @@ export function MediaTorrentsDialog({
     (torrent: TorrentOffer) => {
       void (async () => {
         let mediaType = type?.trim() || undefined;
-        if (!mediaType && mediaId) {
+        let resolvedPoster = posterUrl?.trim() || undefined;
+        if ((!mediaType || !resolvedPoster) && mediaId) {
           try {
             const media = await fetchMediaById(mediaId);
-            mediaType = media?.type?.trim() || undefined;
+            mediaType = mediaType || media?.type?.trim() || undefined;
+            resolvedPoster = resolvedPoster || media?.poster?.trim() || undefined;
           } catch {
             // keep undefined — manager may still resolve from local DB
           }
@@ -203,7 +206,7 @@ export function MediaTorrentsDialog({
           mediaId,
           mediaTitle: title,
           mediaType,
-          posterUrl,
+          posterUrl: resolvedPoster,
           quality: torrent.quality,
           sizeName: torrent.sizeName,
           trackerName: torrent.trackerName,
@@ -255,19 +258,11 @@ export function MediaTorrentsDialog({
     <SlideMenu open={open} title="Скачать" size="wide" onClose={onClose}>
       <div className="media-torrents-panel">
         <div className="media-torrents-panel__identity">
-          <div className="media-torrents-panel__poster" aria-hidden="true">
-            {posterUrl ? (
-              <img
-                src={posterUrl}
-                alt=""
-                loading="eager"
-                decoding="async"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <span className="media-torrents-panel__poster-fallback">{title.slice(0, 1)}</span>
-            )}
-          </div>
+          <TorrentPoster
+            className="media-torrents-panel__poster"
+            posterUrl={posterUrl}
+            title={title}
+          />
           <div className="media-torrents-panel__heading">
             <h3 className="media-torrents-panel__title">{title}</h3>
             {subtitle ? <p className="media-torrents-panel__original">{subtitle}</p> : null}

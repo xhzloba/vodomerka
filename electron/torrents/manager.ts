@@ -792,6 +792,26 @@ export async function setTorrentMediaType(
   return listTorrents();
 }
 
+export async function setTorrentPosterUrl(
+  id: string,
+  posterUrl: string,
+): Promise<TorrentDownloadRecord[]> {
+  await initTorrentManager();
+  const sanitized = sanitizePosterUrl(posterUrl);
+  if (!sanitized) {
+    return listTorrents();
+  }
+  const record = records.find((item) => item.id === id);
+  if (!record || record.posterUrl === sanitized) {
+    return listTorrents();
+  }
+  record.posterUrl = sanitized;
+  record.updatedAt = Date.now();
+  await persist();
+  emit();
+  return listTorrents();
+}
+
 export async function initTorrentManager(): Promise<void> {
   if (ready) {
     return;
@@ -903,8 +923,25 @@ export async function addTorrent(payload: TorrentAddPayload): Promise<TorrentAdd
 
   const existing = records.find((item) => magnetKey(item.magnet) === key);
   if (existing) {
+    let patched = false;
     if (!normalizeMediaType(existing.mediaType) && mediaType) {
       existing.mediaType = mediaType;
+      patched = true;
+    }
+    const nextPoster = sanitizePosterUrl(payload.posterUrl);
+    if (!existing.posterUrl && nextPoster) {
+      existing.posterUrl = nextPoster;
+      patched = true;
+    }
+    if (!existing.mediaId && payload.mediaId) {
+      existing.mediaId = payload.mediaId;
+      patched = true;
+    }
+    if (!existing.mediaTitle && payload.mediaTitle) {
+      existing.mediaTitle = payload.mediaTitle;
+      patched = true;
+    }
+    if (patched) {
       existing.updatedAt = Date.now();
       await persist();
       emit();

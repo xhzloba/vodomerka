@@ -19,6 +19,7 @@ import {
   removeTorrent,
   resumeTorrentDownload,
   setTorrentMediaType,
+  setTorrentPosterUrl,
 } from '../torrents/manager';
 import { ensureTorrentsDirs } from '../torrents/paths';
 import { probeTorrentConnectivity } from '../torrents/probeConnectivity';
@@ -65,6 +66,16 @@ export function registerTorrentsIpc(): void {
         return listTorrents();
       }
       return setTorrentMediaType(id.trim(), mediaType);
+    },
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.torrents.setPosterUrl,
+    async (_event, id: string, posterUrl: string) => {
+      if (typeof id !== 'string' || !id.trim() || typeof posterUrl !== 'string') {
+        return listTorrents();
+      }
+      return setTorrentPosterUrl(id.trim(), posterUrl);
     },
   );
 

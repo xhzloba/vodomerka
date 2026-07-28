@@ -171,6 +171,8 @@ const electronApi: ElectronApi = {
       ipcRenderer.invoke(IPC_CHANNELS.torrents.probeConnectivity),
     setMediaType: (id: string, mediaType: string): Promise<TorrentDownloadRecord[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.torrents.setMediaType, id, mediaType),
+    setPosterUrl: (id: string, posterUrl: string): Promise<TorrentDownloadRecord[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.torrents.setPosterUrl, id, posterUrl),
     onChanged: (callback: (items: TorrentDownloadRecord[]) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, items: TorrentDownloadRecord[]) => {
         callback(items);

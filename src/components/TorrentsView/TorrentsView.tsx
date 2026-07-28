@@ -23,6 +23,7 @@ import {
   TrashIcon,
 } from '@/shared/ui/icons';
 import { PageLoading } from '@/shared/ui/PageState';
+import { TorrentPoster } from '@/shared/ui/TorrentPoster/TorrentPoster';
 import '../BrowseView/BrowseView.css';
 import './TorrentsView.css';
 
@@ -303,13 +304,11 @@ export function TorrentsView({ isActive = true }: { isActive?: boolean }) {
                     </div>
                   ) : null}
 
-                  <div className="torrents-view__poster" aria-hidden="true">
-                    {item.posterUrl ? (
-                      <img src={item.posterUrl} alt="" loading="lazy" decoding="async" />
-                    ) : (
-                      <span>{item.title.slice(0, 1)}</span>
-                    )}
-                  </div>
+                  <TorrentPoster
+                    className="torrents-view__poster"
+                    posterUrl={item.posterUrl}
+                    title={item.mediaTitle || item.title}
+                  />
 
                   <div className="torrents-view__body">
                     <h2 className="torrents-view__name">{item.mediaTitle || item.title}</h2>

@@ -80,19 +80,20 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Catalog type for older downloads that only stored mediaId.
-  const mediaTypeBackfillRef = useRef(new Set<string>());
+  // Catalog type / poster for older downloads that only stored mediaId.
+  const mediaMetaBackfillRef = useRef(new Set<string>());
   useEffect(() => {
     const setMediaType = window.electronAPI?.torrents?.setMediaType;
-    if (!setMediaType) {
+    const setPosterUrl = window.electronAPI?.torrents?.setPosterUrl;
+    if (!setMediaType && !setPosterUrl) {
       return;
     }
 
     const missing = torrents.filter(
       (item) =>
         item.mediaId &&
-        !item.mediaType &&
-        !mediaTypeBackfillRef.current.has(item.id),
+        (!item.mediaType || !item.posterUrl) &&
+        !mediaMetaBackfillRef.current.has(item.id),
     );
     if (missing.length === 0) {
       return;
@@ -104,19 +105,26 @@ export function TorrentsProvider({ children }: { children: ReactNode }) {
         if (cancelled || !item.mediaId) {
           break;
         }
-        mediaTypeBackfillRef.current.add(item.id);
+        mediaMetaBackfillRef.current.add(item.id);
         try {
           const media = await fetchMediaById(item.mediaId);
-          if (cancelled || !media?.type) {
+          if (cancelled || !media) {
             continue;
           }
-          const next = await setMediaType(item.id, media.type);
-          if (!cancelled) {
+
+          let next: TorrentDownloadRecord[] | null = null;
+          if (!item.mediaType && media.type && setMediaType) {
+            next = await setMediaType(item.id, media.type);
+          }
+          if (!item.posterUrl && media.poster && setPosterUrl) {
+            next = await setPosterUrl(item.id, media.poster);
+          }
+          if (!cancelled && next) {
             setTorrents(next);
           }
         } catch {
           // best-effort; next app open can retry
-          mediaTypeBackfillRef.current.delete(item.id);
+          mediaMetaBackfillRef.current.delete(item.id);
         }
       }
     })();

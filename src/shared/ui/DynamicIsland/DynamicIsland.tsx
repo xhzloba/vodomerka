@@ -19,6 +19,7 @@ import { WATCH_STATUS_LABELS } from '@/shared/domain/watchStatus';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { resolveThemeColorScheme } from '@/shared/settings/themes';
 import { EpisodePickerDialog } from '@/shared/ui/EpisodePickerDialog/EpisodePickerDialog';
+import { TorrentPoster } from '@/shared/ui/TorrentPoster/TorrentPoster';
 import {
   ToastIconView,
   useToast,
@@ -725,13 +726,11 @@ export function DynamicIsland() {
               className="dynamic-island__download-detail"
               aria-hidden={!downloadExpanded}
             >
-              <div className="dynamic-island__download-poster" aria-hidden="true">
-                {downloadActivity?.posterUrl ? (
-                  <img src={downloadActivity.posterUrl} alt="" loading="lazy" decoding="async" />
-                ) : (
-                  <span>{downloadTitle.slice(0, 1)}</span>
-                )}
-              </div>
+              <TorrentPoster
+                className="dynamic-island__download-poster"
+                posterUrl={downloadActivity?.posterUrl}
+                title={downloadTitle}
+              />
 
               <div className="dynamic-island__download-copy">
                 <span className="dynamic-island__download-title">{downloadTitle}</span>

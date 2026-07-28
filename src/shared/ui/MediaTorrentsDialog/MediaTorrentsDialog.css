@@ -32,6 +32,7 @@
   object-fit: cover;
 }
 
+.media-torrents-panel__poster > span,
 .media-torrents-panel__poster-fallback {
   display: flex;
   align-items: center;
