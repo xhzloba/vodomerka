@@ -19,7 +19,7 @@ import { TorrentsView } from '@/components/TorrentsView/TorrentsView';
 import { Sidebar } from '@/components/Sidebar/Sidebar';
 import type { MediaItem } from '@/shared/domain/media';
 import { ensureMediaOverridesLoaded } from '@/shared/domain/overridesStore';
-import { openMediaDetailWindow } from '@/shared/platform/mediaDetailWindow';
+import { openMediaDetailWindow, prepareMediaDetailItem } from '@/shared/platform/mediaDetailWindow';
 import { isMacOS } from '@/shared/platform/runtime';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { playWelcomeSound } from '@/shared/audio/uiSounds';
@@ -83,8 +83,21 @@ export function MainAppShell() {
 
   const handleMediaSelect = useCallback(
     (item: MediaItem) => {
-      if (!window.electronAPI?.detail.open) {
-        setSelectedMedia(item);
+      const preferPanel =
+        settings.detailPresentation === 'panel' || !window.electronAPI?.detail?.open;
+
+      if (preferPanel) {
+        setIsOpeningDetail(true);
+        void prepareMediaDetailItem(item)
+          .then((resolved) => {
+            setSelectedMedia(resolved);
+          })
+          .catch(() => {
+            setSelectedMedia(item);
+          })
+          .finally(() => {
+            setIsOpeningDetail(false);
+          });
         return;
       }
 
@@ -97,7 +110,7 @@ export function MainAppShell() {
           setIsOpeningDetail(false);
         });
     },
-    [showToast],
+    [settings.detailPresentation, showToast],
   );
 
   const toggleSidebar = useCallback(
@@ -377,13 +390,30 @@ export function MainAppShell() {
         />
       ) : null}
 
-      {selectedMedia && (
+      {settings.detailPresentation === 'panel' || !window.electronAPI?.detail?.open ? (
+        <SlideMenu
+          open={Boolean(selectedMedia)}
+          title={selectedMedia?.title || 'Карточка'}
+          size="xlarge"
+          chrome="close-only"
+          onClose={() => setSelectedMedia(null)}
+        >
+          {selectedMedia ? (
+            <MediaDetail
+              item={selectedMedia}
+              variant="panel"
+              onClose={() => setSelectedMedia(null)}
+              onPlay={handlePlay}
+            />
+          ) : null}
+        </SlideMenu>
+      ) : selectedMedia ? (
         <MediaDetail
           item={selectedMedia}
           onClose={() => setSelectedMedia(null)}
           onPlay={handlePlay}
         />
-      )}
+      ) : null}
 
       {isOpeningDetail ? (
         <div className="detail-open-overlay" aria-busy="true" aria-label="Открытие карточки">

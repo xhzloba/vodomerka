@@ -66,6 +66,12 @@ function waitForDetailWindowReady(): Promise<void> {
   });
 }
 
+export async function prepareMediaDetailItem(item: MediaItem): Promise<MediaItem> {
+  await ensureMediaOverridesLoaded();
+  const resolved = await resolveDetailMediaItem(item);
+  return hydrateMediaItem(resolved);
+}
+
 export async function openMediaDetailWindow(item: MediaItem): Promise<boolean> {
   if (!window.electronAPI?.detail?.open) {
     return false;
@@ -75,10 +81,7 @@ export async function openMediaDetailWindow(item: MediaItem): Promise<boolean> {
     return true;
   }
 
-  await ensureMediaOverridesLoaded();
-  // Auto-watched / continue stubs often have only id+title+poster — pull full card from /view/{id}.
-  const resolved = await resolveDetailMediaItem(item);
-  const hydrated = hydrateMediaItem(resolved);
+  const hydrated = await prepareMediaDetailItem(item);
   await preloadDetailWindowAssets(hydrated);
 
   const readyPromise = waitForDetailWindowReady();

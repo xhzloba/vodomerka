@@ -39,6 +39,9 @@ export type PosterSizePreset = 'small' | 'medium' | 'large';
 
 export type CollectionLayout = 'slider' | 'grid';
 
+/** How media details open: separate BrowserWindow or in-app side panel. */
+export type DetailPresentation = 'window' | 'panel';
+
 /** Mutually exclusive watch statuses (favorites stay separate). */
 export type WatchStatus = 'watching' | 'watched' | 'postponed' | 'dropped';
 
@@ -64,6 +67,8 @@ export interface AppSettings {
   posterSize: PosterSizePreset;
   /** Collection / watch-status list layout. */
   collectionLayout: CollectionLayout;
+  /** Media detail: separate window or right slide-out panel. */
+  detailPresentation: DetailPresentation;
   sidebarCollapsed: boolean;
   sidebarMenuAnimation: SidebarMenuAnimation;
   sidebarStyle: SidebarStyle;

@@ -151,15 +151,21 @@
 .media-detail__banner {
   position: relative;
   flex-shrink: 0;
-  height: 220px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  max-height: 220px;
+  min-height: 160px;
   overflow: hidden;
   background: var(--app-elevated);
+  contain: layout paint;
 }
 
 .media-detail__banner::after {
   content: '';
   position: absolute;
   inset: 0;
+  z-index: 2;
   background: linear-gradient(
     to bottom,
     rgba(0, 0, 0, 0.08) 0%,
@@ -170,6 +176,8 @@
 }
 
 .media-detail__banner-image {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -181,6 +189,10 @@
 
 .media-detail__banner-image--ready {
   opacity: 1;
+}
+
+.media-detail__banner-placeholder {
+  z-index: 0;
 }
 
 .media-detail__content {
@@ -390,6 +402,266 @@
   color: color-mix(in srgb, var(--app-text) 90%, var(--app-text-muted));
 }
 
+.media-detail--panel {
+  position: relative;
+  inset: auto;
+  z-index: 0;
+  display: block;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  animation: none;
+  background: transparent;
+}
+
+.media-detail--panel .media-detail__panel {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: none;
+  min-height: 0;
+  overflow: visible;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+.media-detail--panel .media-detail__banner {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  max-height: min(52vh, 380px);
+  min-height: 220px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--app-elevated);
+  contain: layout paint;
+  /* растушёвка только вниз и влево — верх жёстко к краю */
+  -webkit-mask-image:
+    linear-gradient(
+      to top,
+      transparent 0%,
+      rgba(0, 0, 0, 0.22) 14%,
+      rgba(0, 0, 0, 0.65) 32%,
+      #000 48%
+    ),
+    linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.35) 8%,
+      rgba(0, 0, 0, 0.8) 20%,
+      #000 34%
+    );
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(
+      to top,
+      transparent 0%,
+      rgba(0, 0, 0, 0.22) 14%,
+      rgba(0, 0, 0, 0.65) 32%,
+      #000 48%
+    ),
+    linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.35) 8%,
+      rgba(0, 0, 0, 0.8) 20%,
+      #000 34%
+    );
+  mask-composite: intersect;
+}
+
+.media-detail--panel .media-detail__banner::after {
+  display: none;
+}
+
+.media-detail--panel .media-detail__banner-placeholder {
+  z-index: 0;
+}
+
+.media-detail--panel .media-detail__banner-image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  z-index: 1;
+}
+
+.media-detail--panel .media-detail__content {
+  position: relative;
+  z-index: 1;
+  padding: 0 22px 28px 20px;
+  margin: 56px 0 0;
+}
+
+.media-detail--panel .media-detail__content--under-banner {
+  margin-top: -110px;
+}
+
+.media-detail--panel .media-detail__intro {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+  margin: 0 0 16px;
+}
+
+.media-detail--panel .media-detail__poster,
+.media-detail--panel .media-detail__poster-placeholder {
+  width: 128px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.media-detail--panel .media-detail__info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 0;
+  min-height: calc(128px * 3 / 2);
+}
+
+.media-detail--panel .media-detail__subtitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--app-text);
+}
+
+.media-detail--panel .media-detail__info .hero__meta {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  gap: 7px;
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.media-detail--panel .media-detail__info .hero__meta-sep {
+  opacity: 0.45;
+}
+
+.media-detail--panel .media-detail__info .hero__meta-item-icon,
+.media-detail--panel .media-detail__info .hero__meta-icon,
+.media-detail--panel .media-detail__info .hero__meta-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.media-detail--panel .media-detail__info .hero__meta-age-badge {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+
+.media-detail--panel .hero-rating {
+  gap: 3px;
+  transform: scale(0.92);
+  transform-origin: left center;
+}
+
+.media-detail--panel .hero-rating__value {
+  font-size: 0.8125rem;
+}
+
+.media-detail--panel .media-detail__synopsis {
+  margin: 0 0 18px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--app-text) 88%, var(--app-text-muted));
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+}
+
+.media-detail--panel .media-detail__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  flex-wrap: nowrap;
+}
+
+.media-detail--panel .media-detail__play-btn {
+  flex: 0 0 auto;
+  min-height: 40px;
+  height: 40px;
+  padding: 0 18px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border-radius: 11px;
+}
+
+.media-detail--panel .media-detail__play-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.media-detail--panel .media-detail__status-group {
+  gap: 8px;
+}
+
+.media-detail--panel .media-detail__icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+}
+
+.media-detail--panel .media-detail__icon-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.media-detail--panel .media-detail__facts {
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 0.5px solid color-mix(in srgb, var(--app-text) 10%, transparent);
+}
+
+.media-detail--panel .media-detail__fact {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.media-detail--panel .media-detail__fact-label {
+  flex: 0 0 auto;
+  min-width: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--app-text-muted);
+}
+
+.media-detail--panel .media-detail__fact-value {
+  min-width: 0;
+  font-size: 0.875rem;
+  color: var(--app-text);
+}
+
 .media-detail--window {
   position: relative;
   inset: auto;
@@ -557,7 +829,8 @@
   }
 
   .media-detail__banner {
-    height: 180px;
+    max-height: 180px;
+    min-height: 140px;
   }
 
   .media-detail__window-content.hero__content {

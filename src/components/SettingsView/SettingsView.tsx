@@ -28,6 +28,7 @@ import { APP_THEME_OPTIONS } from '@/shared/settings/themes';
 import {
   POSTER_SIZE_OPTIONS,
   API_SERVER_OPTIONS,
+  DETAIL_PRESENTATION_OPTIONS,
   SIDEBAR_MENU_ANIMATION_OPTIONS,
   SIDEBAR_STYLE_OPTIONS,
 } from '@/shared/settings/types';
@@ -443,6 +444,48 @@ export function SettingsView() {
                   />
                 </div>
               </div>
+            </section>
+
+            <section className="settings-group" aria-labelledby="settings-detail-presentation-title">
+              <h2 id="settings-detail-presentation-title" className="settings-group__title">
+                Карточка фильма
+              </h2>
+              <div className="settings-panel">
+                <div
+                  className="settings-choice-list"
+                  role="radiogroup"
+                  aria-label="Как открывать карточку"
+                >
+                  {DETAIL_PRESENTATION_OPTIONS.map((option) => {
+                    const isActive = settings.detailPresentation === option.id;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isActive}
+                        className={`settings-choice${isActive ? ' settings-choice--active' : ''}`}
+                        onClick={() => {
+                          if (isActive) {
+                            return;
+                          }
+                          void updateSettings({ detailPresentation: option.id });
+                        }}
+                      >
+                        <span className="settings-choice__body">
+                          <span className="settings-choice__label">{option.label}</span>
+                          <span className="settings-choice__hint">{option.hint}</span>
+                        </span>
+                        <SettingsCheckbox checked={isActive} decorative />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <p className="settings-group__footer">
+                Отдельное окно — как сейчас. Боковая панель выезжает справа поверх приложения.
+              </p>
             </section>
 
             <section className="settings-group" aria-labelledby="settings-sidebar-menu-title">

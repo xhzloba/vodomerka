@@ -18,7 +18,7 @@ import './MediaDetail.css';
 
 interface MediaDetailProps {
   item: MediaItem;
-  variant?: 'modal' | 'window';
+  variant?: 'modal' | 'window' | 'panel';
   onClose: () => void;
   onPlay: (item: MediaItem) => void;
 }
@@ -97,6 +97,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
         ? null
         : pendingStatus;
   const isWindow = variant === 'window';
+  const isPanel = variant === 'panel';
   const metaParts = buildDetailMetaParts(detailItem);
 
   useEffect(() => {
@@ -286,7 +287,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
           );
         })}
       </div>
-      {detailItem.description ? (
+      {!isWindow && !isPanel && detailItem.description ? (
         <button
           type="button"
           className="hero__btn hero__btn--ghost media-detail__info-btn"
@@ -296,7 +297,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
           Описание
         </button>
       ) : null}
-      {!isWindow ? (
+      {!isWindow && !isPanel ? (
         <button type="button" className="hero__btn hero__btn--ghost" onClick={onClose}>
           Закрыть
         </button>
@@ -360,35 +361,138 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
     );
   }
 
-  return (
-    <div className="media-detail" onClick={onClose}>
-      <div className="media-detail__backdrop" />
-      <div className="media-detail__snake" onClick={(event) => event.stopPropagation()}>
-        <div className="media-detail__snake-ring" aria-hidden="true">
-          <div className="media-detail__snake-beam media-detail__snake-beam--trail" />
-          <div className="media-detail__snake-beam media-detail__snake-beam--core" />
+  const body = (
+    <>
+      {hasHeroSource ? (
+        <div className="media-detail__banner" aria-hidden="true">
+          {!showHeroImage ? (
+            <MediaCoverPlaceholder
+              className="media-detail__banner-placeholder"
+              fill
+              animate={!failed}
+            />
+          ) : null}
+          {src && !failed ? (
+            <img
+              key={src}
+              className={`media-detail__banner-image${heroReady ? ' media-detail__banner-image--ready' : ''}`}
+              src={src}
+              alt=""
+              loading={loading}
+              referrerPolicy="no-referrer"
+              onError={onError}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="media-detail__content">
+        <div className="media-detail__intro">
+          {isPosterLoading ? (
+            <MediaCoverPlaceholder className="media-detail__poster-placeholder" />
+          ) : null}
+          {showPoster ? (
+            <img
+              key={posterSrc}
+              className="media-detail__poster media-detail__poster--ready"
+              src={posterSrc}
+              alt={detailItem.title}
+              loading="eager"
+              referrerPolicy="no-referrer"
+              onClick={(event) => void handleCopyId(event)}
+            />
+          ) : null}
+
+          <div className="media-detail__info">
+            {showLogo ? (
+              <img
+                key={logoSrc}
+                className="media-detail__logo"
+                src={logoSrc}
+                alt={detailItem.title}
+                loading="eager"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <h2 className="media-detail__title media-pearl-text">{detailItem.title}</h2>
+            )}
+
+            {detailItem.subtitle ? (
+              <p className="media-detail__subtitle">{detailItem.subtitle}</p>
+            ) : null}
+
+            {metaRow}
+
+            {detailItem.genres.length > 0 ? (
+              <p className="media-detail__genres">{detailItem.genres.join(' · ')}</p>
+            ) : null}
+          </div>
         </div>
 
-        <div className="media-detail__panel">
-          <button type="button" className="media-detail__close" onClick={onClose} aria-label="Закрыть">
-            <CloseIcon size={18} />
-          </button>
+        {detailItem.description ? (
+          <p className="media-detail__synopsis">{detailItem.description}</p>
+        ) : null}
 
-          {showHeroImage ? (
+        {actions}
+        {factsBlock}
+      </div>
+    </>
+  );
+
+  if (isPanel) {
+    const panelFacts =
+      detailItem.director || detailItem.country || detailItem.genres.length > 1 ? (
+        <div className="media-detail__facts">
+          {detailItem.genres.length > 1 ? (
+            <p className="media-detail__fact">
+              <span className="media-detail__fact-label">Жанры</span>
+              <span className="media-detail__fact-value">{detailItem.genres.join(', ')}</span>
+            </p>
+          ) : null}
+          {detailItem.director ? (
+            <p className="media-detail__fact">
+              <span className="media-detail__fact-label">Режиссёр</span>
+              <span className="media-detail__fact-value">{detailItem.director}</span>
+            </p>
+          ) : null}
+          {detailItem.country ? (
+            <p className="media-detail__fact">
+              <span className="media-detail__fact-label">Страна</span>
+              <span className="media-detail__fact-value">{detailItem.country}</span>
+            </p>
+          ) : null}
+        </div>
+      ) : null;
+
+    return (
+      <div className="media-detail media-detail--panel">
+        <div className="media-detail__panel">
+          {hasHeroSource ? (
             <div className="media-detail__banner" aria-hidden="true">
-              <img
-                key={src}
-                className="media-detail__banner-image media-detail__banner-image--ready"
-                src={src}
-                alt=""
-                loading={loading}
-                referrerPolicy="no-referrer"
-                onError={onError}
-              />
+              {!showHeroImage ? (
+                <MediaCoverPlaceholder
+                  className="media-detail__banner-placeholder"
+                  fill
+                  animate={!failed}
+                />
+              ) : null}
+              {src && !failed ? (
+                <img
+                  key={src}
+                  className={`media-detail__banner-image${heroReady ? ' media-detail__banner-image--ready' : ''}`}
+                  src={src}
+                  alt=""
+                  loading={loading}
+                  referrerPolicy="no-referrer"
+                  onError={onError}
+                />
+              ) : null}
             </div>
           ) : null}
 
-          <div className="media-detail__content">
+          <div
+            className={`media-detail__content${hasHeroSource ? ' media-detail__content--under-banner' : ''}`}
+          >
             <div className="media-detail__intro">
               {isPosterLoading ? (
                 <MediaCoverPlaceholder className="media-detail__poster-placeholder" />
@@ -406,28 +510,10 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
               ) : null}
 
               <div className="media-detail__info">
-                {showLogo ? (
-                  <img
-                    key={logoSrc}
-                    className="media-detail__logo"
-                    src={logoSrc}
-                    alt={detailItem.title}
-                    loading="eager"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <h2 className="media-detail__title media-pearl-text">{detailItem.title}</h2>
-                )}
-
                 {detailItem.subtitle ? (
                   <p className="media-detail__subtitle">{detailItem.subtitle}</p>
                 ) : null}
-
                 {metaRow}
-
-                {detailItem.genres.length > 0 ? (
-                  <p className="media-detail__genres">{detailItem.genres.join(' · ')}</p>
-                ) : null}
               </div>
             </div>
 
@@ -436,8 +522,28 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
             ) : null}
 
             {actions}
-            {factsBlock}
+            {panelFacts}
           </div>
+        </div>
+        {descriptionDialog}
+      </div>
+    );
+  }
+
+  return (
+    <div className="media-detail" onClick={onClose}>
+      <div className="media-detail__backdrop" />
+      <div className="media-detail__snake" onClick={(event) => event.stopPropagation()}>
+        <div className="media-detail__snake-ring" aria-hidden="true">
+          <div className="media-detail__snake-beam media-detail__snake-beam--trail" />
+          <div className="media-detail__snake-beam media-detail__snake-beam--core" />
+        </div>
+
+        <div className="media-detail__panel">
+          <button type="button" className="media-detail__close" onClick={onClose} aria-label="Закрыть">
+            <CloseIcon size={18} />
+          </button>
+          {body}
         </div>
       </div>
 

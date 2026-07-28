@@ -3,6 +3,7 @@ import type {
   AppSettings,
   CatalogRowGapPreset,
   CollectionLayout,
+  DetailPresentation,
   HiddenHomeSection,
   HomeSectionMode,
   PosterSizePreset,
@@ -17,6 +18,7 @@ export type {
   AppTheme,
   CatalogRowGapPreset,
   CollectionLayout,
+  DetailPresentation,
   HiddenHomeSection,
   HomeSectionMode as HomeFavoritesSectionMode,
   PosterSizePreset,
@@ -62,6 +64,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   catalogRowGap: 'normal',
   posterSize: 'medium',
   collectionLayout: 'slider',
+  detailPresentation: 'window',
   sidebarCollapsed: false,
   sidebarMenuAnimation: DEFAULT_SIDEBAR_ANIMATION_ID,
   sidebarStyle: 'apple',
@@ -119,6 +122,31 @@ export function normalizeCollectionLayout(value: unknown): CollectionLayout {
 
   return DEFAULT_APP_SETTINGS.collectionLayout;
 }
+
+export function normalizeDetailPresentation(value: unknown): DetailPresentation {
+  if (value === 'window' || value === 'panel') {
+    return value;
+  }
+
+  return DEFAULT_APP_SETTINGS.detailPresentation;
+}
+
+export const DETAIL_PRESENTATION_OPTIONS: Array<{
+  id: DetailPresentation;
+  label: string;
+  hint: string;
+}> = [
+  {
+    id: 'window',
+    label: 'Отдельное окно',
+    hint: 'Карточка открывается в своём окне поверх приложения',
+  },
+  {
+    id: 'panel',
+    label: 'Боковая панель',
+    hint: 'Карточка выезжает справа, как меню настроек',
+  },
+];
 
 export function applyPosterSizeCssVars(posterSize: PosterSizePreset): void {
   const values = POSTER_SIZE_VALUES[posterSize];

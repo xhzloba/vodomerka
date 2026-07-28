@@ -16,6 +16,9 @@ interface UseMediaImageResult {
   onError: () => void;
 }
 
+/** Avoid re-fetch flash: same source URL → same resolved src. */
+const resolvedCache = new Map<string, string>();
+
 export function useMediaImage({
   primaryUrl,
   fallbackUrl = '',
@@ -28,70 +31,124 @@ export function useMediaImage({
   const activeUrlRef = useRef(primaryUrl);
   const retriesRef = useRef(0);
   const usedFallbackRef = useRef(false);
+  const srcRef = useRef('');
+  const readySrcRef = useRef('');
+  const requestIdRef = useRef(0);
+  const onErrorRef = useRef<() => void>(() => undefined);
 
-  const loadUrl = useCallback(async (url: string, bustRetry = false) => {
+  const applySrc = useCallback((next: string) => {
+    if (srcRef.current === next) {
+      setFailed(false);
+      return;
+    }
+
+    srcRef.current = next;
+    readySrcRef.current = '';
+    setReady(false);
+    setSrc(next);
+    setFailed(false);
+  }, []);
+
+  const loadUrl = useCallback(async (url: string, bustRetry = false, requestId?: number) => {
     if (!url) {
       setFailed(true);
+      srcRef.current = '';
       setSrc('');
       setReady(false);
+      readySrcRef.current = '';
       return;
     }
 
     activeUrlRef.current = url;
+    const isStale = () => requestId !== undefined && requestId !== requestIdRef.current;
+
+    if (!bustRetry) {
+      const cached = resolvedCache.get(url);
+      if (cached) {
+        if (isStale()) return;
+        applySrc(cached);
+        return;
+      }
+    }
 
     try {
       const resolved = await loadMediaImage(url);
-      if (activeUrlRef.current !== url) {
+      if (!bustRetry) {
+        resolvedCache.set(url, resolved);
+      }
+
+      if (isStale() || activeUrlRef.current !== url) {
         return;
       }
 
+      let next = resolved;
       if (bustRetry && !resolved.startsWith('data:') && !resolved.startsWith('blob:')) {
         const separator = resolved.includes('?') ? '&' : '?';
-        setSrc(`${resolved}${separator}_r=${retriesRef.current}`);
-        return;
+        next = `${resolved}${separator}_r=${retriesRef.current}`;
       }
 
-      setSrc(resolved);
-      setFailed(false);
-      setReady(false);
+      applySrc(next);
     } catch {
-      if (activeUrlRef.current !== url) {
+      if (isStale() || activeUrlRef.current !== url) {
         return;
       }
 
       if (window.electronAPI?.images?.fetch && shouldFetchVokinoImageViaIpc(url)) {
-        setSrc(resolveDirectImageUrl(url));
-        setFailed(false);
-        setReady(false);
+        const direct = resolveDirectImageUrl(url);
+        if (!bustRetry) {
+          resolvedCache.set(url, direct);
+        }
+        applySrc(direct);
         return;
       }
 
       setFailed(true);
+      srcRef.current = '';
       setSrc('');
       setReady(false);
+      readySrcRef.current = '';
     }
-  }, []);
+  }, [applySrc]);
 
   useEffect(() => {
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+
     retriesRef.current = 0;
     usedFallbackRef.current = false;
-    setFailed(false);
-    setSrc('');
-    setReady(false);
 
     if (!primaryUrl) {
       setFailed(true);
+      srcRef.current = '';
+      setSrc('');
+      setReady(false);
+      readySrcRef.current = '';
       return;
     }
 
+    setFailed(false);
+
+    // Switch item: drop previous frame only when next isn't cached yet
+    const cached = resolvedCache.get(primaryUrl);
+    if (cached) {
+      applySrc(cached);
+    } else if (activeUrlRef.current !== primaryUrl) {
+      srcRef.current = '';
+      setSrc('');
+      setReady(false);
+      readySrcRef.current = '';
+    }
+
+    activeUrlRef.current = primaryUrl;
+
     if (eager) {
-      void loadUrl(primaryUrl);
+      void loadUrl(primaryUrl, false, requestId);
       return;
     }
 
     const node = rootRef?.current;
     if (!node) {
-      void loadUrl(primaryUrl);
+      void loadUrl(primaryUrl, false, requestId);
       return;
     }
 
@@ -103,7 +160,7 @@ export function useMediaImage({
         }
 
         observer.disconnect();
-        void loadUrl(primaryUrl);
+        void loadUrl(primaryUrl, false, requestId);
       },
       { rootMargin: '280px 0px', threshold: 0.01 },
     );
@@ -117,12 +174,21 @@ export function useMediaImage({
   }, [primaryUrl, eager, loadUrl, rootRef]);
 
   const onError = useCallback(() => {
+    const currentSrc = srcRef.current;
+    // IPC data/blob already passed probe — ignore transient <img> abort/remount errors
+    if (
+      readySrcRef.current === currentSrc &&
+      (currentSrc.startsWith('data:') || currentSrc.startsWith('blob:'))
+    ) {
+      return;
+    }
+
     const currentUrl = activeUrlRef.current;
 
     if (retriesRef.current < 2) {
       retriesRef.current += 1;
       void delay(250 * retriesRef.current).then(() => {
-        void loadUrl(currentUrl, true);
+        void loadUrl(currentUrl, true, requestIdRef.current);
       });
       return;
     }
@@ -130,46 +196,59 @@ export function useMediaImage({
     if (fallbackUrl && !usedFallbackRef.current && fallbackUrl !== currentUrl) {
       usedFallbackRef.current = true;
       retriesRef.current = 0;
-      void loadUrl(fallbackUrl);
+      void loadUrl(fallbackUrl, false, requestIdRef.current);
       return;
     }
 
     setFailed(true);
+    srcRef.current = '';
     setSrc('');
     setReady(false);
+    readySrcRef.current = '';
   }, [fallbackUrl, loadUrl]);
+
+  onErrorRef.current = onError;
 
   useEffect(() => {
     if (!src || failed) {
       setReady(false);
+      readySrcRef.current = '';
+      return;
+    }
+
+    if (readySrcRef.current === src) {
+      setReady(true);
       return;
     }
 
     let cancelled = false;
-    setReady(false);
-
     const probe = new Image();
     probe.decoding = 'async';
     probe.referrerPolicy = 'no-referrer';
     probe.onload = () => {
-      if (!cancelled) {
-        setReady(true);
-      }
+      if (cancelled) return;
+      readySrcRef.current = src;
+      setReady(true);
     };
     probe.onerror = () => {
-      if (!cancelled) {
-        setReady(false);
-        onError();
-      }
+      if (cancelled) return;
+      readySrcRef.current = '';
+      setReady(false);
+      onErrorRef.current();
     };
     probe.src = src;
+
+    if (probe.complete && probe.naturalWidth > 0) {
+      readySrcRef.current = src;
+      setReady(true);
+    }
 
     return () => {
       cancelled = true;
       probe.onload = null;
       probe.onerror = null;
     };
-  }, [src, failed, onError]);
+  }, [src, failed]);
 
   return {
     src,

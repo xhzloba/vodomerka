@@ -11,6 +11,7 @@ interface SlideMenuProps {
   onClose: () => void;
   placement?: 'side' | 'bottom';
   size?: 'default' | 'wide' | 'xlarge';
+  chrome?: 'default' | 'close-only';
   anchorSelector?: string;
   children: React.ReactNode;
 }
@@ -21,6 +22,7 @@ export function SlideMenu({
   onClose,
   placement = 'side',
   size = 'default',
+  chrome = 'default',
   anchorSelector,
   children,
 }: SlideMenuProps) {
@@ -116,7 +118,7 @@ export function SlideMenu({
 
   return createPortal(
     <div
-      className={`slide-menu slide-menu--${placement} slide-menu--${size}${closing ? ' slide-menu--closing' : ''}`}
+      className={`slide-menu slide-menu--${placement} slide-menu--${size}${chrome === 'close-only' ? ' slide-menu--chrome-close' : ''}${closing ? ' slide-menu--closing' : ''}`}
       style={anchorStyle}
       role="presentation"
     >
@@ -133,18 +135,30 @@ export function SlideMenu({
 
         <div className="slide-menu__content">
           {placement === 'bottom' ? <div className="slide-menu__handle" aria-hidden="true" /> : null}
-          <div className="slide-menu__header">
-            <h2 className="slide-menu__title">{title}</h2>
+          {chrome === 'close-only' ? (
             <button
               type="button"
-              className="slide-menu__close"
+              className="slide-menu__close slide-menu__close--float"
               onClick={onClose}
               aria-label="Закрыть"
               disabled={closing}
             >
               <CloseIcon size={18} />
             </button>
-          </div>
+          ) : (
+            <div className="slide-menu__header">
+              <h2 className="slide-menu__title">{title}</h2>
+              <button
+                type="button"
+                className="slide-menu__close"
+                onClick={onClose}
+                aria-label="Закрыть"
+                disabled={closing}
+              >
+                <CloseIcon size={18} />
+              </button>
+            </div>
+          )}
 
           <div className="slide-menu__body scroll-overlay">{children}</div>
         </div>
