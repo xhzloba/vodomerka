@@ -510,7 +510,19 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
               ) : null}
 
               <div className="media-detail__info">
-                {detailItem.subtitle ? (
+                {showLogo ? (
+                  <img
+                    key={logoSrc}
+                    className="media-detail__logo"
+                    src={logoSrc}
+                    alt={detailItem.title}
+                    loading="eager"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <h2 className="media-detail__title media-pearl-text">{detailItem.title}</h2>
+                )}
+                {detailItem.subtitle && detailItem.subtitle !== detailItem.title ? (
                   <p className="media-detail__subtitle">{detailItem.subtitle}</p>
                 ) : null}
                 {metaRow}
@@ -518,10 +530,25 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
             </div>
 
             {detailItem.description ? (
-              <p className="media-detail__synopsis">{detailItem.description}</p>
+              <section className="media-detail__description">
+                <h3 className="media-detail__section-title">Описание</h3>
+                <div className="media-detail__synopsis">
+                  <p className="media-detail__synopsis-text">{detailItem.description}</p>
+                  <button
+                    type="button"
+                    className="media-detail__more-btn"
+                    onClick={() => setDescriptionOpen(true)}
+                  >
+                    Подробнее
+                  </button>
+                </div>
+              </section>
             ) : null}
 
-            {actions}
+            <section className="media-detail__actions-block">
+              <h3 className="media-detail__section-title">Просмотр</h3>
+              {actions}
+            </section>
             {panelFacts}
           </div>
         </div>
