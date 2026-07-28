@@ -669,7 +669,7 @@
   align-items: center;
   gap: 10px;
   margin: 0 0 18px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 
 .media-detail--panel .media-detail__play-btn {
@@ -685,6 +685,30 @@
 .media-detail--panel .media-detail__play-btn svg {
   width: 17px;
   height: 17px;
+}
+
+.media-detail--panel .media-detail__download-btn {
+  flex: 0 0 auto;
+}
+
+.media-detail--panel .media-detail__status-block {
+  margin: 0 0 18px;
+}
+
+.media-detail--panel .media-detail__status-block .media-detail__status-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.media-detail--panel .media-detail__status-block .media-detail__icon-btn {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
 }
 
 .media-detail--panel .media-detail__status-group {

@@ -10,8 +10,20 @@ import { useOverriddenMediaItem } from '@/shared/hooks/useOverriddenMediaItem';
 import { copyText } from '@/shared/lib/copyText';
 import { HeroRating } from '@/shared/ui/HeroRating/HeroRating';
 import { MediaDescriptionDialog } from '@/shared/ui/MediaDescriptionDialog/MediaDescriptionDialog';
+import { MediaTorrentsDialog } from '@/shared/ui/MediaTorrentsDialog/MediaTorrentsDialog';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
-import { ClockIcon, CloseIcon, BanIcon, EyeIcon, FavoritesIcon, InfoIcon, PauseCircleIcon, PlayIcon, WatchingIcon } from '@/shared/ui/icons';
+import {
+  ClockIcon,
+  CloseIcon,
+  BanIcon,
+  DownloadIcon,
+  EyeIcon,
+  FavoritesIcon,
+  InfoIcon,
+  PauseCircleIcon,
+  PlayIcon,
+  WatchingIcon,
+} from '@/shared/ui/icons';
 import { WATCH_STATUS_LABELS, WATCH_STATUSES, type WatchStatus } from '@/shared/domain/watchStatus';
 import '../HeroBanner/HeroBanner.css';
 import './MediaDetail.css';
@@ -89,6 +101,8 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
   const [isPendingFavorite, setIsPendingFavorite] = useState<boolean | null>(null);
   const [pendingStatus, setPendingStatus] = useState<WatchStatus | 'none' | null>(null);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [torrentsOpen, setTorrentsOpen] = useState(false);
+  const [torrentsMounted, setTorrentsMounted] = useState(false);
   const inFavorites = isPendingFavorite ?? isFavorite(detailItem.id);
   const watchStatus =
     pendingStatus === null
@@ -104,7 +118,13 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
     setIsPendingFavorite(null);
     setPendingStatus(null);
     setDescriptionOpen(false);
+    setTorrentsOpen(false);
   }, [detailItem.id]);
+
+  const openTorrents = useCallback(() => {
+    setTorrentsMounted(true);
+    setTorrentsOpen(true);
+  }, []);
 
   useEffect(() => {
     void trackView(detailItem);
@@ -237,6 +257,37 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
       </div>
     ) : null;
 
+  const statusButtons = (
+    <div className="media-detail__status-group" role="group" aria-label="Статус просмотра">
+      {WATCH_STATUSES.map((status) => {
+        const active = watchStatus === status;
+        return (
+          <button
+            key={status}
+            type="button"
+            className={`media-detail__icon-btn media-detail__icon-btn--${status}${
+              active ? ' media-detail__icon-btn--active' : ''
+            }`}
+            onClick={() => void handleToggleStatus(status)}
+            aria-label={WATCH_STATUS_LABELS[status]}
+            aria-pressed={active}
+            title={WATCH_STATUS_LABELS[status]}
+          >
+            {status === 'watching' ? (
+              <WatchingIcon size={18} strokeWidth={active ? 2 : 1.75} />
+            ) : status === 'watched' ? (
+              <EyeIcon size={18} strokeWidth={active ? 2 : 1.75} />
+            ) : status === 'postponed' ? (
+              <PauseCircleIcon size={18} strokeWidth={active ? 2 : 1.75} />
+            ) : (
+              <BanIcon size={18} strokeWidth={active ? 2 : 1.75} />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   const actions = (
     <div className="media-detail__actions">
       <button
@@ -247,6 +298,17 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
         <PlayIcon size={18} />
         Смотреть
       </button>
+      {isPanel ? (
+        <button
+          type="button"
+          className="media-detail__icon-btn media-detail__download-btn"
+          onClick={openTorrents}
+          aria-label="Скачать"
+          title="Скачать"
+        >
+          <DownloadIcon size={18} />
+        </button>
+      ) : null}
       <button
         type="button"
         className={`media-detail__icon-btn media-detail__icon-btn--favorite${
@@ -259,34 +321,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
       >
         <FavoritesIcon size={18} filled={inFavorites} />
       </button>
-      <div className="media-detail__status-group" role="group" aria-label="Статус просмотра">
-        {WATCH_STATUSES.map((status) => {
-          const active = watchStatus === status;
-          return (
-            <button
-              key={status}
-              type="button"
-              className={`media-detail__icon-btn media-detail__icon-btn--${status}${
-                active ? ' media-detail__icon-btn--active' : ''
-              }`}
-              onClick={() => void handleToggleStatus(status)}
-              aria-label={WATCH_STATUS_LABELS[status]}
-              aria-pressed={active}
-              title={WATCH_STATUS_LABELS[status]}
-            >
-              {status === 'watching' ? (
-                <WatchingIcon size={18} strokeWidth={active ? 2 : 1.75} />
-              ) : status === 'watched' ? (
-                <EyeIcon size={18} strokeWidth={active ? 2 : 1.75} />
-              ) : status === 'postponed' ? (
-                <PauseCircleIcon size={18} strokeWidth={active ? 2 : 1.75} />
-              ) : (
-                <BanIcon size={18} strokeWidth={active ? 2 : 1.75} />
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {!isPanel ? statusButtons : null}
       {!isWindow && !isPanel && detailItem.description ? (
         <button
           type="button"
@@ -314,6 +349,19 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
       onClose={() => setDescriptionOpen(false)}
     />
   );
+
+  const torrentsDialog = torrentsMounted ? (
+    <MediaTorrentsDialog
+      open={torrentsOpen}
+      mediaId={detailItem.id}
+      title={detailItem.title}
+      subtitle={detailItem.subtitle}
+      year={detailItem.year}
+      type={detailItem.type}
+      posterUrl={detailItem.poster || undefined}
+      onClose={() => setTorrentsOpen(false)}
+    />
+  ) : null;
 
   if (isWindow) {
     return (
@@ -357,6 +405,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
           </section>
         </div>
         {descriptionDialog}
+        {torrentsDialog}
       </div>
     );
   }
@@ -549,10 +598,17 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
               <h3 className="media-detail__section-title">Просмотр</h3>
               {actions}
             </section>
+
+            <section className="media-detail__status-block">
+              <h3 className="media-detail__section-title">Статус</h3>
+              {statusButtons}
+            </section>
+
             {panelFacts}
           </div>
         </div>
         {descriptionDialog}
+        {torrentsDialog}
       </div>
     );
   }
@@ -575,6 +631,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
       </div>
 
       {descriptionDialog}
+      {torrentsDialog}
     </div>
   );
 }
