@@ -11,7 +11,7 @@ interface SlideMenuProps {
   onClose: () => void;
   placement?: 'side' | 'bottom';
   size?: 'default' | 'wide' | 'xlarge';
-  chrome?: 'default' | 'close-only';
+  chrome?: 'default' | 'close-only' | 'none';
   anchorSelector?: string;
   children: React.ReactNode;
 }
@@ -118,7 +118,7 @@ export function SlideMenu({
 
   return createPortal(
     <div
-      className={`slide-menu slide-menu--${placement} slide-menu--${size}${chrome === 'close-only' ? ' slide-menu--chrome-close' : ''}${closing ? ' slide-menu--closing' : ''}`}
+      className={`slide-menu slide-menu--${placement} slide-menu--${size}${chrome === 'close-only' || chrome === 'none' ? ' slide-menu--chrome-close' : ''}${closing ? ' slide-menu--closing' : ''}`}
       style={anchorStyle}
       role="presentation"
     >
@@ -145,7 +145,7 @@ export function SlideMenu({
             >
               <CloseIcon size={18} />
             </button>
-          ) : (
+          ) : chrome === 'none' ? null : (
             <div className="slide-menu__header">
               <h2 className="slide-menu__title">{title}</h2>
               <button

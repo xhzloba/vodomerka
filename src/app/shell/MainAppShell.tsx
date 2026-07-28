@@ -395,7 +395,7 @@ export function MainAppShell() {
           open={Boolean(selectedMedia)}
           title={selectedMedia?.title || 'Карточка'}
           size="xlarge"
-          chrome="close-only"
+          chrome="none"
           onClose={() => setSelectedMedia(null)}
         >
           {selectedMedia ? (
