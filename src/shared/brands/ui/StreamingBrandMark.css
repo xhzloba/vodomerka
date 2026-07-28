@@ -1,0 +1,32 @@
+.streaming-brand-mark {
+  --streaming-brand-size: 22px;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--streaming-brand-size);
+  height: var(--streaming-brand-size);
+  overflow: hidden;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.streaming-brand-mark--sm {
+  --streaming-brand-size: 22px;
+  border-radius: 6px;
+}
+
+.streaming-brand-mark--md {
+  --streaming-brand-size: 28px;
+  border-radius: 8px;
+}
+
+.streaming-brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 0;
+  pointer-events: none;
+  user-select: none;
+}

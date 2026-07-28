@@ -16,6 +16,7 @@ import {
   useCompilationFilters,
 } from '@/features/compilations/ui/CompilationFiltersPanel';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
+import { resolveStreamingBrand, StreamingBrandMark } from '@/shared/brands';
 import { ChevronLeftIcon, FilterIcon } from '@/shared/ui/icons';
 import { PageError, PageLoading } from '@/shared/ui/PageState';
 import { useAppTopProgress } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
@@ -219,6 +220,11 @@ export function CompilationsView({
     const showFilteredEmpty =
       !isDetailLoading && detailItems.length > 0 && filteredDetailItems.length === 0;
 
+    const compilationBrand = resolveStreamingBrand({
+      id: selectedCompilation.details.id,
+      name: selectedCompilation.details.name,
+    });
+
     return (
       <div className="library-view compilations-view compilations-view--detail">
         <div className="library-view__header compilations-view__header">
@@ -232,7 +238,16 @@ export function CompilationsView({
               <ChevronLeftIcon size={24} strokeWidth={1.75} />
               <span>Подборки</span>
             </button>
-            <h1 className="compilations-view__detail-title">{selectedCompilation.details.name}</h1>
+            <div className="compilations-view__detail-heading">
+              {compilationBrand ? (
+                <StreamingBrandMark
+                  brand={compilationBrand}
+                  size="sm"
+                  className="compilations-view__brand-mark"
+                />
+              ) : null}
+              <h1 className="compilations-view__detail-title">{selectedCompilation.details.name}</h1>
+            </div>
           </nav>
 
           {filtersSupported ? (
