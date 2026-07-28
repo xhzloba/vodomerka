@@ -1,0 +1,161 @@
+.watch-status-picker {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.watch-status-picker__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px 0 10px;
+  border-radius: 11px;
+  border: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--app-surface) 88%, transparent);
+  color: var(--app-text);
+  font-size: 0.875rem;
+  font-weight: 550;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.watch-status-picker__trigger:hover {
+  background: var(--app-surface-hover);
+  border-color: var(--app-border-strong);
+}
+
+.watch-status-picker--open .watch-status-picker__trigger {
+  background: var(--app-surface-hover);
+  border-color: var(--app-border-strong);
+}
+
+.watch-status-picker--active .watch-status-picker__trigger {
+  border-color: color-mix(in srgb, var(--app-text) 18%, transparent);
+  background: color-mix(in srgb, var(--app-text) 8%, var(--app-surface));
+}
+
+.watch-status-picker__trigger-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--app-text-muted);
+}
+
+.watch-status-picker--active .watch-status-picker__trigger-icon {
+  color: var(--app-text);
+}
+
+.watch-status-picker__trigger-label {
+  min-width: 0;
+}
+
+.watch-status-picker__chevron {
+  flex-shrink: 0;
+  color: var(--app-text-muted);
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.watch-status-picker--open .watch-status-picker__chevron {
+  transform: rotate(180deg);
+}
+
+.watch-status-picker__menu {
+  position: fixed;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 220px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--app-text) 12%, transparent);
+  background: color-mix(in srgb, var(--app-elevated, var(--app-surface)) 94%, var(--app-bg));
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.34),
+    0 0 0 0.5px color-mix(in srgb, var(--app-text) 6%, transparent);
+  backdrop-filter: blur(18px) saturate(1.12);
+  animation: watch-status-picker-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: center right;
+}
+
+.watch-status-picker__option {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--app-text);
+  font-size: 0.875rem;
+  font-weight: 510;
+  letter-spacing: -0.015em;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.watch-status-picker__option:hover {
+  background: color-mix(in srgb, var(--app-text) 8%, transparent);
+}
+
+.watch-status-picker__option--selected {
+  background: color-mix(in srgb, var(--app-text) 10%, transparent);
+  font-weight: 600;
+}
+
+.watch-status-picker__option-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--app-text-muted);
+}
+
+.watch-status-picker__option--selected .watch-status-picker__option-icon {
+  color: var(--app-text);
+}
+
+.watch-status-picker__option-label {
+  min-width: 0;
+}
+
+.watch-status-picker__check {
+  color: var(--app-text);
+}
+
+.watch-status-picker__check-spacer {
+  width: 15px;
+  height: 15px;
+}
+
+@keyframes watch-status-picker-in {
+  from {
+    opacity: 0;
+    transform: translateX(10px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .watch-status-picker__menu {
+    animation: none;
+  }
+
+  .watch-status-picker__chevron {
+    transition: none;
+  }
+}

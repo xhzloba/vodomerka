@@ -25,6 +25,7 @@ import {
   WatchingIcon,
 } from '@/shared/ui/icons';
 import { WATCH_STATUS_LABELS, WATCH_STATUSES, type WatchStatus } from '@/shared/domain/watchStatus';
+import { WatchStatusPicker } from './WatchStatusPicker';
 import '../HeroBanner/HeroBanner.css';
 import './MediaDetail.css';
 
@@ -601,7 +602,11 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
 
             <section className="media-detail__status-block">
               <h3 className="media-detail__section-title">Статус</h3>
-              {statusButtons}
+              <WatchStatusPicker
+                key={detailItem.id}
+                value={watchStatus}
+                onSelect={(status) => void handleToggleStatus(status)}
+              />
             </section>
 
             {panelFacts}

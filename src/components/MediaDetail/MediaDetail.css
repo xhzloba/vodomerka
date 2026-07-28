@@ -692,7 +692,10 @@
 }
 
 .media-detail--panel .media-detail__status-block {
+  position: relative;
+  z-index: 2;
   margin: 0 0 18px;
+  overflow: visible;
 }
 
 .media-detail--panel .media-detail__status-block .media-detail__status-group {
