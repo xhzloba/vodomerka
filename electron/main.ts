@@ -13,6 +13,7 @@ import { registerOverridesIpc } from './ipc/overrides';
 import { registerSettingsIpc } from './ipc/settings';
 import { registerBackupIpc } from './ipc/backup';
 import { registerPluginsIpc } from './ipc/plugins';
+import { registerAiIpc } from './ipc/ai';
 import { registerDetailIpc } from './ipc/detail';
 import { registerPlayerIpc } from './ipc/player';
 import { configureAppBranding, APP_NAME } from './branding';
@@ -153,6 +154,7 @@ app.whenReady().then(() => {
   registerSettingsIpc(() => mainWindow);
   registerBackupIpc();
   registerPluginsIpc(() => mainWindow);
+  registerAiIpc();
   registerFavoritesIpc();
   registerRecentlyViewedIpc();
   registerContinueWatchingIpc();

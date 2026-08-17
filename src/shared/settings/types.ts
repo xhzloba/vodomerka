@@ -86,6 +86,9 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   tipShownAt: {},
   apiServer: '1',
   torrentPlaybackPlayerId: 'vodomerka',
+  aiSectionEnabled: false,
+  aiBaseUrl: 'http://127.0.0.1:11434',
+  aiModel: '',
 };
 
 export const HERO_SLIDE_INTERVAL_MIN_SEC = 3;
@@ -260,6 +263,35 @@ export function normalizeApiServer(value: unknown): ApiServerId {
   }
 
   return DEFAULT_APP_SETTINGS.apiServer;
+}
+
+export function normalizeAiBaseUrl(value: unknown): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return DEFAULT_APP_SETTINGS.aiBaseUrl;
+  }
+
+  try {
+    const parsed = new URL(value.trim());
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return DEFAULT_APP_SETTINGS.aiBaseUrl;
+    }
+    return parsed.origin;
+  } catch {
+    return DEFAULT_APP_SETTINGS.aiBaseUrl;
+  }
+}
+
+export function normalizeAiModel(value: unknown): string {
+  if (typeof value !== 'string') {
+    return DEFAULT_APP_SETTINGS.aiModel;
+  }
+
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || trimmed.length > 128) {
+    return DEFAULT_APP_SETTINGS.aiModel;
+  }
+
+  return trimmed;
 }
 
 export function normalizeDismissedTipIds(value: unknown): string[] {

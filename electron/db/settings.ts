@@ -40,6 +40,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   tipShownAt: {},
   apiServer: '1',
   torrentPlaybackPlayerId: 'vodomerka',
+  aiSectionEnabled: false,
+  aiBaseUrl: 'http://127.0.0.1:11434',
+  aiModel: '',
 };
 
 const DEFAULT_HIDDEN_BUILTIN_HOME_SECTIONS = DEFAULT_SETTINGS.hiddenHomeSections;
@@ -79,6 +82,9 @@ const SETTING_KEYS = {
   tipShownAt: 'tip_shown_at',
   apiServer: 'api_server',
   torrentPlaybackPlayerId: 'torrent_playback_player_id',
+  aiSectionEnabled: 'ai_section_enabled',
+  aiBaseUrl: 'ai_base_url',
+  aiModel: 'ai_model',
 } as const;
 
 const LEGACY_CARD_KEYS = ['card_show_title', 'card_show_year', 'card_show_rating'] as const;
@@ -278,6 +284,18 @@ function getDefaultSettingEntries(): Array<{ key: string; value: string }> {
       key: SETTING_KEYS.torrentPlaybackPlayerId,
       value: DEFAULT_SETTINGS.torrentPlaybackPlayerId,
     },
+    {
+      key: SETTING_KEYS.aiSectionEnabled,
+      value: DEFAULT_SETTINGS.aiSectionEnabled ? '1' : '0',
+    },
+    {
+      key: SETTING_KEYS.aiBaseUrl,
+      value: DEFAULT_SETTINGS.aiBaseUrl,
+    },
+    {
+      key: SETTING_KEYS.aiModel,
+      value: DEFAULT_SETTINGS.aiModel,
+    },
   ];
 }
 
@@ -316,6 +334,35 @@ function normalizeTorrentPlaybackPlayerId(value: string | undefined): string {
     return value.trim();
   }
   return DEFAULT_SETTINGS.torrentPlaybackPlayerId;
+}
+
+function normalizeAiBaseUrl(value: string | undefined): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return DEFAULT_SETTINGS.aiBaseUrl;
+  }
+
+  try {
+    const parsed = new URL(value.trim());
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return DEFAULT_SETTINGS.aiBaseUrl;
+    }
+    return parsed.origin;
+  } catch {
+    return DEFAULT_SETTINGS.aiBaseUrl;
+  }
+}
+
+function normalizeAiModel(value: string | undefined): string {
+  if (typeof value !== 'string') {
+    return DEFAULT_SETTINGS.aiModel;
+  }
+
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || trimmed.length > 128) {
+    return DEFAULT_SETTINGS.aiModel;
+  }
+
+  return trimmed;
 }
 
 function normalizeTheme(value: string | undefined): AppTheme {
@@ -613,6 +660,9 @@ function parseSettings(database: Database.Database): AppSettings {
   const tipShownAtRaw = readSetting(database, SETTING_KEYS.tipShownAt);
   const apiServerRaw = readSetting(database, SETTING_KEYS.apiServer);
   const torrentPlaybackPlayerIdRaw = readSetting(database, SETTING_KEYS.torrentPlaybackPlayerId);
+  const aiSectionEnabledRaw = readSetting(database, SETTING_KEYS.aiSectionEnabled);
+  const aiBaseUrlRaw = readSetting(database, SETTING_KEYS.aiBaseUrl);
+  const aiModelRaw = readSetting(database, SETTING_KEYS.aiModel);
 
   const heroSlideIntervalSec = clampInterval(Number.parseInt(intervalRaw ?? '', 10));
 
@@ -646,6 +696,9 @@ function parseSettings(database: Database.Database): AppSettings {
     tipShownAt: parseTipShownAt(tipShownAtRaw),
     apiServer: normalizeApiServer(apiServerRaw),
     torrentPlaybackPlayerId: normalizeTorrentPlaybackPlayerId(torrentPlaybackPlayerIdRaw),
+    aiSectionEnabled: aiSectionEnabledRaw === '1',
+    aiBaseUrl: normalizeAiBaseUrl(aiBaseUrlRaw),
+    aiModel: normalizeAiModel(aiModelRaw),
   });
 }
 
@@ -871,6 +924,27 @@ export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
     upsert.run({
       key: SETTING_KEYS.torrentPlaybackPlayerId,
       value: normalizeTorrentPlaybackPlayerId(patch.torrentPlaybackPlayerId),
+    });
+  }
+
+  if (patch.aiSectionEnabled !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.aiSectionEnabled,
+      value: patch.aiSectionEnabled ? '1' : '0',
+    });
+  }
+
+  if (patch.aiBaseUrl !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.aiBaseUrl,
+      value: normalizeAiBaseUrl(patch.aiBaseUrl),
+    });
+  }
+
+  if (patch.aiModel !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.aiModel,
+      value: normalizeAiModel(patch.aiModel),
     });
   }
 

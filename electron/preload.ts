@@ -2,6 +2,13 @@ import { contextBridge, ipcRenderer } from 'electron';
 import {
   IPC_CHANNELS,
   type AppSettings,
+  type AiChatMessage,
+  type AiChatResult,
+  type AiDeleteResult,
+  type AiInstalledModel,
+  type AiPullProgressEvent,
+  type AiPullResult,
+  type AiStatusSnapshot,
   type BackupResult,
   type ElectronApi,
   type InstalledSidebarAnimationPlugin,
@@ -243,6 +250,30 @@ const electronApi: ElectronApi = {
       ipcRenderer.invoke(IPC_CHANNELS.system.openExternal, url),
     listMediaPlayers: (): Promise<MediaPlayerOption[]> =>
       ipcRenderer.invoke(IPC_CHANNELS.system.listMediaPlayers),
+  },
+  ai: {
+    getStatus: (baseUrl?: string): Promise<AiStatusSnapshot> =>
+      ipcRenderer.invoke(IPC_CHANNELS.ai.getStatus, baseUrl),
+    listModels: (baseUrl?: string): Promise<AiInstalledModel[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.ai.listModels, baseUrl),
+    pullModel: (model: string, baseUrl?: string): Promise<AiPullResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.ai.pullModel, model, baseUrl),
+    cancelPull: (): Promise<{ ok: true }> => ipcRenderer.invoke(IPC_CHANNELS.ai.cancelPull),
+    deleteModel: (model: string, baseUrl?: string): Promise<AiDeleteResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.ai.deleteModel, model, baseUrl),
+    chat: (
+      messages: AiChatMessage[],
+      options?: { model?: string; baseUrl?: string },
+    ): Promise<AiChatResult> => ipcRenderer.invoke(IPC_CHANNELS.ai.chat, messages, options),
+    onPullProgress: (callback: (event: AiPullProgressEvent) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: AiPullProgressEvent) => {
+        callback(payload);
+      };
+      ipcRenderer.on(IPC_CHANNELS.ai.pullProgress, listener);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.ai.pullProgress, listener);
+      };
+    },
   },
   detail: {
     tryFocus: (mediaId: string): Promise<boolean> =>

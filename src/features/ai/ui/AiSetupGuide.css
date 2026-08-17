@@ -1,0 +1,56 @@
+.ai-setup-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 2px 8px;
+}
+
+.ai-setup-guide__header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ai-setup-guide__titles {
+  min-width: 0;
+}
+
+.ai-setup-guide__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--app-text);
+}
+
+.ai-setup-guide__text {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--app-text-muted);
+}
+
+.ai-setup-guide__steps {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.ai-setup-guide__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-model-card__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ui-control-accent) 16%, transparent);
+  color: var(--ui-control-accent);
+  flex: 0 0 auto;
+}

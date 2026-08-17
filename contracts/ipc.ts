@@ -87,7 +87,77 @@ export interface AppSettings {
   apiServer: ApiServerId;
   /** Preferred player for torrent playback: `vodomerka` | `system` | app id */
   torrentPlaybackPlayerId: string;
+  /** Show «Подбор» AI section in the sidebar. */
+  aiSectionEnabled: boolean;
+  /** Local Ollama base URL, e.g. http://127.0.0.1:11434 */
+  aiBaseUrl: string;
+  /** Selected Ollama model name (empty = auto-pick). */
+  aiModel: string;
 }
+
+export type AiRuntimeStatus =
+  | 'unknown'
+  | 'missing'
+  | 'offline'
+  | 'ready'
+  | 'no_models';
+
+export interface AiInstalledModel {
+  name: string;
+  size: number;
+  digest: string;
+  family?: string;
+  parameterSize?: string;
+  quantization?: string;
+  modifiedAt?: string;
+}
+
+export interface AiCatalogModel {
+  id: string;
+  name: string;
+  description: string;
+  sizeLabel: string;
+  recommended?: boolean;
+  /** Prefer for auto-pick when installed. Higher = better. */
+  priority: number;
+}
+
+export interface AiStatusSnapshot {
+  status: AiRuntimeStatus;
+  baseUrl: string;
+  version: string | null;
+  models: AiInstalledModel[];
+  recommendedModel: string | null;
+  message: string;
+  platform: 'darwin' | 'win32' | 'linux' | 'other';
+  installUrl: string;
+  checkedAt: number;
+}
+
+export type AiPullResult =
+  | { ok: true; model: string }
+  | { ok: false; error: string; cancelled?: true };
+
+export type AiDeleteResult =
+  | { ok: true; model: string }
+  | { ok: false; error: string };
+
+export interface AiPullProgressEvent {
+  model: string;
+  status: string;
+  progress: number;
+  completed?: number;
+  total?: number;
+}
+
+export interface AiChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+export type AiChatResult =
+  | { ok: true; content: string }
+  | { ok: false; error: string };
 
 export interface StoredMediaItem {
   id: string;
@@ -221,6 +291,15 @@ export const IPC_CHANNELS = {
     getUserDisplayName: 'system:getUserDisplayName',
     openExternal: 'system:openExternal',
     listMediaPlayers: 'system:listMediaPlayers',
+  },
+  ai: {
+    getStatus: 'ai:getStatus',
+    listModels: 'ai:listModels',
+    pullModel: 'ai:pullModel',
+    cancelPull: 'ai:cancelPull',
+    deleteModel: 'ai:deleteModel',
+    chat: 'ai:chat',
+    pullProgress: 'ai:pullProgress',
   },
   torrents: {
     list: 'torrents:list',
@@ -506,6 +585,18 @@ export interface ElectronApi {
     getUserDisplayName: () => Promise<string | null>;
     openExternal: (url: string) => Promise<OpenExternalResult>;
     listMediaPlayers: () => Promise<MediaPlayerOption[]>;
+  };
+  ai: {
+    getStatus: (baseUrl?: string) => Promise<AiStatusSnapshot>;
+    listModels: (baseUrl?: string) => Promise<AiInstalledModel[]>;
+    pullModel: (model: string, baseUrl?: string) => Promise<AiPullResult>;
+    cancelPull: () => Promise<{ ok: true }>;
+    deleteModel: (model: string, baseUrl?: string) => Promise<AiDeleteResult>;
+    chat: (
+      messages: AiChatMessage[],
+      options?: { model?: string; baseUrl?: string },
+    ) => Promise<AiChatResult>;
+    onPullProgress: (callback: (event: AiPullProgressEvent) => void) => Unsubscribe;
   };
   detail: {
     tryFocus: (mediaId: string) => Promise<boolean>;

@@ -19,6 +19,8 @@ import {
   listInstalledSidebarAnimations,
   uninstallSidebarAnimationPlugin,
 } from '@/shared/plugins/sidebarPlugins';
+import { AiPluginsPanel } from '@/features/ai/ui/AiPluginsPanel';
+import { AI_OPEN_PLUGINS_EVENT, consumeOpenAiPluginsTab } from '@/shared/ai/navigation';
 import { useToast } from '@/shared/ui/Toast/ToastContext';
 import { useOverlayScroll } from '@/shared/hooks/useOverlayScroll';
 import { useAppTopProgress } from '@/shared/ui/AppTopProgress/AppTopProgressContext';
@@ -33,6 +35,7 @@ import './PluginsView.css';
 const PLUGIN_TABS = [
   { id: 'themes', label: 'Темы' },
   { id: 'sidebar', label: 'Меню' },
+  { id: 'ai', label: 'ИИ' },
 ] as const;
 
 type PluginTabId = (typeof PLUGIN_TABS)[number]['id'];
@@ -133,6 +136,20 @@ export function PluginsView() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (consumeOpenAiPluginsTab()) {
+      setActiveTab('ai');
+    }
+
+    const onOpenAi = () => {
+      setActiveTab('ai');
+    };
+    window.addEventListener(AI_OPEN_PLUGINS_EVENT, onOpenAi);
+    return () => {
+      window.removeEventListener(AI_OPEN_PLUGINS_EVENT, onOpenAi);
+    };
+  }, []);
 
   const installedThemeIds = new Set(installedThemes.map((theme) => theme.id));
   const installedSidebarIds = new Set(installedSidebar.map((item) => item.id));
@@ -261,7 +278,7 @@ export function PluginsView() {
     <div className="settings-view">
       <header className="settings-view__header">
         <h1 className="settings-view__title">Плагины</h1>
-        <p className="settings-view__subtitle">Темы оформления и анимации бокового меню</p>
+        <p className="settings-view__subtitle">Темы, анимации меню и локальные ИИ-модели</p>
 
         <Tabs
           items={[...PLUGIN_TABS]}
@@ -405,7 +422,9 @@ export function PluginsView() {
               </p>
             </section>
           </div>
-        ) : (
+        ) : null}
+
+        {activeTab === 'sidebar' ? (
           <div className="settings-panels-grid">
             <section className="settings-group" aria-labelledby="plugins-installed-sidebar-title">
               <h2 id="plugins-installed-sidebar-title" className="settings-group__title">
@@ -543,7 +562,9 @@ export function PluginsView() {
               </p>
             </section>
           </div>
-        )}
+        ) : null}
+
+        {activeTab === 'ai' ? <AiPluginsPanel /> : null}
       </div>
     </div>
   );

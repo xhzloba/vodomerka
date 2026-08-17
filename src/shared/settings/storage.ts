@@ -8,6 +8,8 @@ import {
   normalizeDetailPresentation,
   normalizeDismissedTipIds,
   normalizeApiServer,
+  normalizeAiBaseUrl,
+  normalizeAiModel,
   normalizeHeroSourceSectionIds,
   normalizeHiddenHomeSections,
   normalizeHomeSectionRestoreOrder,
@@ -155,6 +157,9 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
       typeof value.torrentPlaybackPlayerId === 'string' && value.torrentPlaybackPlayerId.trim()
         ? value.torrentPlaybackPlayerId.trim()
         : DEFAULT_APP_SETTINGS.torrentPlaybackPlayerId,
+    aiSectionEnabled: value.aiSectionEnabled === true,
+    aiBaseUrl: normalizeAiBaseUrl(value.aiBaseUrl),
+    aiModel: normalizeAiModel(value.aiModel),
   };
 }
 

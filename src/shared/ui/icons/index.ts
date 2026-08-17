@@ -47,4 +47,5 @@ export {
   TvIcon,
   WatchingIcon,
   PuzzleIcon,
+  SparklesIcon,
 } from './icons';

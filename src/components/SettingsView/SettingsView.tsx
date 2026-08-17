@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { HomeSettingsPanels } from '@/features/home/ui/HomeSettingsPanels';
+import { AiSettingsPanel } from '@/features/ai/ui/AiSettingsPanel';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { useApiServerHealth } from '@/shared/settings/useApiServerHealth';
 import { listInstalledThemePlugins } from '@/shared/plugins/themePlugins';
@@ -41,6 +42,7 @@ const SETTINGS_TABS = [
   { id: 'appearance', label: 'Оформление' },
   { id: 'home', label: 'Главная' },
   { id: 'interface', label: 'Интерфейс' },
+  { id: 'ai', label: 'ИИ' },
   { id: 'network', label: 'Сеть' },
   { id: 'sounds', label: 'Звуки' },
   { id: 'data', label: 'Данные' },
@@ -207,7 +209,7 @@ export function SettingsView() {
     <div className="settings-view">
       <header className="settings-view__header">
         <h1 className="settings-view__title">Настройки</h1>
-        <p className="settings-view__subtitle">Оформление, главная, интерфейс и данные приложения</p>
+        <p className="settings-view__subtitle">Оформление, главная, ИИ, интерфейс и данные приложения</p>
 
         <Tabs
           items={[...SETTINGS_TABS]}
@@ -533,6 +535,8 @@ export function SettingsView() {
             </section>
           </div>
         ) : null}
+
+        {activeTab === 'ai' ? <AiSettingsPanel /> : null}
 
         {activeTab === 'network' ? (
           <div className="settings-panels-grid">

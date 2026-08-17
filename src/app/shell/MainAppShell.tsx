@@ -18,6 +18,7 @@ import { PluginsView } from '@/components/PluginsView/PluginsView';
 import { TorrentsView } from '@/components/TorrentsView/TorrentsView';
 import { Sidebar } from '@/components/Sidebar/Sidebar';
 import type { MediaItem } from '@/shared/domain/media';
+import { AI_OPEN_PLUGINS_EVENT } from '@/shared/ai/navigation';
 import { ensureMediaOverridesLoaded } from '@/shared/domain/overridesStore';
 import { openMediaDetailWindow, prepareMediaDetailItem } from '@/shared/platform/mediaDetailWindow';
 import { isMacOS } from '@/shared/platform/runtime';
@@ -263,6 +264,16 @@ export function MainAppShell() {
       cancelled = true;
     };
   }, [settings.sidebarMenuAnimation]);
+
+  useEffect(() => {
+    const onOpenAiPlugins = () => {
+      navigate('plugins');
+    };
+    window.addEventListener(AI_OPEN_PLUGINS_EVENT, onOpenAiPlugins);
+    return () => {
+      window.removeEventListener(AI_OPEN_PLUGINS_EVENT, onOpenAiPlugins);
+    };
+  }, [navigate]);
 
   useEffect(() => {
     if (!macSidebarChrome) {
