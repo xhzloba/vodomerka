@@ -9,11 +9,17 @@ export function applyMediaOverrides(item: MediaItem, overrides: MediaOverridesMa
     return item;
   }
 
+  const backdrop = override.backdrop ?? item.backdrop;
+  const backdrops = override.backdrop
+    ? [override.backdrop, ...(item.backdrops ?? []).filter((url) => url !== override.backdrop)]
+    : item.backdrops;
+
   return {
     ...item,
     description: override.about ?? item.description,
     poster: override.poster ?? item.poster,
-    backdrop: override.backdrop ?? item.backdrop,
+    backdrop,
+    backdrops,
     logo: override.logo ?? item.logo,
   };
 }

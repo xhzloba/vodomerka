@@ -22,6 +22,7 @@ export interface MediaItem {
   description?: string;
   poster: string;
   backdrop: string;
+  backdrops?: string[];
   logo?: string;
   viewUrl: string;
   country?: string;
@@ -64,6 +65,46 @@ function formatDuration(runtime?: number, duration?: string): string | undefined
   return undefined;
 }
 
+function uniqueUrls(...groups: Array<string | string[] | null | undefined>): string[] {
+  const urls: string[] = [];
+  const seen = new Set<string>();
+
+  for (const group of groups) {
+    const list = Array.isArray(group) ? group : group ? [group] : [];
+    for (const raw of list) {
+      const url = raw.trim();
+      if (!url || seen.has(url)) {
+        continue;
+      }
+      seen.add(url);
+      urls.push(url);
+    }
+  }
+
+  return urls;
+}
+
+function mapBackdropGallery(details: VokinoChannelItem['details']): {
+  backdrop: string;
+  backdrops: string[];
+} {
+  const pattern = details.bg_poster?.pattern;
+  const fromIds = (details.bg_poster?.ids ?? []).map((id) => {
+    if (!pattern || typeof id !== 'string' || !id) {
+      return '';
+    }
+    return pattern.replace(/\{id\}/g, id);
+  });
+
+  const gallery = uniqueUrls(details.bg_poster?.backdrop, fromIds);
+  const backdrop = gallery[0] ?? details.wide_poster ?? details.poster ?? '';
+
+  return {
+    backdrop,
+    backdrops: gallery.length > 0 ? gallery : backdrop ? [backdrop] : [],
+  };
+}
+
 export function mapChannelItem(channel: VokinoChannelItem): MediaItem | null {
   if (!channel?.details?.id) {
     return null;
@@ -88,7 +129,8 @@ export function mapChannelItem(channel: VokinoChannelItem): MediaItem | null {
     duration: formatDuration(details.runtime, details.duration),
     description: details.about,
     poster: details.poster ?? '',
-    backdrop: details.bg_poster?.backdrop ?? details.wide_poster ?? details.poster ?? '',
+    ...mapBackdropGallery(details),
+    logo: details.logo_poster || undefined,
     viewUrl: channel.playlist_url,
     country: details.country,
     director: details.director,

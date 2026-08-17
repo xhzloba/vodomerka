@@ -26,6 +26,9 @@ function parseStoredMediaItem(value: unknown): StoredMediaItem | null {
     description: item.description,
     poster: item.poster ?? '',
     backdrop: item.backdrop ?? '',
+    backdrops: Array.isArray(item.backdrops)
+      ? item.backdrops.filter((url): url is string => typeof url === 'string' && url.length > 0)
+      : undefined,
     logo: item.logo,
     viewUrl: item.viewUrl ?? '',
     country: item.country,

@@ -6,7 +6,7 @@ import { preloadDetailWindowAssets } from '@/shared/media/preloadDetailAssets';
 const DETAIL_OPEN_TIMEOUT_MS = 15_000;
 
 async function resolveDetailMediaItem(item: MediaItem): Promise<MediaItem> {
-  if (!isSparseMediaItem(item)) {
+  if (item.id.startsWith('torrent:')) {
     return item;
   }
 
@@ -16,15 +16,16 @@ async function resolveDetailMediaItem(item: MediaItem): Promise<MediaItem> {
       return item;
     }
 
-    // Heal watched/status stubs so the next open doesn't need another round-trip.
-    try {
-      const watched = (await window.electronAPI?.watched?.list?.()) ?? [];
-      const entry = watched.find((row) => row.item.id === full.id);
-      if (entry) {
-        void window.electronAPI?.watched?.setStatus?.(full, entry.status);
+    if (isSparseMediaItem(item)) {
+      try {
+        const watched = (await window.electronAPI?.watched?.list?.()) ?? [];
+        const entry = watched.find((row) => row.item.id === full.id);
+        if (entry) {
+          void window.electronAPI?.watched?.setStatus?.(full, entry.status);
+        }
+      } catch {
+        // best-effort
       }
-    } catch {
-      // best-effort
     }
 
     return full;

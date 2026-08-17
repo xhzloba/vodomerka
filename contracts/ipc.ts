@@ -171,6 +171,7 @@ export interface StoredMediaItem {
   description?: string;
   poster: string;
   backdrop: string;
+  backdrops?: string[];
   logo?: string;
   viewUrl: string;
   country?: string;

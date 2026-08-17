@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useState, type MouseEvent } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { getMediaTypeLabel } from '@/shared/domain/media';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
@@ -93,6 +93,22 @@ function renderDetailMetaPart(part: DetailMetaPart) {
   }
 }
 
+function uniqueBackdropUrls(item: MediaItem): string[] {
+  const urls: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of [...(item.backdrops ?? []), item.backdrop]) {
+    const url = raw?.trim();
+    if (!url || seen.has(url)) {
+      continue;
+    }
+    seen.add(url);
+    urls.push(url);
+  }
+  return urls;
+}
+
+const BACKDROP_ROTATE_MS = 5000;
+
 export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaDetailProps) {
   const detailItem = useOverriddenMediaItem(item);
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -104,6 +120,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   const [torrentsOpen, setTorrentsOpen] = useState(false);
   const [torrentsMounted, setTorrentsMounted] = useState(false);
+  const [backdropIndex, setBackdropIndex] = useState(0);
   const inFavorites = isPendingFavorite ?? isFavorite(detailItem.id);
   const watchStatus =
     pendingStatus === null
@@ -115,11 +132,17 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
   const isPanel = variant === 'panel';
   const metaParts = buildDetailMetaParts(detailItem);
 
+  const backdropUrls = useMemo(() => uniqueBackdropUrls(detailItem), [detailItem]);
+  const activeBackdrop = backdropUrls[backdropIndex] ?? (detailItem.backdrop || detailItem.poster);
+  const nextBackdrop =
+    backdropUrls.length > 1 ? backdropUrls[(backdropIndex + 1) % backdropUrls.length] : '';
+
   useEffect(() => {
     setIsPendingFavorite(null);
     setPendingStatus(null);
     setDescriptionOpen(false);
     setTorrentsOpen(false);
+    setBackdropIndex(0);
   }, [detailItem.id]);
 
   const openTorrents = useCallback(() => {
@@ -131,10 +154,26 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
     void trackView(detailItem);
   }, [detailItem.id, detailItem, trackView]);
 
+  useEffect(() => {
+    if (backdropUrls.length <= 1) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setBackdropIndex((current) => (current + 1) % backdropUrls.length);
+    }, BACKDROP_ROTATE_MS);
+
+    return () => window.clearInterval(timer);
+  }, [backdropUrls]);
+
   const { src, failed, ready: heroReady, loading, onError } = useMediaImage({
-    primaryUrl: detailItem.backdrop || detailItem.poster,
+    primaryUrl: activeBackdrop,
     fallbackUrl: detailItem.poster,
     eager: true,
+  });
+  useMediaImage({
+    primaryUrl: nextBackdrop,
+    eager: Boolean(nextBackdrop),
   });
   const { src: logoSrc, failed: logoFailed } = useMediaImage({
     primaryUrl: detailItem.logo ?? '',
@@ -146,13 +185,24 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
     eager: true,
   });
 
+  const [pinnedHeroSrc, setPinnedHeroSrc] = useState('');
+  useEffect(() => {
+    setPinnedHeroSrc('');
+  }, [detailItem.id]);
+  useEffect(() => {
+    if (src && heroReady && !failed) {
+      setPinnedHeroSrc(src);
+    }
+  }, [failed, heroReady, src]);
+
   const showLogo = Boolean(detailItem.logo && logoSrc && !logoFailed);
   const hasPosterSource = Boolean(detailItem.poster || detailItem.backdrop);
   const isPosterLoading = hasPosterSource && !posterFailed && !posterReady;
   const showPoster = hasPosterSource && !posterFailed && posterReady;
-  const hasHeroSource = Boolean(detailItem.backdrop || detailItem.poster);
-  const isHeroLoading = hasHeroSource && !failed && !heroReady;
-  const showHeroImage = Boolean(src) && !failed && heroReady;
+  const hasHeroSource = Boolean(activeBackdrop || detailItem.poster);
+  const displayHeroSrc = pinnedHeroSrc || src;
+  const isHeroLoading = hasHeroSource && !failed && !displayHeroSrc;
+  const showHeroImage = Boolean(displayHeroSrc) && !failed;
 
   const handleCopyId = useCallback(
     async (event: MouseEvent) => {
@@ -378,9 +428,9 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
                 {isHeroLoading ? <MediaCoverPlaceholder className="hero__cover-placeholder" fill /> : null}
                 {showHeroImage ? (
                   <img
-                    key={src}
+                    key={displayHeroSrc}
                     className="hero__backdrop-image hero__backdrop-image--ready"
-                    src={src}
+                    src={displayHeroSrc}
                     alt=""
                     loading={loading}
                     referrerPolicy="no-referrer"
@@ -422,11 +472,11 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
               animate={!failed}
             />
           ) : null}
-          {src && !failed ? (
+          {displayHeroSrc && !failed ? (
             <img
-              key={src}
-              className={`media-detail__banner-image${heroReady ? ' media-detail__banner-image--ready' : ''}`}
-              src={src}
+              key={displayHeroSrc}
+              className="media-detail__banner-image media-detail__banner-image--ready"
+              src={displayHeroSrc}
               alt=""
               loading={loading}
               referrerPolicy="no-referrer"
@@ -526,11 +576,11 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
                   animate={!failed}
                 />
               ) : null}
-              {src && !failed ? (
+              {displayHeroSrc && !failed ? (
                 <img
-                  key={src}
-                  className={`media-detail__banner-image${heroReady ? ' media-detail__banner-image--ready' : ''}`}
-                  src={src}
+                  key={displayHeroSrc}
+                  className="media-detail__banner-image media-detail__banner-image--ready"
+                  src={displayHeroSrc}
                   alt=""
                   loading={loading}
                   referrerPolicy="no-referrer"

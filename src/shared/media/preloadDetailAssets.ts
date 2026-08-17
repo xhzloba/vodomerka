@@ -48,16 +48,15 @@ async function loadAndProbe(url: string, fallbackUrl = ''): Promise<void> {
 }
 
 async function preloadDetailAssets(item: MediaItem): Promise<void> {
-  const backdropPrimary = item.backdrop || item.poster;
-  const backdropFallback = item.backdrop && item.poster !== item.backdrop ? item.poster : '';
+  const backdropPrimary = item.backdrops?.[0] || item.backdrop || item.poster;
+  const backdropFallback = item.poster && item.poster !== backdropPrimary ? item.poster : '';
+  const nextBackdrop = item.backdrops?.[1] && item.backdrops[1] !== backdropPrimary ? item.backdrops[1] : '';
 
-  if (backdropPrimary) {
-    await loadAndProbe(backdropPrimary, backdropFallback);
-  }
-
-  if (item.logo) {
-    await loadAndProbe(item.logo);
-  }
+  await Promise.all([
+    backdropPrimary ? loadAndProbe(backdropPrimary, backdropFallback) : Promise.resolve(),
+    nextBackdrop ? loadAndProbe(nextBackdrop) : Promise.resolve(),
+    item.logo ? loadAndProbe(item.logo) : Promise.resolve(),
+  ]);
 }
 
 export async function preloadDetailWindowAssets(item: MediaItem): Promise<void> {

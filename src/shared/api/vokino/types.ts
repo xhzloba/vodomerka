@@ -44,7 +44,12 @@ export interface VokinoContentDetails {
   poster?: string;
   is_tv?: boolean;
   wide_poster?: string | null;
-  bg_poster?: { backdrop?: string } | null;
+  logo_poster?: string | null;
+  bg_poster?: {
+    backdrop?: string;
+    ids?: string[];
+    pattern?: string;
+  } | null;
   ident?: string;
   rating_kp?: string;
   rating_imdb?: string;
