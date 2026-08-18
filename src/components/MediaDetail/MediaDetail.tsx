@@ -117,11 +117,13 @@ function MediaDetailBrand({
   logoUrl,
   title,
   variant,
+  pending = false,
   onClick,
 }: {
   logoUrl?: string;
   title: string;
   variant: 'window' | 'panel' | 'modal';
+  pending?: boolean;
   onClick?: (event: MouseEvent<HTMLElement>) => void;
 }) {
   const { src, failed } = useMediaImage({
@@ -133,42 +135,27 @@ function MediaDetailBrand({
 
   useEffect(() => {
     setLoaded(false);
-  }, [src]);
+  }, [logoUrl, src]);
 
   const showLogo = hasLogoUrl && Boolean(src) && loaded && !failed;
-  const showLogoSkeleton = hasLogoUrl && !failed && !showLogo;
+  const showLogoSkeleton = !showLogo && ((hasLogoUrl && !failed) || pending);
   const logoClassName = variant === 'window' ? 'hero__logo' : 'media-detail__logo';
-  const skeletonClassName =
-    variant === 'window' ? 'hero__logo-skeleton' : 'hero__logo-skeleton media-detail__logo-skeleton';
+  const skeletonClassName = 'hero__logo-skeleton media-detail__logo-skeleton';
   const titleClassName =
     variant === 'window' ? 'hero__title media-pearl-text' : 'media-detail__title media-pearl-text';
 
-  if (showLogo) {
+  if (showLogoSkeleton || showLogo) {
     return (
-      <img
-        className={logoClassName}
-        src={src}
-        alt={title}
-        loading="eager"
-        referrerPolicy="no-referrer"
-        onClick={onClick}
-      />
-    );
-  }
-
-  if (showLogoSkeleton) {
-    return (
-      <>
-        <div className={skeletonClassName} aria-hidden="true" />
-        {src ? (
+      <div className={`media-detail__brand${showLogo ? ' media-detail__brand--ready' : ''}`}>
+        {showLogoSkeleton ? <div className={skeletonClassName} aria-hidden="true" /> : null}
+        {src && !failed ? (
           <img
             className={logoClassName}
             src={src}
-            alt=""
+            alt={showLogo ? title : ''}
             loading="eager"
             referrerPolicy="no-referrer"
-            aria-hidden="true"
-            style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+            onClick={onClick}
             onLoad={() => setLoaded(true)}
             ref={(node) => {
               if (node?.complete && node.naturalWidth > 0) {
@@ -177,7 +164,7 @@ function MediaDetailBrand({
             }}
           />
         ) : null}
-      </>
+      </div>
     );
   }
 
@@ -278,6 +265,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
   const hasHeroSource = Boolean(activeBackdrop || detailItem.poster);
   const displayHeroSrc = pinnedHeroSrc || src;
   const isHeroLoading = hasHeroSource && !failed && !displayHeroSrc;
+  const logoPending = detailItem.related === undefined;
   const showHeroImage = Boolean(displayHeroSrc) && !failed;
 
   const handleCopyId = useCallback(
@@ -349,10 +337,11 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
 
   const titleBlock = (
     <MediaDetailBrand
-      key={detailItem.id}
+      key={`${detailItem.id}:${detailItem.logo ?? ''}`}
       logoUrl={detailItem.logo}
       title={detailItem.title}
       variant="window"
+      pending={logoPending}
       onClick={(event) => void handleCopyId(event)}
     />
   );
@@ -636,10 +625,11 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
 
           <div className="media-detail__info">
             <MediaDetailBrand
-              key={detailItem.id}
+              key={`${detailItem.id}:${detailItem.logo ?? ''}`}
               logoUrl={detailItem.logo}
               title={detailItem.title}
               variant="modal"
+              pending={logoPending}
               onClick={(event) => void handleCopyId(event)}
             />
 
@@ -723,10 +713,11 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
             <div className="media-detail__intro">
               <div className="media-detail__info">
                 <MediaDetailBrand
-                  key={detailItem.id}
+                  key={`${detailItem.id}:${detailItem.logo ?? ''}`}
                   logoUrl={detailItem.logo}
                   title={detailItem.title}
                   variant="panel"
+                  pending={logoPending}
                   onClick={(event) => void handleCopyId(event)}
                 />
                 {detailItem.subtitle && detailItem.subtitle !== detailItem.title ? (
