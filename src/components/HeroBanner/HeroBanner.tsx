@@ -166,11 +166,13 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
     fallbackUrl: item.poster,
     eager: true,
   });
-  const { src: logoSrc, failed: logoFailed } = useMediaImage({
+  const { src: logoSrc, failed: logoFailed, ready: logoReady } = useMediaImage({
     primaryUrl: item.logo ?? '',
     eager: true,
   });
-  const showLogo = Boolean(item.logo && logoSrc && !logoFailed);
+  const hasLogoUrl = Boolean(item.logo);
+  const showLogo = hasLogoUrl && Boolean(logoSrc) && logoReady && !logoFailed;
+  const showLogoSkeleton = hasLogoUrl && !logoFailed && !showLogo;
 
   const hasHeroSource = Boolean(item.backdrop || item.poster);
   const isHeroLoading = hasHeroSource && !heroImageFailed && !heroReady;
@@ -209,6 +211,8 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
               loading="eager"
               referrerPolicy="no-referrer"
             />
+          ) : showLogoSkeleton ? (
+            <div className="hero__logo-skeleton" aria-hidden="true" />
           ) : (
             <h2 className="hero__title media-pearl-text">{item.title}</h2>
           )}

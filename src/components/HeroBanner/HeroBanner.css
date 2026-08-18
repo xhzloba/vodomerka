@@ -218,6 +218,53 @@
   object-position: left bottom;
   -webkit-filter: var(--media-brand-logo-filter);
   filter: var(--media-brand-logo-filter);
+  animation: hero-logo-enter 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.hero__logo-skeleton {
+  position: relative;
+  width: min(240px, 72%);
+  height: clamp(28px, 46%, 44px);
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: color-mix(in srgb, #ffffff 16%, transparent);
+  overflow: hidden;
+}
+
+.hero__logo-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 42%,
+    rgba(255, 255, 255, 0.22) 50%,
+    rgba(255, 255, 255, 0.08) 58%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: hero-logo-shimmer 1.5s linear infinite;
+}
+
+@keyframes hero-logo-enter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hero-logo-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
 }
 
 .hero__description {
@@ -328,5 +375,16 @@
 
   .hero__content {
     width: min(520px, calc(100% - 36px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__logo {
+    animation: none;
+  }
+
+  .hero__logo-skeleton::after {
+    animation: none;
+    opacity: 0.35;
   }
 }
