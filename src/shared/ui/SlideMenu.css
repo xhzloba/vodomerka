@@ -138,6 +138,32 @@
   padding-right: 0;
 }
 
+.slide-menu--xlarge.slide-menu--chrome-close .slide-menu__shade {
+  background:
+    linear-gradient(
+      to left,
+      color-mix(in srgb, #000 84%, transparent) 0%,
+      color-mix(in srgb, #000 74%, transparent) 22%,
+      color-mix(in srgb, #000 58%, transparent) 42%,
+      color-mix(in srgb, #000 38%, transparent) 62%,
+      color-mix(in srgb, #000 18%, transparent) 80%,
+      color-mix(in srgb, #000 6%, transparent) 92%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to left,
+      var(--app-bg) 0%,
+      color-mix(in srgb, var(--app-bg) 99%, transparent) 10%,
+      color-mix(in srgb, var(--app-bg) 94%, transparent) 24%,
+      color-mix(in srgb, var(--app-bg) 82%, transparent) 40%,
+      color-mix(in srgb, var(--app-bg) 62%, transparent) 54%,
+      color-mix(in srgb, var(--app-bg) 40%, transparent) 68%,
+      color-mix(in srgb, var(--app-bg) 20%, transparent) 80%,
+      color-mix(in srgb, var(--app-bg) 8%, transparent) 90%,
+      transparent 100%
+    );
+}
+
 .slide-menu--xlarge.slide-menu--chrome-close .slide-menu__close--float {
   position: absolute;
   top: 12px;

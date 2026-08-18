@@ -8,10 +8,10 @@ import { getRendererUrl } from './appUrl';
 const detailWindows = new Map<string, BrowserWindow>();
 const detailPayloads = new Map<string, StoredMediaItem>();
 
-const DETAIL_WINDOW_MIN_WIDTH = 1024;
-const DETAIL_WINDOW_MIN_HEIGHT = 640;
-const DETAIL_WINDOW_WIDTH = DETAIL_WINDOW_MIN_WIDTH;
-const DETAIL_WINDOW_HEIGHT = DETAIL_WINDOW_MIN_HEIGHT;
+const DETAIL_WINDOW_MIN_WIDTH = 1100;
+const DETAIL_WINDOW_MIN_HEIGHT = 720;
+const DETAIL_WINDOW_WIDTH = 1320;
+const DETAIL_WINDOW_HEIGHT = 840;
 
 export function getDetailPayload(mediaId: string): StoredMediaItem | null {
   return detailPayloads.get(mediaId) ?? null;

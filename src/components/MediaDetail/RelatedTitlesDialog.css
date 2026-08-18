@@ -1,0 +1,32 @@
+.related-dialog__snake {
+  width: min(100%, 920px);
+  max-height: min(82vh, 780px);
+}
+
+.related-dialog__panel {
+  max-height: min(82vh, 777px);
+}
+
+.related-dialog__count {
+  margin-left: 8px;
+  font-size: 0.875rem;
+  font-weight: 550;
+  letter-spacing: 0;
+  color: var(--app-text-muted);
+}
+
+.related-dialog__content {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+}
+
+.related-dialog__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: var(--catalog-row-gap, 20px) var(--catalog-column-gap, 16px);
+}
+
+.related-dialog__grid .media-card {
+  width: 100%;
+}

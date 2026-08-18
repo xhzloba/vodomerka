@@ -88,7 +88,12 @@ export function MainAppShell() {
         settings.detailPresentation === 'panel' || !window.electronAPI?.detail?.open;
 
       if (preferPanel) {
-        setIsOpeningDetail(true);
+        const swapInOpenPanel = selectedMedia != null;
+        if (swapInOpenPanel) {
+          setSelectedMedia(item);
+        } else {
+          setIsOpeningDetail(true);
+        }
         void prepareMediaDetailItem(item)
           .then((resolved) => {
             setSelectedMedia(resolved);
@@ -97,7 +102,9 @@ export function MainAppShell() {
             setSelectedMedia(item);
           })
           .finally(() => {
-            setIsOpeningDetail(false);
+            if (!swapInOpenPanel) {
+              setIsOpeningDetail(false);
+            }
           });
         return;
       }
@@ -111,7 +118,7 @@ export function MainAppShell() {
           setIsOpeningDetail(false);
         });
     },
-    [settings.detailPresentation, showToast],
+    [selectedMedia, settings.detailPresentation, showToast],
   );
 
   const toggleSidebar = useCallback(
@@ -411,10 +418,12 @@ export function MainAppShell() {
         >
           {selectedMedia ? (
             <MediaDetail
+              key={selectedMedia.id}
               item={selectedMedia}
               variant="panel"
               onClose={() => setSelectedMedia(null)}
               onPlay={handlePlay}
+              onSelect={handleMediaSelect}
             />
           ) : null}
         </SlideMenu>
@@ -423,6 +432,7 @@ export function MainAppShell() {
           item={selectedMedia}
           onClose={() => setSelectedMedia(null)}
           onPlay={handlePlay}
+          onSelect={handleMediaSelect}
         />
       ) : null}
 

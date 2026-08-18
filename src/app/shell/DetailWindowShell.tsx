@@ -26,7 +26,7 @@ export function DetailWindowShell({ mediaId }: { mediaId: string }) {
         }
 
         let next = hydrateMediaItem(payload);
-        if (isSparseMediaItem(next)) {
+        if (isSparseMediaItem(next) || next.related === undefined || next.similars === undefined) {
           const full = await fetchMediaById(mediaId);
           if (full) {
             next = hydrateMediaItem(full);
@@ -67,6 +67,25 @@ export function DetailWindowShell({ mediaId }: { mediaId: string }) {
     [showToast],
   );
 
+  const handleSelect = useCallback((media: MediaItem) => {
+    if (media.id === item?.id) {
+      return;
+    }
+
+    setItem(hydrateMediaItem(media));
+
+    void ensureMediaOverridesLoaded()
+      .then(() => fetchMediaById(media.id))
+      .then((full) => {
+        if (full) {
+          setItem(hydrateMediaItem(full));
+        }
+      })
+      .catch(() => {
+        showToast('Не удалось открыть карточку', { kind: 'error', title: 'Ошибка' });
+      });
+  }, [item?.id, showToast]);
+
   if (loadFailed) {
     return (
       <div className="detail-window-shell page-state-shell">
@@ -82,7 +101,14 @@ export function DetailWindowShell({ mediaId }: { mediaId: string }) {
 
   return (
     <div className="detail-window-shell">
-      <MediaDetail variant="window" item={item} onClose={handleClose} onPlay={handlePlay} />
+      <MediaDetail
+        key={item.id}
+        variant="window"
+        item={item}
+        onClose={handleClose}
+        onPlay={handlePlay}
+        onSelect={handleSelect}
+      />
       <div className="titlebar" aria-hidden="true" />
     </div>
   );

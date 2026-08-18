@@ -20,12 +20,15 @@ import {
   EyeIcon,
   FavoritesIcon,
   InfoIcon,
+  LayersIcon,
   PauseCircleIcon,
   PlayIcon,
+  SparklesIcon,
   WatchingIcon,
 } from '@/shared/ui/icons';
 import { WATCH_STATUS_LABELS, WATCH_STATUSES, type WatchStatus } from '@/shared/domain/watchStatus';
 import { WatchStatusPicker } from './WatchStatusPicker';
+import { RelatedTitlesDialog } from './RelatedTitlesDialog';
 import '../HeroBanner/HeroBanner.css';
 import './MediaDetail.css';
 
@@ -34,6 +37,7 @@ interface MediaDetailProps {
   variant?: 'modal' | 'window' | 'panel';
   onClose: () => void;
   onPlay: (item: MediaItem) => void;
+  onSelect?: (item: MediaItem) => void;
 }
 
 type DetailMetaPart =
@@ -109,7 +113,82 @@ function uniqueBackdropUrls(item: MediaItem): string[] {
 
 const BACKDROP_ROTATE_MS = 5000;
 
-export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaDetailProps) {
+function MediaDetailBrand({
+  logoUrl,
+  title,
+  variant,
+  onClick,
+}: {
+  logoUrl?: string;
+  title: string;
+  variant: 'window' | 'panel' | 'modal';
+  onClick?: (event: MouseEvent<HTMLElement>) => void;
+}) {
+  const { src, failed } = useMediaImage({
+    primaryUrl: logoUrl ?? '',
+    eager: true,
+  });
+  const [loaded, setLoaded] = useState(false);
+  const hasLogoUrl = Boolean(logoUrl);
+
+  useEffect(() => {
+    setLoaded(false);
+  }, [src]);
+
+  const showLogo = hasLogoUrl && Boolean(src) && loaded && !failed;
+  const showLogoSkeleton = hasLogoUrl && !failed && !showLogo;
+  const logoClassName = variant === 'window' ? 'hero__logo' : 'media-detail__logo';
+  const skeletonClassName =
+    variant === 'window' ? 'hero__logo-skeleton' : 'hero__logo-skeleton media-detail__logo-skeleton';
+  const titleClassName =
+    variant === 'window' ? 'hero__title media-pearl-text' : 'media-detail__title media-pearl-text';
+
+  if (showLogo) {
+    return (
+      <img
+        className={logoClassName}
+        src={src}
+        alt={title}
+        loading="eager"
+        referrerPolicy="no-referrer"
+        onClick={onClick}
+      />
+    );
+  }
+
+  if (showLogoSkeleton) {
+    return (
+      <>
+        <div className={skeletonClassName} aria-hidden="true" />
+        {src ? (
+          <img
+            className={logoClassName}
+            src={src}
+            alt=""
+            loading="eager"
+            referrerPolicy="no-referrer"
+            aria-hidden="true"
+            style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+            onLoad={() => setLoaded(true)}
+            ref={(node) => {
+              if (node?.complete && node.naturalWidth > 0) {
+                requestAnimationFrame(() => setLoaded(true));
+              }
+            }}
+          />
+        ) : null}
+      </>
+    );
+  }
+
+  return (
+    <h2 className={titleClassName} onClick={onClick}>
+      {title}
+    </h2>
+  );
+}
+
+export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect }: MediaDetailProps) {
   const detailItem = useOverriddenMediaItem(item);
   const { isFavorite, toggleFavorite } = useFavorites();
   const { getStatus, toggleStatus } = useWatched();
@@ -118,6 +197,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
   const [isPendingFavorite, setIsPendingFavorite] = useState<boolean | null>(null);
   const [pendingStatus, setPendingStatus] = useState<WatchStatus | 'none' | null>(null);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [relatedSheet, setRelatedSheet] = useState<'sequels' | 'similars' | null>(null);
   const [torrentsOpen, setTorrentsOpen] = useState(false);
   const [torrentsMounted, setTorrentsMounted] = useState(false);
   const [backdropIndex, setBackdropIndex] = useState(0);
@@ -141,6 +221,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
     setIsPendingFavorite(null);
     setPendingStatus(null);
     setDescriptionOpen(false);
+    setRelatedSheet(null);
     setTorrentsOpen(false);
     setBackdropIndex(0);
   }, [detailItem.id]);
@@ -175,10 +256,6 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
     primaryUrl: nextBackdrop,
     eager: Boolean(nextBackdrop),
   });
-  const { src: logoSrc, failed: logoFailed, ready: logoReady } = useMediaImage({
-    primaryUrl: detailItem.logo ?? '',
-    eager: true,
-  });
   const { src: posterSrc, failed: posterFailed, ready: posterReady } = useMediaImage({
     primaryUrl: detailItem.poster,
     fallbackUrl: detailItem.backdrop,
@@ -195,9 +272,6 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
     }
   }, [failed, heroReady, src]);
 
-  const hasLogoUrl = Boolean(detailItem.logo);
-  const showLogo = hasLogoUrl && Boolean(logoSrc) && logoReady && !logoFailed;
-  const showLogoSkeleton = hasLogoUrl && !logoFailed && !showLogo;
   const hasPosterSource = Boolean(detailItem.poster || detailItem.backdrop);
   const isPosterLoading = hasPosterSource && !posterFailed && !posterReady;
   const showPoster = hasPosterSource && !posterFailed && posterReady;
@@ -273,19 +347,14 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
       </p>
     ) : null;
 
-  const titleBlock = showLogo ? (
-    <img
-      key={logoSrc}
-      className="hero__logo"
-      src={logoSrc}
-      alt={detailItem.title}
-      loading="eager"
-      referrerPolicy="no-referrer"
+  const titleBlock = (
+    <MediaDetailBrand
+      key={detailItem.id}
+      logoUrl={detailItem.logo}
+      title={detailItem.title}
+      variant="window"
+      onClick={(event) => void handleCopyId(event)}
     />
-  ) : showLogoSkeleton ? (
-    <div className="hero__logo-skeleton" aria-hidden="true" />
-  ) : (
-    <h2 className="hero__title media-pearl-text">{detailItem.title}</h2>
   );
 
   const factsBlock =
@@ -418,6 +487,62 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
     />
   ) : null;
 
+  const relatedItems = detailItem.related ?? [];
+  const similarItems = detailItem.similars ?? [];
+  const relatedAllItems = useMemo(() => {
+    if (relatedItems.length === 0) {
+      return [];
+    }
+
+    if (relatedItems.some((row) => row.id === detailItem.id)) {
+      return relatedItems;
+    }
+
+    return [...relatedItems, detailItem].sort(
+      (left, right) => (left.year ?? 99999) - (right.year ?? 99999),
+    );
+  }, [detailItem, relatedItems]);
+  const canOpenRelated = relatedItems.length > 0 && Boolean(onSelect);
+  const canOpenSimilars = similarItems.length > 0 && Boolean(onSelect);
+  const relatedDialog =
+    (canOpenRelated || canOpenSimilars) && onSelect ? (
+      <RelatedTitlesDialog
+        open={relatedSheet != null}
+        title={relatedSheet === 'similars' ? 'Похожие фильмы' : 'Сиквелы и приквелы'}
+        items={relatedSheet === 'similars' ? similarItems : relatedAllItems}
+        currentId={relatedSheet === 'sequels' ? detailItem.id : undefined}
+        onClose={() => setRelatedSheet(null)}
+        onSelect={onSelect}
+      />
+    ) : null;
+  const relatedButton =
+    canOpenRelated || canOpenSimilars ? (
+      <section className="media-detail__franchise">
+        {canOpenRelated ? (
+          <button
+            type="button"
+            className="media-detail__franchise-btn"
+            onClick={() => setRelatedSheet('sequels')}
+          >
+            <LayersIcon size={18} />
+            <span className="media-detail__franchise-label">Сиквелы и приквелы</span>
+            <span className="media-detail__franchise-count">{relatedAllItems.length}</span>
+          </button>
+        ) : null}
+        {canOpenSimilars ? (
+          <button
+            type="button"
+            className="media-detail__franchise-btn"
+            onClick={() => setRelatedSheet('similars')}
+          >
+            <SparklesIcon size={18} />
+            <span className="media-detail__franchise-label">Похожие фильмы</span>
+            <span className="media-detail__franchise-count">{similarItems.length}</span>
+          </button>
+        ) : null}
+      </section>
+    ) : null;
+
   if (isWindow) {
     return (
       <div className="media-detail media-detail--window">
@@ -456,10 +581,12 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
               ) : null}
               {actions}
               {factsBlock}
+              {relatedButton}
             </div>
           </section>
         </div>
         {descriptionDialog}
+        {relatedDialog}
         {torrentsDialog}
       </div>
     );
@@ -508,20 +635,13 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
           ) : null}
 
           <div className="media-detail__info">
-            {showLogo ? (
-              <img
-                key={logoSrc}
-                className="media-detail__logo"
-                src={logoSrc}
-                alt={detailItem.title}
-                loading="eager"
-                referrerPolicy="no-referrer"
-              />
-            ) : showLogoSkeleton ? (
-              <div className="hero__logo-skeleton media-detail__logo-skeleton" aria-hidden="true" />
-            ) : (
-              <h2 className="media-detail__title media-pearl-text">{detailItem.title}</h2>
-            )}
+            <MediaDetailBrand
+              key={detailItem.id}
+              logoUrl={detailItem.logo}
+              title={detailItem.title}
+              variant="modal"
+              onClick={(event) => void handleCopyId(event)}
+            />
 
             {detailItem.subtitle ? (
               <p className="media-detail__subtitle">{detailItem.subtitle}</p>
@@ -541,6 +661,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
 
         {actions}
         {factsBlock}
+        {relatedButton}
       </div>
     </>
   );
@@ -601,26 +722,13 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
           >
             <div className="media-detail__intro">
               <div className="media-detail__info">
-                {showLogo ? (
-                  <img
-                    key={logoSrc}
-                    className="media-detail__logo"
-                    src={logoSrc}
-                    alt={detailItem.title}
-                    loading="eager"
-                    referrerPolicy="no-referrer"
-                    onClick={(event) => void handleCopyId(event)}
-                  />
-                ) : showLogoSkeleton ? (
-                  <div className="hero__logo-skeleton media-detail__logo-skeleton" aria-hidden="true" />
-                ) : (
-                  <h2
-                    className="media-detail__title media-pearl-text"
-                    onClick={(event) => void handleCopyId(event)}
-                  >
-                    {detailItem.title}
-                  </h2>
-                )}
+                <MediaDetailBrand
+                  key={detailItem.id}
+                  logoUrl={detailItem.logo}
+                  title={detailItem.title}
+                  variant="panel"
+                  onClick={(event) => void handleCopyId(event)}
+                />
                 {detailItem.subtitle && detailItem.subtitle !== detailItem.title ? (
                   <p className="media-detail__subtitle">{detailItem.subtitle}</p>
                 ) : null}
@@ -659,9 +767,11 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
             </section>
 
             {panelFacts}
+            {relatedButton}
           </div>
         </div>
         {descriptionDialog}
+        {relatedDialog}
         {torrentsDialog}
       </div>
     );
@@ -685,6 +795,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
       </div>
 
       {descriptionDialog}
+      {relatedDialog}
       {torrentsDialog}
     </div>
   );

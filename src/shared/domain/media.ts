@@ -24,6 +24,8 @@ export interface MediaItem {
   backdrop: string;
   backdrops?: string[];
   logo?: string;
+  related?: MediaItem[];
+  similars?: MediaItem[];
   viewUrl: string;
   country?: string;
   director?: string;
@@ -146,6 +148,35 @@ export function mapVokinoChannelToMediaItem(channel: VokinoChannelItem): MediaIt
     throw new Error('Invalid Vokino channel item');
   }
   return item;
+}
+
+function mapRelatedChannels(
+  itemId: string,
+  channels: VokinoChannelItem[] | 0 | undefined,
+): MediaItem[] {
+  if (!Array.isArray(channels) || channels.length === 0) {
+    return [];
+  }
+
+  return channels
+    .map(mapChannelItem)
+    .filter((row): row is MediaItem => row != null && row.id !== itemId);
+}
+
+export function attachViewRelations(
+  item: MediaItem,
+  sequelsAndPrequels: VokinoChannelItem[] | 0 | undefined,
+  similars: VokinoChannelItem[] | 0 | undefined,
+): MediaItem {
+  const related = mapRelatedChannels(item.id, sequelsAndPrequels).sort(
+    (left, right) => (left.year ?? 99999) - (right.year ?? 99999),
+  );
+
+  return {
+    ...item,
+    related,
+    similars: mapRelatedChannels(item.id, similars),
+  };
 }
 
 export function getMediaTypeLabel(type: MediaType): string {
