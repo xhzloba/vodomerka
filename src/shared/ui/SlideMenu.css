@@ -134,7 +134,7 @@
 /* Media detail: шире, без header-блока, body от y=0 */
 .slide-menu--xlarge.slide-menu--chrome-close .slide-menu__content {
   position: relative;
-  width: min(580px, 62vw);
+  width: min(720px, 72vw);
   padding-right: 0;
 }
 

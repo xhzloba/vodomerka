@@ -175,7 +175,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
     primaryUrl: nextBackdrop,
     eager: Boolean(nextBackdrop),
   });
-  const { src: logoSrc, failed: logoFailed } = useMediaImage({
+  const { src: logoSrc, failed: logoFailed, ready: logoReady } = useMediaImage({
     primaryUrl: detailItem.logo ?? '',
     eager: true,
   });
@@ -195,7 +195,9 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
     }
   }, [failed, heroReady, src]);
 
-  const showLogo = Boolean(detailItem.logo && logoSrc && !logoFailed);
+  const hasLogoUrl = Boolean(detailItem.logo);
+  const showLogo = hasLogoUrl && Boolean(logoSrc) && logoReady && !logoFailed;
+  const showLogoSkeleton = hasLogoUrl && !logoFailed && !showLogo;
   const hasPosterSource = Boolean(detailItem.poster || detailItem.backdrop);
   const isPosterLoading = hasPosterSource && !posterFailed && !posterReady;
   const showPoster = hasPosterSource && !posterFailed && posterReady;
@@ -280,6 +282,8 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
       loading="eager"
       referrerPolicy="no-referrer"
     />
+  ) : showLogoSkeleton ? (
+    <div className="hero__logo-skeleton" aria-hidden="true" />
   ) : (
     <h2 className="hero__title media-pearl-text">{detailItem.title}</h2>
   );
@@ -513,6 +517,8 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
                 loading="eager"
                 referrerPolicy="no-referrer"
               />
+            ) : showLogoSkeleton ? (
+              <div className="hero__logo-skeleton media-detail__logo-skeleton" aria-hidden="true" />
             ) : (
               <h2 className="media-detail__title media-pearl-text">{detailItem.title}</h2>
             )}
@@ -594,21 +600,6 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
             className={`media-detail__content${hasHeroSource ? ' media-detail__content--under-banner' : ''}`}
           >
             <div className="media-detail__intro">
-              {isPosterLoading ? (
-                <MediaCoverPlaceholder className="media-detail__poster-placeholder" />
-              ) : null}
-              {showPoster ? (
-                <img
-                  key={posterSrc}
-                  className="media-detail__poster media-detail__poster--ready"
-                  src={posterSrc}
-                  alt={detailItem.title}
-                  loading="eager"
-                  referrerPolicy="no-referrer"
-                  onClick={(event) => void handleCopyId(event)}
-                />
-              ) : null}
-
               <div className="media-detail__info">
                 {showLogo ? (
                   <img
@@ -618,9 +609,17 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay }: MediaD
                     alt={detailItem.title}
                     loading="eager"
                     referrerPolicy="no-referrer"
+                    onClick={(event) => void handleCopyId(event)}
                   />
+                ) : showLogoSkeleton ? (
+                  <div className="hero__logo-skeleton media-detail__logo-skeleton" aria-hidden="true" />
                 ) : (
-                  <h2 className="media-detail__title media-pearl-text">{detailItem.title}</h2>
+                  <h2
+                    className="media-detail__title media-pearl-text"
+                    onClick={(event) => void handleCopyId(event)}
+                  >
+                    {detailItem.title}
+                  </h2>
                 )}
                 {detailItem.subtitle && detailItem.subtitle !== detailItem.title ? (
                   <p className="media-detail__subtitle">{detailItem.subtitle}</p>
