@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
@@ -17,10 +17,12 @@ import {
   EyeIcon,
   FavoritesIcon,
   PauseCircleIcon,
+  SettingsIcon,
   WatchingIcon,
 } from '@/shared/ui/icons';
 import { LibraryCollectionView } from '../LibraryCollectionView/LibraryCollectionView';
 import { LibraryTypeFilteredRows } from '../LibraryCollectionView/LibraryTypeFilteredRows';
+import './CollectionViewFavoritesBackdrop.css';
 
 export type CollectionTab = 'favorites' | WatchStatus;
 
@@ -54,6 +56,8 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
   const [tab, setTab] = useState<CollectionTab>('favorites');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [favoritesBackdropEnabled, setFavoritesBackdropEnabled] = useState(true);
+  const [favoritesBackdropIndex, setFavoritesBackdropIndex] = useState(0);
 
   const collectionTabs = useMemo(
     () => [
@@ -74,6 +78,37 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
 
   const items = tab === 'favorites' ? favorites : statusItems;
   const isLoading = tab === 'favorites' ? favoritesLoading : statusesLoading;
+
+  const favoriteBackdrops = useMemo(() => {
+    const urls = favorites.map((item) => item.backdrop).filter((url) => Boolean(url));
+    return Array.from(new Set(urls));
+  }, [favorites]);
+
+  useEffect(() => {
+    if (tab !== 'favorites') {
+      setFavoritesBackdropIndex(0);
+      return;
+    }
+
+    if (!favoritesBackdropEnabled) {
+      return;
+    }
+
+    if (favoriteBackdrops.length <= 1) {
+      setFavoritesBackdropIndex(0);
+      return;
+    }
+
+    setFavoritesBackdropIndex(0);
+
+    const id = window.setInterval(() => {
+      setFavoritesBackdropIndex((current) => (current + 1) % favoriteBackdrops.length);
+    }, 5000);
+
+    return () => window.clearInterval(id);
+  }, [favoriteBackdrops, favoritesBackdropEnabled, tab]);
+
+  const activeFavoriteBackdrop = favoriteBackdrops[favoritesBackdropIndex] ?? favoriteBackdrops[0] ?? '';
 
   const clearCopy =
     tab === 'favorites'
@@ -108,34 +143,71 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
 
   return (
     <>
-      <LibraryCollectionView
-        title="Моё"
-        headerExtra={
-          <Tabs
-            items={collectionTabs}
-            activeId={tab}
-            onChange={(id) => setTab(id as CollectionTab)}
-            ariaLabel="Разделы в Моё"
-            variant="segmented"
+      <div className="collection-favorites-hero">
+        {tab === 'favorites' && favoritesBackdropEnabled && activeFavoriteBackdrop ? (
+          <div className="collection-favorites-hero__backdrop" aria-hidden="true">
+            <div className="collection-favorites-hero__image-panel">
+              <img
+                key={activeFavoriteBackdrop}
+                className="collection-favorites-hero__backdrop-image collection-favorites-hero__backdrop-image--enter"
+                src={activeFavoriteBackdrop}
+                alt=""
+                loading="eager"
+                decoding="async"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        <LibraryCollectionView
+          title="Моё"
+          headerExtra={
+            <div className="collection-favorites-hero__header-extra">
+              <Tabs
+                items={collectionTabs}
+                activeId={tab}
+                onChange={(id) => setTab(id as CollectionTab)}
+                ariaLabel="Разделы в Моё"
+                variant="segmented"
+              />
+
+              {tab === 'favorites' && favoriteBackdrops.length > 0 ? (
+                <button
+                  type="button"
+                  className={`collection-favorites-hero__backdrop-toggle${
+                    favoritesBackdropEnabled ? '' : ' collection-favorites-hero__backdrop-toggle--off'
+                  }`}
+                  aria-label={
+                    favoritesBackdropEnabled ? 'Отключить фон' : 'Включить фон'
+                  }
+                  aria-pressed={favoritesBackdropEnabled}
+                  onClick={() => setFavoritesBackdropEnabled((v) => !v)}
+                  title="Фон по backdrop"
+                >
+                  <SettingsIcon size={18} />
+                </button>
+              ) : null}
+            </div>
+          }
+          scrollKey={tab}
+          isLoading={isLoading}
+          loadingTitle={clearCopy.loadingTitle}
+          hasItems={items.length > 0}
+          clearAriaLabel={clearCopy.ariaLabel}
+          onClearRequest={() => setConfirmOpen(true)}
+          emptyIcon={tabEmptyIcon(tab)}
+          emptyText={emptyText}
+          isActive={isActive}
+        >
+          <LibraryTypeFilteredRows
+            key={tab}
+            items={items}
+            onMediaSelect={onMediaSelect}
+            filterAriaLabel="Фильтр Моё по типу"
           />
-        }
-        scrollKey={tab}
-        isLoading={isLoading}
-        loadingTitle={clearCopy.loadingTitle}
-        hasItems={items.length > 0}
-        clearAriaLabel={clearCopy.ariaLabel}
-        onClearRequest={() => setConfirmOpen(true)}
-        emptyIcon={tabEmptyIcon(tab)}
-        emptyText={emptyText}
-        isActive={isActive}
-      >
-        <LibraryTypeFilteredRows
-          key={tab}
-          items={items}
-          onMediaSelect={onMediaSelect}
-          filterAriaLabel="Фильтр Моё по типу"
-        />
-      </LibraryCollectionView>
+        </LibraryCollectionView>
+      </div>
 
       <ConfirmDialog
         open={confirmOpen}
