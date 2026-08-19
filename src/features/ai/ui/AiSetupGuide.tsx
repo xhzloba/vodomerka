@@ -84,7 +84,7 @@ export function AiSetupGuide({
         </ol>
       ) : null}
 
-      <div className="ai-setup-guide__actions">
+      <div className="settings-data-actions ai-setup-guide__actions">
         {showInstall && onOpenInstall ? (
           <button type="button" className="settings-action-btn" onClick={onOpenInstall}>
             <SettingsGlyph tone="blue">

@@ -44,35 +44,7 @@
   gap: 0;
 }
 
-.ai-setup-guide__actions .settings-action-btn {
-  position: relative;
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  min-height: 48px;
-  padding: 10px var(--settings-inset);
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  font-size: 0.9375rem;
-  font-weight: 400;
-  letter-spacing: -0.015em;
-  color: var(--ui-control-accent);
-  transition: background var(--transition-fast), opacity var(--transition-fast);
-}
-
-.ai-setup-guide__actions .settings-action-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--app-text) 4%, transparent);
-}
-
-.ai-setup-guide__actions .settings-action-btn:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.ai-setup-guide__actions .settings-action-btn + .settings-action-btn::before {
+.ai-setup-guide__actions.settings-data-actions .settings-action-btn + .settings-action-btn::before {
   content: '';
   position: absolute;
   top: 0;
