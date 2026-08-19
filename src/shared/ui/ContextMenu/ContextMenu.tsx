@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { CheckIcon } from '@/shared/ui/icons';
+import { CheckIcon, ChevronRightIcon } from '@/shared/ui/icons';
 import './ContextMenu.css';
 
 export interface ContextMenuItem {
@@ -11,6 +11,7 @@ export interface ContextMenuItem {
   active?: boolean;
   tone?: 'default' | 'danger';
   separatorBefore?: boolean;
+  children?: ContextMenuItem[];
 }
 
 interface ContextMenuProps {
@@ -27,6 +28,7 @@ interface ContextMenuProps {
 
 const MENU_OFFSET = 8;
 const VIEWPORT_PADDING = 12;
+const SUBMENU_MIN_WIDTH = 220;
 
 export function ContextMenu({
   open,
@@ -42,8 +44,22 @@ export function ContextMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x, y });
   const [focusIndex, setFocusIndex] = useState(0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [submenuSide, setSubmenuSide] = useState<'right' | 'left'>('right');
 
   const enabledItems = items.filter((item) => !item.disabled);
+
+  const toggleExpanded = (itemId: string) => {
+    const root = menuRef.current;
+    const anchor = root?.querySelector<HTMLButtonElement>(`[data-menu-item-id="${itemId}"]`);
+    if (anchor) {
+      const rect = anchor.getBoundingClientRect();
+      const freeRight = window.innerWidth - rect.right - VIEWPORT_PADDING;
+      const freeLeft = rect.left - VIEWPORT_PADDING;
+      setSubmenuSide(freeRight >= SUBMENU_MIN_WIDTH || freeRight >= freeLeft ? 'right' : 'left');
+    }
+    setExpandedId((current) => (current === itemId ? null : itemId));
+  };
 
   useLayoutEffect(() => {
     if (!open) {
@@ -72,6 +88,7 @@ export function ContextMenu({
     }
 
     setFocusIndex(0);
+    setExpandedId(null);
   }, [open, items]);
 
   useEffect(() => {
@@ -113,6 +130,10 @@ export function ContextMenu({
         event.preventDefault();
         const item = enabledItems[focusIndex];
         if (item) {
+          if (item.children?.length) {
+            toggleExpanded(item.id);
+            return;
+          }
           onItemClick?.(item.id);
           onClose();
         }
@@ -173,6 +194,8 @@ export function ContextMenu({
                 type="button"
                 className={[
                   'context-menu__button',
+                  item.children?.length ? 'context-menu__button--expandable' : '',
+                  expandedId === item.id ? 'context-menu__button--expanded' : '',
                   item.active ? 'context-menu__button--active' : '',
                   item.tone === 'danger' ? 'context-menu__button--danger' : '',
                   isFocused ? 'context-menu__button--focused' : '',
@@ -180,9 +203,15 @@ export function ContextMenu({
                   .filter(Boolean)
                   .join(' ')}
                 role="menuitem"
+                data-menu-item-id={item.id}
                 disabled={item.disabled}
                 onClick={() => {
                   if (item.disabled) {
+                    return;
+                  }
+
+                  if (item.children?.length) {
+                    toggleExpanded(item.id);
                     return;
                   }
 
@@ -192,12 +221,53 @@ export function ContextMenu({
               >
                 {item.icon ? <span className="context-menu__icon">{item.icon}</span> : null}
                 <span className="context-menu__label">{item.label}</span>
+                {item.children?.length ? (
+                  <span className="context-menu__expand" aria-hidden="true">
+                    <ChevronRightIcon size={14} />
+                  </span>
+                ) : null}
                 {item.active ? (
                   <span className="context-menu__check" aria-hidden="true">
                     <CheckIcon size={12} strokeWidth={2.5} />
                   </span>
                 ) : null}
               </button>
+              {item.children?.length && expandedId === item.id ? (
+                <ul className={`context-menu__sublist context-menu__sublist--${submenuSide}`} role="menu">
+                  {item.children.map((child) => (
+                    <li key={child.id} className="context-menu__item" role="none">
+                      <button
+                        type="button"
+                        className={[
+                          'context-menu__button',
+                          'context-menu__button--subitem',
+                          child.active ? 'context-menu__button--active' : '',
+                          child.tone === 'danger' ? 'context-menu__button--danger' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        role="menuitem"
+                        disabled={child.disabled}
+                        onClick={() => {
+                          if (child.disabled) {
+                            return;
+                          }
+                          onItemClick?.(child.id);
+                          onClose();
+                        }}
+                      >
+                        {child.icon ? <span className="context-menu__icon">{child.icon}</span> : null}
+                        <span className="context-menu__label">{child.label}</span>
+                        {child.active ? (
+                          <span className="context-menu__check" aria-hidden="true">
+                            <CheckIcon size={12} strokeWidth={2.5} />
+                          </span>
+                        ) : null}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </li>
           );
         })}

@@ -57,7 +57,7 @@ export function MediaCard({
 }: MediaCardProps) {
   const { settings } = useAppSettings();
   const { isFavorite, toggleFavorite } = useFavorites();
-  const { getStatus, toggleStatus } = useWatched();
+  const { clearStatus, getStatus, toggleStatus } = useWatched();
   const { beginMediaDrag, updatePointer, releasePointer } = useMediaDrag();
   const { showToast } = useToast();
   const cardRef = useRef<HTMLElement>(null);
@@ -146,6 +146,15 @@ export function MediaCard({
         default:
           if (menuItemId.startsWith('status:')) {
             const status = menuItemId.slice('status:'.length);
+            if (status === 'none') {
+              void clearStatus(item.id).then(() => {
+                showToast(`«${item.title}» без статуса`, {
+                  kind: 'hide',
+                  title: 'Статус снят',
+                });
+              });
+              break;
+            }
             if (
               status === 'watching' ||
               status === 'watched' ||
@@ -174,7 +183,7 @@ export function MediaCard({
           break;
       }
     },
-    [copyMediaId, item, onOpenDetails, onSelect, showToast, toggleFavorite, toggleStatus],
+    [clearStatus, copyMediaId, item, onOpenDetails, onSelect, showToast, toggleFavorite, toggleStatus],
   );
 
   const handlePointerDown = useCallback(

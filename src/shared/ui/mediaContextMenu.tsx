@@ -12,6 +12,7 @@ import {
   CopyIcon,
   DownloadIcon,
   EyeIcon,
+  EyeOffIcon,
   FavoritesIcon,
   InfoIcon,
   PauseCircleIcon,
@@ -71,6 +72,8 @@ export function getMediaContextMenuItems(
   item: MediaItem,
   { isFavorite, watchStatus }: MediaContextMenuState,
 ): ContextMenuItem[] {
+  const statusLabel = watchStatus ? WATCH_STATUS_LABELS[watchStatus] : 'Не выбран';
+
   return [
     {
       id: 'details',
@@ -101,12 +104,25 @@ export function getMediaContextMenuItems(
       active: isFavorite,
       separatorBefore: true,
     },
-    ...WATCH_STATUSES.map((status, index) => ({
-      id: `status:${status}`,
-      label: WATCH_STATUS_LABELS[status],
-      icon: statusIcon(status, watchStatus === status),
-      active: watchStatus === status,
-      separatorBefore: index === 0,
-    })),
+    {
+      id: 'status-group',
+      label: `Статус: ${statusLabel}`,
+      icon: watchStatus ? statusIcon(watchStatus, true) : <WatchingIcon size={15} strokeWidth={1.75} />,
+      separatorBefore: true,
+      children: [
+        {
+          id: 'status:none',
+          label: 'Не выбран',
+          icon: <EyeOffIcon size={15} strokeWidth={watchStatus === null ? 2.1 : 1.75} />,
+          active: watchStatus === null,
+        },
+        ...WATCH_STATUSES.map((status) => ({
+          id: `status:${status}`,
+          label: WATCH_STATUS_LABELS[status],
+          icon: statusIcon(status, watchStatus === status),
+          active: watchStatus === status,
+        })),
+      ],
+    },
   ];
 }
