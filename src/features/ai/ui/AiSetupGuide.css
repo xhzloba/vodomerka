@@ -44,6 +44,13 @@
   gap: 0;
 }
 
+.ai-setup-guide__actions.settings-data-actions {
+  /* Кнопки внутри уже имеют свой padding (var(--settings-inset)), поэтому
+     компенсируем внешний padding контейнера, чтобы они вернулись "как было". */
+  margin-left: calc(-1 * var(--settings-inset));
+  margin-right: calc(-1 * var(--settings-inset));
+}
+
 .ai-setup-guide__actions.settings-data-actions .settings-action-btn + .settings-action-btn::before {
   content: '';
   position: absolute;
