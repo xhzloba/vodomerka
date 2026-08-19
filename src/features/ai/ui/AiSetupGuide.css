@@ -39,8 +39,9 @@
 
 .ai-setup-guide__actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 0;
 }
 
 .ai-setup-guide__actions .settings-action-btn {
