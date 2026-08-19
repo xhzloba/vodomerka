@@ -55,6 +55,11 @@
   pointer-events: none;
 }
 
+/* Зафиксировать отступ между иконкой-«глифом» и текстом. */
+.ai-setup-guide__actions .settings-action-btn {
+  gap: 12px !important;
+}
+
 .ai-model-card__mark {
   display: inline-flex;
   align-items: center;
