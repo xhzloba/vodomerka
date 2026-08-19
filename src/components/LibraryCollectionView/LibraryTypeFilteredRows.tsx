@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { isMovieMedia, isSerialMedia } from '@/shared/domain/media';
 import { useAppSettings } from '@/shared/settings/AppSettingsContext';
@@ -30,6 +30,11 @@ interface LibraryTypeFilteredRowsProps {
   onMediaSelect: (item: MediaItem) => void;
   /** Accessible name for the type filter. */
   filterAriaLabel?: string;
+  /**
+   * Exposes currently visible items after applying `typeFilter` ('Все/Фильмы/Сериалы').
+   * Useful for syncing background effects with the filter.
+   */
+  onVisibleItemsChange?: (items: MediaItem[]) => void;
 }
 
 /** Single poster row or catalog grid + Все / Фильмы / Сериалы filter. */
@@ -37,6 +42,7 @@ export function LibraryTypeFilteredRows({
   items,
   onMediaSelect,
   filterAriaLabel = 'Фильтр по типу',
+  onVisibleItemsChange,
 }: LibraryTypeFilteredRowsProps) {
   const { settings, updateSettings } = useAppSettings();
   const [typeFilter, setTypeFilter] = useState<MediaTypeFilter>('all');
@@ -53,6 +59,10 @@ export function LibraryTypeFilteredRows({
     }
     return canonicalItems;
   }, [canonicalItems, typeFilter]);
+
+  useEffect(() => {
+    onVisibleItemsChange?.(filteredItems);
+  }, [filteredItems, onVisibleItemsChange]);
 
   const title =
     typeFilter === 'movie' ? 'Фильмы' : typeFilter === 'serial' ? 'Сериалы' : 'Все';
@@ -113,14 +123,8 @@ export function LibraryTypeFilteredRows({
     return (
       <section className="library-type-grid">
         <div className="library-type-grid__header">
-          <h2 className="library-type-grid__title">
-            <span>{title}</span>
-            <span className="library-type-grid__count">{filteredItems.length}</span>
-          </h2>
-          <div className="library-type-grid__aside">
-            {typeFilterControl}
-            {layoutToggle}
-          </div>
+          {typeFilterControl}
+          {layoutToggle}
         </div>
         <div className="media-grid library-type-grid__media" style={gridStyle}>
           {filteredItems.map((item) => (
@@ -134,12 +138,12 @@ export function LibraryTypeFilteredRows({
   return (
     <ContentRow
       title={title}
-      titleCount={filteredItems.length}
       items={filteredItems}
       onMediaSelect={onMediaSelect}
+      hideTitle
+      headerLeft={typeFilterControl}
       headerExtra={
         <div className="library-type-grid__aside">
-          {typeFilterControl}
           {layoutToggle}
         </div>
       }

@@ -14,6 +14,7 @@ interface ContentRowProps {
   hideTitle?: boolean;
   icon?: ReactNode;
   titleCount?: number;
+  headerLeft?: ReactNode;
   headerExtra?: ReactNode;
   continueByItemId?: ReadonlyMap<string, ContinueCardProgress>;
   onRemoveContinue?: (continueId: string) => void;
@@ -36,6 +37,7 @@ export function ContentRow({
   hideTitle = false,
   icon,
   titleCount,
+  headerLeft,
   headerExtra,
   continueByItemId,
   onRemoveContinue,
@@ -151,17 +153,19 @@ export function ContentRow({
     el.scrollBy({ left: direction === 'left' ? -400 : 400, behavior: 'smooth' });
   };
 
-  const showHeader = !hideTitle || canScroll || Boolean(headerExtra);
+  const showHeader = !hideTitle || canScroll || Boolean(headerExtra) || Boolean(headerLeft);
 
   return (
     <section
       className={`content-row${hideTitle ? ' content-row--no-title' : ''}${
-        canScroll ? ' content-row--scrollable' : ''
-      }${edgeFade ? ' content-row--edge-fade' : ''}`}
+        headerLeft ? ' content-row--header-left' : ''
+      }${canScroll ? ' content-row--scrollable' : ''}${edgeFade ? ' content-row--edge-fade' : ''}`}
     >
       {showHeader ? (
         <div className="content-row__header">
-          {!hideTitle && (
+          {headerLeft ? (
+            <div className="content-row__header-left">{headerLeft}</div>
+          ) : !hideTitle && (
             <h2 className="content-row__title">
               {icon ? <span className="content-row__title-icon">{icon}</span> : null}
               {onTitleClick ? (

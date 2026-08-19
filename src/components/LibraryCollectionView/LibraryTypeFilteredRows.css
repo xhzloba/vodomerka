@@ -62,19 +62,43 @@
 
 .library-type-grid__title {
   display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
+  position: relative;
+  align-items: center;
+  gap: 0;
   margin: 0;
   min-width: 0;
   font-size: 1.125rem;
   font-weight: 510;
   letter-spacing: -0.022em;
   color: var(--app-text-muted);
+  overflow: visible;
 }
 
 .library-type-grid__count {
+  position: absolute;
+  top: -4px;
+  right: 5px;
+  z-index: 3;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--app-text);
+  color: var(--app-bg);
+  font-family: var(--font-system);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.022em;
   font-variant-numeric: tabular-nums;
-  opacity: 0.72;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 1;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 3px 8px rgba(0, 0, 0, 0.2);
 }
 
 .library-type-grid__media {

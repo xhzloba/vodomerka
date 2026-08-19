@@ -58,6 +58,7 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
   const [isClearing, setIsClearing] = useState(false);
   const [favoritesBackdropEnabled, setFavoritesBackdropEnabled] = useState(true);
   const [favoritesBackdropIndex, setFavoritesBackdropIndex] = useState(0);
+  const [favoritesVisibleItems, setFavoritesVisibleItems] = useState<MediaItem[]>([]);
 
   const collectionTabs = useMemo(
     () => [
@@ -80,9 +81,11 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
   const isLoading = tab === 'favorites' ? favoritesLoading : statusesLoading;
 
   const favoriteBackdrops = useMemo(() => {
-    const urls = favorites.map((item) => item.backdrop).filter((url) => Boolean(url));
+    const urls = favoritesVisibleItems
+      .map((item) => item.backdrop)
+      .filter((url) => Boolean(url));
     return Array.from(new Set(urls));
-  }, [favorites]);
+  }, [favoritesVisibleItems]);
 
   useEffect(() => {
     if (tab !== 'favorites') {
@@ -109,6 +112,12 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
   }, [favoriteBackdrops, favoritesBackdropEnabled, tab]);
 
   const activeFavoriteBackdrop = favoriteBackdrops[favoritesBackdropIndex] ?? favoriteBackdrops[0] ?? '';
+
+  useEffect(() => {
+    if (tab !== 'favorites') {
+      setFavoritesVisibleItems([]);
+    }
+  }, [tab]);
 
   const clearCopy =
     tab === 'favorites'
@@ -205,6 +214,9 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
             items={items}
             onMediaSelect={onMediaSelect}
             filterAriaLabel="Фильтр Моё по типу"
+            onVisibleItemsChange={
+              tab === 'favorites' ? (visible) => setFavoritesVisibleItems(visible) : undefined
+            }
           />
         </LibraryCollectionView>
       </div>
