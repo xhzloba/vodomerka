@@ -4,7 +4,8 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* Не клипим ряд под меню — .library-view в Apple sidebar использует negative margin */
+  overflow: visible;
 }
 
 .collection-favorites-hero .library-view {
