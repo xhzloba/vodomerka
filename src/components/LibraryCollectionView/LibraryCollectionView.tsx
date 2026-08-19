@@ -7,6 +7,8 @@ import '../BrowseView/BrowseView.css';
 
 interface LibraryCollectionViewProps {
   title: string;
+  /** Extra actions placed on the same row as the title/clear button (right side). */
+  titleRightExtra?: ReactNode;
   headerExtra?: ReactNode;
   /** Reset scroll when this value changes (e.g. collection tab). */
   scrollKey?: string;
@@ -24,6 +26,7 @@ interface LibraryCollectionViewProps {
 
 export function LibraryCollectionView({
   title,
+  titleRightExtra,
   headerExtra,
   scrollKey,
   isLoading,
@@ -51,17 +54,20 @@ export function LibraryCollectionView({
       <div className="library-view__header">
         <div className="library-view__title-group">
           <h1 className="library-view__title">{title}</h1>
-          <button
-            type="button"
-            className="library-view__clear-btn"
-            onClick={onClearRequest}
-            disabled={!hasItems || isLoading}
-            aria-label={clearAriaLabel}
-            aria-hidden={!hasItems || isLoading}
-            tabIndex={hasItems && !isLoading ? 0 : -1}
-          >
-            <TrashIcon size={18} strokeWidth={1.75} />
-          </button>
+          <div className="library-view__title-actions">
+            <button
+              type="button"
+              className="library-view__clear-btn"
+              onClick={onClearRequest}
+              disabled={!hasItems || isLoading}
+              aria-label={clearAriaLabel}
+              aria-hidden={!hasItems || isLoading}
+              tabIndex={hasItems && !isLoading ? 0 : -1}
+            >
+              <TrashIcon size={18} strokeWidth={1.75} />
+            </button>
+            {titleRightExtra ? titleRightExtra : null}
+          </div>
         </div>
         {headerExtra ? <div className="library-view__header-extra">{headerExtra}</div> : null}
       </div>

@@ -85,14 +85,14 @@
   padding: 0;
   border: none;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--app-text);
+  background: transparent;
+  color: var(--chrome-muted);
   cursor: pointer;
-  transition: background var(--transition-fast), opacity var(--transition-fast), color var(--transition-fast);
+  transition: opacity var(--transition-fast), color var(--transition-fast);
 }
 
 .collection-favorites-hero__backdrop-toggle:hover {
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--chrome-strong);
 }
 
 .collection-favorites-hero__backdrop-toggle--off {

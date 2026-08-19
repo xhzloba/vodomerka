@@ -171,6 +171,22 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
 
         <LibraryCollectionView
           title="Моё"
+          titleRightExtra={
+            tab === 'favorites' && favoriteBackdrops.length > 0 ? (
+              <button
+                type="button"
+                className={`collection-favorites-hero__backdrop-toggle${
+                  favoritesBackdropEnabled ? '' : ' collection-favorites-hero__backdrop-toggle--off'
+                }`}
+                aria-label={favoritesBackdropEnabled ? 'Отключить фон' : 'Включить фон'}
+                aria-pressed={favoritesBackdropEnabled}
+                onClick={() => setFavoritesBackdropEnabled((v) => !v)}
+                title="Фон по backdrop"
+              >
+                <SettingsIcon size={18} />
+              </button>
+            ) : null
+          }
           headerExtra={
             <div className="collection-favorites-hero__header-extra">
               <Tabs
@@ -180,23 +196,6 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
                 ariaLabel="Разделы в Моё"
                 variant="segmented"
               />
-
-              {tab === 'favorites' && favoriteBackdrops.length > 0 ? (
-                <button
-                  type="button"
-                  className={`collection-favorites-hero__backdrop-toggle${
-                    favoritesBackdropEnabled ? '' : ' collection-favorites-hero__backdrop-toggle--off'
-                  }`}
-                  aria-label={
-                    favoritesBackdropEnabled ? 'Отключить фон' : 'Включить фон'
-                  }
-                  aria-pressed={favoritesBackdropEnabled}
-                  onClick={() => setFavoritesBackdropEnabled((v) => !v)}
-                  title="Фон по backdrop"
-                >
-                  <SettingsIcon size={18} />
-                </button>
-              ) : null}
             </div>
           }
           scrollKey={tab}

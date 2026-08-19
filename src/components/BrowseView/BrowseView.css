@@ -206,10 +206,18 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  justify-content: space-between;
   /* Fixed band so «Моё» / «Подборки» / «Торренты» share one title baseline. */
   height: var(--app-section-header-size);
   min-height: var(--app-section-header-size);
+}
+
+.library-view__title-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .library-view__header {
