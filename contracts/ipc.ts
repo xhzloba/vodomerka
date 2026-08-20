@@ -216,6 +216,8 @@ export type MediaOverridesMap = Record<string, MediaOverride>;
 export const IPC_CHANNELS = {
   api: {
     get: 'api:get',
+    resolveUrl: 'api:resolve-url',
+    proxyHlsUrl: 'api:proxy-hls-url',
   },
   images: {
     fetch: 'images:fetch',
@@ -482,6 +484,9 @@ export interface ElectronApi {
   platform: string;
   api: {
     get: (url: string) => Promise<unknown>;
+    resolveUrl: (url: string) => Promise<string>;
+    /** Wrap remote HLS URL with local 127.0.0.1 proxy (rewrites playlists). */
+    proxyHlsUrl: (url: string) => Promise<string>;
   };
   images: {
     fetch: (url: string) => Promise<string>;

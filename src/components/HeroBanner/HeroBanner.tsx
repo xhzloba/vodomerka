@@ -1,14 +1,17 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import Hls from 'hls.js';
+import { fetchMediaById } from '@/shared/api/vokino/media';
 import type { MediaItem } from '@/shared/domain/media';
 import { getMediaTypeLabel } from '@/shared/domain/media';
 import { useHeroManualSwipe } from '@/shared/hooks/useHeroManualSwipe';
 import { useMediaImage } from '@/shared/hooks/useMediaImage';
+import { createInAppHlsPlayer, toPlayableHlsUrl } from '@/shared/media/createInAppHlsPlayer';
 import {
   MediaCoverPlaceholder,
   MediaPosterGlyph,
 } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
 import { HeroRating } from '@/shared/ui/HeroRating/HeroRating';
-import { ClockIcon, InfoIcon, PlayIcon } from '@/shared/ui/icons';
+import { ClockIcon, InfoIcon, PauseBarsIcon, PlayIcon } from '@/shared/ui/icons';
 import './HeroBanner.css';
 
 interface HeroBannerProps {
@@ -99,12 +102,41 @@ function createSlideQueue(items: MediaItem[], avoidFirstId?: string): MediaItem[
   return shuffleItems(items, avoidFirstId);
 }
 
+async function startVideoWithAutoplayFallback(video: HTMLVideoElement): Promise<boolean> {
+  video.muted = false;
+  video.volume = 1;
+  try {
+    await video.play();
+    return true;
+  } catch {
+    // Autoplay with sound may be blocked — retry muted, then unmute.
+  }
+
+  try {
+    video.muted = true;
+    await video.play();
+    video.muted = false;
+    video.volume = 1;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo }: HeroBannerProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [autoSlideItem, setAutoSlideItem] = useState(items[0]);
   const slideQueueRef = useRef<MediaItem[]>([]);
   const slideIndexRef = useRef(0);
   const heroRef = useRef<HTMLElement>(null);
+  const trailerVideoRef = useRef<HTMLVideoElement>(null);
+  const trailerHlsRef = useRef<Hls | null>(null);
+  const trailerCacheRef = useRef<Map<string, string | null>>(new Map());
+  const playableTrailerCacheRef = useRef<Map<string, string | null>>(new Map());
+  const [trailerUrls, setTrailerUrls] = useState<Record<string, string | null>>({});
+  const [playableTrailerUrls, setPlayableTrailerUrls] = useState<Record<string, string | null>>({});
+  const [activeTrailerItemId, setActiveTrailerItemId] = useState<string | null>(null);
+  const [isTrailerLoading, setIsTrailerLoading] = useState(false);
 
   useEffect(() => {
     slideQueueRef.current = createSlideQueue(items);
@@ -114,7 +146,8 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
   }, [items]);
 
   useEffect(() => {
-    if (!autoSlide || items.length <= 1) {
+    // Pause auto-slide while trailer is playing; resume when stopped.
+    if (!autoSlide || items.length <= 1 || activeTrailerItemId != null) {
       return;
     }
 
@@ -135,11 +168,16 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
     }, slideIntervalSec * 1000);
 
     return () => window.clearInterval(timer);
-  }, [items, autoSlide, slideIntervalSec]);
+  }, [items, autoSlide, slideIntervalSec, activeTrailerItemId]);
 
   const item = autoSlide ? autoSlideItem : (items[activeIndex] ?? items[0]);
   const showSlideDots = !autoSlide && items.length > 1;
   const manualSwipeEnabled = showSlideDots;
+  const cachedTrailerUrl = trailerUrls[item.id];
+  const trailerUrl = item.trailerUrl ?? cachedTrailerUrl ?? null;
+  const playableTrailerUrl = playableTrailerUrls[item.id] ?? null;
+  const isTrailerArmed = activeTrailerItemId === item.id;
+  const isTrailerActive = isTrailerArmed && Boolean(playableTrailerUrl);
 
   const handleManualSwipe = useCallback(
     (direction: 1 | -1) => {
@@ -160,6 +198,167 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
     onSwipe: handleManualSwipe,
   });
 
+  useEffect(() => {
+    setActiveTrailerItemId(null);
+    setIsTrailerLoading(false);
+    trailerVideoRef.current?.pause();
+    trailerHlsRef.current?.destroy();
+    trailerHlsRef.current = null;
+  }, [item.id]);
+
+  useEffect(() => {
+    if (item.trailerUrl) {
+      trailerCacheRef.current.set(item.id, item.trailerUrl);
+      setTrailerUrls((current) =>
+        current[item.id] === item.trailerUrl
+          ? current
+          : { ...current, [item.id]: item.trailerUrl ?? null },
+      );
+      return;
+    }
+
+    if (trailerCacheRef.current.has(item.id)) {
+      const cached = trailerCacheRef.current.get(item.id) ?? null;
+      setTrailerUrls((current) => (current[item.id] === cached ? current : { ...current, [item.id]: cached }));
+      return;
+    }
+
+    let cancelled = false;
+    void fetchMediaById(item.id)
+      .then((resolved) => {
+        if (cancelled) {
+          return;
+        }
+        const nextUrl = resolved?.trailerUrl ?? null;
+        trailerCacheRef.current.set(item.id, nextUrl);
+        setTrailerUrls((current) => ({ ...current, [item.id]: nextUrl }));
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+        trailerCacheRef.current.set(item.id, null);
+        setTrailerUrls((current) => ({ ...current, [item.id]: null }));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [item.id, item.trailerUrl]);
+
+  useEffect(() => {
+    if (!trailerUrl) {
+      setPlayableTrailerUrls((current) =>
+        current[item.id] == null ? current : { ...current, [item.id]: null },
+      );
+      return;
+    }
+
+    if (playableTrailerCacheRef.current.has(item.id)) {
+      const cached = playableTrailerCacheRef.current.get(item.id) ?? null;
+      setPlayableTrailerUrls((current) =>
+        current[item.id] === cached ? current : { ...current, [item.id]: cached },
+      );
+      return;
+    }
+
+    let cancelled = false;
+    void toPlayableHlsUrl(trailerUrl)
+      .then((proxiedUrl) => {
+        if (cancelled) {
+          return;
+        }
+        playableTrailerCacheRef.current.set(item.id, proxiedUrl);
+        setPlayableTrailerUrls((current) => ({ ...current, [item.id]: proxiedUrl }));
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+        // Last resort: try raw URL (browser/dev without Electron proxy).
+        playableTrailerCacheRef.current.set(item.id, trailerUrl);
+        setPlayableTrailerUrls((current) => ({ ...current, [item.id]: trailerUrl }));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [item.id, trailerUrl]);
+
+  useEffect(() => {
+    if (!isTrailerActive || !playableTrailerUrl || !trailerVideoRef.current) {
+      return;
+    }
+
+    const video = trailerVideoRef.current;
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    video.currentTime = 0;
+    video.muted = false;
+    video.volume = 1;
+
+    trailerHlsRef.current?.destroy();
+    trailerHlsRef.current = null;
+
+    if (!Hls.isSupported()) {
+      setIsTrailerLoading(false);
+      setActiveTrailerItemId(null);
+      return;
+    }
+
+    const hls = createInAppHlsPlayer();
+    trailerHlsRef.current = hls;
+    hls.loadSource(playableTrailerUrl);
+    hls.attachMedia(video);
+
+    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      void startVideoWithAutoplayFallback(video).then((ok) => {
+        if (!ok) {
+          setIsTrailerLoading(false);
+          setActiveTrailerItemId(null);
+        }
+      });
+    });
+    hls.on(Hls.Events.ERROR, (_event, data) => {
+      if (!data.fatal) {
+        return;
+      }
+
+      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+        try {
+          hls.startLoad();
+          return;
+        } catch {
+          // fallthrough
+        }
+      }
+
+      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        try {
+          hls.recoverMediaError();
+          return;
+        } catch {
+          // fallthrough
+        }
+      }
+
+      setIsTrailerLoading(false);
+      setActiveTrailerItemId(null);
+      hls.destroy();
+      if (trailerHlsRef.current === hls) {
+        trailerHlsRef.current = null;
+      }
+    });
+
+    return () => {
+      hls.destroy();
+      if (trailerHlsRef.current === hls) {
+        trailerHlsRef.current = null;
+      }
+    };
+  }, [isTrailerActive, item.id, playableTrailerUrl]);
+
   const metaParts = buildMetaParts(item);
   const { src: heroSrc, failed: heroImageFailed, ready: heroReady, loading, onError } = useMediaImage({
     primaryUrl: item.backdrop || item.poster,
@@ -177,6 +376,8 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
   const hasHeroSource = Boolean(item.backdrop || item.poster);
   const isHeroLoading = hasHeroSource && !heroImageFailed && !heroReady;
   const showHeroImage = Boolean(heroSrc) && !heroImageFailed && heroReady;
+  const showTrailerButton = Boolean(trailerUrl);
+  const trailerButtonLabel = isTrailerArmed ? 'Стоп' : 'Трейлер';
 
   return (
     <section
@@ -185,8 +386,30 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
     >
       <div className="hero__backdrop" aria-hidden="true">
         <div className="hero__image-panel">
-          {isHeroLoading ? <MediaCoverPlaceholder className="hero__cover-placeholder" fill /> : null}
-          {showHeroImage ? (
+          {isTrailerActive && trailerUrl ? (
+            <video
+              ref={trailerVideoRef}
+              key={`trailer-${item.id}`}
+              className="hero__trailer-video"
+              autoPlay
+              playsInline
+              preload="auto"
+              controls={false}
+              {...{ 'webkit-playsinline': 'true' }}
+              disablePictureInPicture
+              controlsList="nodownload noplaybackrate nofullscreen noremoteplayback"
+              onLoadedData={() => setIsTrailerLoading(false)}
+              onWaiting={() => setIsTrailerLoading(true)}
+              onPlaying={() => setIsTrailerLoading(false)}
+              onError={() => {
+                setIsTrailerLoading(false);
+                setActiveTrailerItemId(null);
+              }}
+              onEnded={() => setActiveTrailerItemId(null)}
+            />
+          ) : null}
+          {!isTrailerArmed && isHeroLoading ? <MediaCoverPlaceholder className="hero__cover-placeholder" fill /> : null}
+          {!isTrailerArmed && showHeroImage ? (
             <img
               key={heroSrc}
               className="hero__backdrop-image hero__backdrop-image--ready"
@@ -196,6 +419,9 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
               referrerPolicy="no-referrer"
               onError={onError}
             />
+          ) : null}
+          {isTrailerArmed && (isTrailerLoading || !playableTrailerUrl) ? (
+            <MediaCoverPlaceholder className="hero__cover-placeholder" fill />
           ) : null}
         </div>
       </div>
@@ -232,12 +458,29 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
         {item.description && <p className="hero__description">{item.description}</p>}
 
         <div className="hero__actions">
-          <button className="hero__btn hero__btn--primary" onClick={() => onPlay(item)}>
-            <PlayIcon size={18} />
+          <button type="button" className="hero__btn hero__btn--primary" onClick={() => onPlay(item)}>
+            <PlayIcon size={16} />
             Смотреть
           </button>
-          <button className="hero__btn hero__btn--ghost" onClick={() => onInfo(item)}>
-            <InfoIcon size={18} />
+          {showTrailerButton ? (
+            <button
+              type="button"
+              className={`hero__btn hero__btn--ghost hero__btn--trailer${isTrailerArmed ? ' hero__btn--trailer-active' : ''}`}
+              aria-pressed={isTrailerArmed}
+              aria-label={isTrailerArmed ? 'Остановить трейлер' : 'Смотреть трейлер'}
+              onClick={() => {
+                setIsTrailerLoading(true);
+                setActiveTrailerItemId((current) => (current === item.id ? null : item.id));
+              }}
+            >
+              <span className="hero__btn-icon" aria-hidden="true">
+                {isTrailerArmed ? <PauseBarsIcon size={15} /> : <PlayIcon size={15} />}
+              </span>
+              <span className="hero__btn-label">{trailerButtonLabel}</span>
+            </button>
+          ) : null}
+          <button type="button" className="hero__btn hero__btn--ghost" onClick={() => onInfo(item)}>
+            <InfoIcon size={16} />
             Подробнее
           </button>
         </div>

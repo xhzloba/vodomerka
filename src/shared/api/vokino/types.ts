@@ -56,6 +56,7 @@ export interface VokinoContentDetails {
   age?: number;
   tags?: string[];
   trailers?: boolean;
+  trailer_url?: string;
 }
 
 export interface VokinoChannelItem {

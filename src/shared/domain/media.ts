@@ -1,4 +1,5 @@
 import type { VokinoChannelItem } from '@/shared/api/vokino/types';
+import { resolveVokinoUrl } from '@/shared/config/api';
 import { applyMediaOverrides } from '@/shared/domain/overrides';
 import { getMediaOverrides } from '@/shared/domain/overridesStore';
 import {
@@ -30,6 +31,7 @@ export interface MediaItem {
   country?: string;
   director?: string;
   age?: number;
+  trailerUrl?: string;
 }
 
 export interface ContentRow {
@@ -137,6 +139,7 @@ export function mapChannelItem(channel: VokinoChannelItem): MediaItem | null {
     country: details.country,
     director: details.director,
     age: details.age,
+    trailerUrl: details.trailer_url ? resolveVokinoUrl(details.trailer_url) : undefined,
     },
     getMediaOverrides(),
   );

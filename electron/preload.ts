@@ -39,6 +39,9 @@ const electronApi: ElectronApi = {
   platform: process.platform,
   api: {
     get: (url: string): Promise<unknown> => ipcRenderer.invoke(IPC_CHANNELS.api.get, url),
+    resolveUrl: (url: string): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.api.resolveUrl, url),
+    proxyHlsUrl: (url: string): Promise<string> =>
+      ipcRenderer.invoke(IPC_CHANNELS.api.proxyHlsUrl, url),
   },
   images: {
     fetch: (url: string): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.images.fetch, url),

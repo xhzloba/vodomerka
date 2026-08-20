@@ -4,6 +4,7 @@ import { closeDatabase } from './db/database';
 import { getAppSettings, getThemeBackgroundColor } from './db/settings';
 import { applyThemeWindowChrome } from './themeChrome';
 import { registerApiIpc } from './ipc/api';
+import { shutdownHlsProxyServer } from './media/hlsProxy';
 import { registerFavoritesIpc } from './ipc/favorites';
 import { registerRecentlyViewedIpc } from './ipc/recentlyViewed';
 import { registerContinueWatchingIpc } from './ipc/continueWatching';
@@ -186,7 +187,7 @@ app.on('before-quit', (event) => {
     app.exit(0);
   }, 4000);
 
-  void Promise.allSettled([shutdownMediaIpc(), shutdownTorrentsIpc()])
+  void Promise.allSettled([shutdownMediaIpc(), shutdownTorrentsIpc(), shutdownHlsProxyServer()])
     .catch((error) => {
       console.warn('[main] shutdown failed', error);
     })
