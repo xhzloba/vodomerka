@@ -65,6 +65,10 @@
   background: #000;
 }
 
+.hero__trailer-video--pending {
+  opacity: 0;
+}
+
 .hero__backdrop-image--ready {
   opacity: 1;
 }

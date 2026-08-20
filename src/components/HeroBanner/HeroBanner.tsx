@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import { fetchMediaById } from '@/shared/api/vokino/media';
 import type { MediaItem } from '@/shared/domain/media';
@@ -177,7 +177,6 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
   const trailerUrl = item.trailerUrl ?? cachedTrailerUrl ?? null;
   const playableTrailerUrl = playableTrailerUrls[item.id] ?? null;
   const isTrailerArmed = activeTrailerItemId === item.id;
-  const isTrailerActive = isTrailerArmed && Boolean(playableTrailerUrl);
 
   const handleManualSwipe = useCallback(
     (direction: 1 | -1) => {
@@ -270,6 +269,8 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
         }
         playableTrailerCacheRef.current.set(item.id, proxiedUrl);
         setPlayableTrailerUrls((current) => ({ ...current, [item.id]: proxiedUrl }));
+        // Warm proxy + CDN master so first click doesn't hit cold 502.
+        void fetch(proxiedUrl, { method: 'GET', mode: 'cors' }).catch(() => undefined);
       })
       .catch(() => {
         if (cancelled) {
@@ -285,79 +286,120 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
     };
   }, [item.id, trailerUrl]);
 
-  useEffect(() => {
-    if (!isTrailerActive || !playableTrailerUrl || !trailerVideoRef.current) {
+  useLayoutEffect(() => {
+    if (!isTrailerArmed || !playableTrailerUrl) {
       return;
     }
 
-    const video = trailerVideoRef.current;
-    video.pause();
-    video.removeAttribute('src');
-    video.load();
-    video.currentTime = 0;
-    video.muted = false;
-    video.volume = 1;
+    let cancelled = false;
+    let rafId = 0;
+    let retryTimer = 0;
+    let networkRetries = 0;
+    let hls: Hls | null = null;
 
-    trailerHlsRef.current?.destroy();
-    trailerHlsRef.current = null;
-
-    if (!Hls.isSupported()) {
-      setIsTrailerLoading(false);
-      setActiveTrailerItemId(null);
-      return;
-    }
-
-    const hls = createInAppHlsPlayer();
-    trailerHlsRef.current = hls;
-    hls.loadSource(playableTrailerUrl);
-    hls.attachMedia(video);
-
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      void startVideoWithAutoplayFallback(video).then((ok) => {
-        if (!ok) {
-          setIsTrailerLoading(false);
-          setActiveTrailerItemId(null);
+    const cleanupHls = () => {
+      if (hls) {
+        hls.destroy();
+        if (trailerHlsRef.current === hls) {
+          trailerHlsRef.current = null;
         }
-      });
-    });
-    hls.on(Hls.Events.ERROR, (_event, data) => {
-      if (!data.fatal) {
+        hls = null;
+      }
+    };
+
+    const startOnVideo = (video: HTMLVideoElement) => {
+      if (cancelled) {
         return;
       }
 
-      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-        try {
-          hls.startLoad();
-          return;
-        } catch {
-          // fallthrough
-        }
+      trailerHlsRef.current?.destroy();
+      trailerHlsRef.current = null;
+
+      if (!Hls.isSupported()) {
+        setIsTrailerLoading(false);
+        setActiveTrailerItemId(null);
+        return;
       }
 
-      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-        try {
-          hls.recoverMediaError();
-          return;
-        } catch {
-          // fallthrough
-        }
-      }
+      video.pause();
+      video.muted = false;
+      video.volume = 1;
 
-      setIsTrailerLoading(false);
-      setActiveTrailerItemId(null);
-      hls.destroy();
-      if (trailerHlsRef.current === hls) {
-        trailerHlsRef.current = null;
+      hls = createInAppHlsPlayer();
+      trailerHlsRef.current = hls;
+      hls.loadSource(playableTrailerUrl);
+      hls.attachMedia(video);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        if (cancelled) {
+          return;
+        }
+        void startVideoWithAutoplayFallback(video).then((ok) => {
+          if (!ok && !cancelled) {
+            setIsTrailerLoading(false);
+            setActiveTrailerItemId(null);
+          }
+        });
+      });
+
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (cancelled || !data.fatal || !hls) {
+          return;
+        }
+
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR && networkRetries < 4) {
+          networkRetries += 1;
+          window.clearTimeout(retryTimer);
+          retryTimer = window.setTimeout(() => {
+            if (cancelled || !hls) {
+              return;
+            }
+            try {
+              hls.startLoad();
+            } catch {
+              try {
+                hls.loadSource(playableTrailerUrl);
+              } catch {
+                // fallthrough below on next error
+              }
+            }
+          }, 280 * networkRetries);
+          return;
+        }
+
+        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          try {
+            hls.recoverMediaError();
+            return;
+          } catch {
+            // fallthrough
+          }
+        }
+
+        setIsTrailerLoading(false);
+        setActiveTrailerItemId(null);
+        cleanupHls();
+      });
+    };
+
+    const tryStart = () => {
+      const video = trailerVideoRef.current;
+      if (!video) {
+        rafId = window.requestAnimationFrame(tryStart);
+        return;
       }
-    });
+      startOnVideo(video);
+    };
+
+    tryStart();
 
     return () => {
-      hls.destroy();
-      if (trailerHlsRef.current === hls) {
-        trailerHlsRef.current = null;
-      }
+      cancelled = true;
+      window.cancelAnimationFrame(rafId);
+      window.clearTimeout(retryTimer);
+      cleanupHls();
     };
-  }, [isTrailerActive, item.id, playableTrailerUrl]);
+  }, [isTrailerArmed, item.id, playableTrailerUrl]);
 
   const metaParts = buildMetaParts(item);
   const { src: heroSrc, failed: heroImageFailed, ready: heroReady, loading, onError } = useMediaImage({
@@ -386,11 +428,11 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
     >
       <div className="hero__backdrop" aria-hidden="true">
         <div className="hero__image-panel">
-          {isTrailerActive && trailerUrl ? (
+          {isTrailerArmed ? (
             <video
               ref={trailerVideoRef}
               key={`trailer-${item.id}`}
-              className="hero__trailer-video"
+              className={`hero__trailer-video${playableTrailerUrl ? '' : ' hero__trailer-video--pending'}`}
               autoPlay
               playsInline
               preload="auto"
@@ -401,10 +443,6 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
               onLoadedData={() => setIsTrailerLoading(false)}
               onWaiting={() => setIsTrailerLoading(true)}
               onPlaying={() => setIsTrailerLoading(false)}
-              onError={() => {
-                setIsTrailerLoading(false);
-                setActiveTrailerItemId(null);
-              }}
               onEnded={() => setActiveTrailerItemId(null)}
             />
           ) : null}

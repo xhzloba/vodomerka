@@ -1,10 +1,11 @@
-import { Fragment, useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState, type MouseEvent, type RefObject } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { getMediaTypeLabel } from '@/shared/domain/media';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { useRecentlyViewed } from '@/shared/domain/RecentlyViewedContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
 import { useMediaImage } from '@/shared/hooks/useMediaImage';
+import { useInAppTrailer } from '@/shared/media/useInAppTrailer';
 import { MediaCoverPlaceholder, MediaPosterGlyph } from '@/shared/ui/MediaCoverPlaceholder/MediaCoverPlaceholder';
 import { useOverriddenMediaItem } from '@/shared/hooks/useOverriddenMediaItem';
 import { copyText } from '@/shared/lib/copyText';
@@ -21,6 +22,7 @@ import {
   FavoritesIcon,
   InfoIcon,
   LayersIcon,
+  PauseBarsIcon,
   PauseCircleIcon,
   PlayIcon,
   SparklesIcon,
@@ -113,6 +115,46 @@ function uniqueBackdropUrls(item: MediaItem): string[] {
 
 const BACKDROP_ROTATE_MS = 5000;
 
+function DetailTrailerVideo({
+  mediaId,
+  videoRef,
+  playableTrailerUrl,
+  className,
+  onLoading,
+  onPlaying,
+  onEnded,
+}: {
+  mediaId: string;
+  videoRef: RefObject<HTMLVideoElement | null>;
+  playableTrailerUrl: string | null;
+  className: string;
+  onLoading: (loading: boolean) => void;
+  onPlaying: () => void;
+  onEnded: () => void;
+}) {
+  return (
+    <video
+      ref={videoRef as RefObject<HTMLVideoElement>}
+      key={`detail-trailer-${mediaId}`}
+      className={`${className}${playableTrailerUrl ? '' : ' hero__trailer-video--pending'}`}
+      autoPlay
+      playsInline
+      preload="auto"
+      controls={false}
+      {...{ 'webkit-playsinline': 'true' }}
+      disablePictureInPicture
+      controlsList="nodownload noplaybackrate nofullscreen noremoteplayback"
+      onLoadedData={() => onLoading(false)}
+      onWaiting={() => onLoading(true)}
+      onPlaying={() => {
+        onLoading(false);
+        onPlaying();
+      }}
+      onEnded={onEnded}
+    />
+  );
+}
+
 function MediaDetailBrand({
   logoUrl,
   title,
@@ -188,6 +230,16 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
   const [torrentsOpen, setTorrentsOpen] = useState(false);
   const [torrentsMounted, setTorrentsMounted] = useState(false);
   const [backdropIndex, setBackdropIndex] = useState(0);
+  const {
+    playableTrailerUrl,
+    isTrailerArmed,
+    isTrailerLoading,
+    showTrailerButton,
+    trailerVideoRef,
+    toggleTrailer,
+    stopTrailer,
+    setTrailerLoading,
+  } = useInAppTrailer(detailItem.id, detailItem.trailerUrl);
   const inFavorites = isPendingFavorite ?? isFavorite(detailItem.id);
   const watchStatus =
     pendingStatus === null
@@ -223,7 +275,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
   }, [detailItem.id, detailItem, trackView]);
 
   useEffect(() => {
-    if (backdropUrls.length <= 1) {
+    if (backdropUrls.length <= 1 || isTrailerArmed) {
       return;
     }
 
@@ -232,7 +284,7 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
     }, BACKDROP_ROTATE_MS);
 
     return () => window.clearInterval(timer);
-  }, [backdropUrls]);
+  }, [backdropUrls, isTrailerArmed]);
 
   const { src, failed, ready: heroReady, loading, onError } = useMediaImage({
     primaryUrl: activeBackdrop,
@@ -411,6 +463,22 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
         <PlayIcon size={18} />
         Смотреть
       </button>
+      {showTrailerButton ? (
+        <button
+          type="button"
+          className={`hero__btn hero__btn--ghost hero__btn--trailer${
+            isTrailerArmed ? ' hero__btn--trailer-active' : ''
+          }`}
+          aria-pressed={isTrailerArmed}
+          aria-label={isTrailerArmed ? 'Остановить трейлер' : 'Смотреть трейлер'}
+          onClick={toggleTrailer}
+        >
+          <span className="hero__btn-icon" aria-hidden="true">
+            {isTrailerArmed ? <PauseBarsIcon size={15} /> : <PlayIcon size={15} />}
+          </span>
+          <span className="hero__btn-label">{isTrailerArmed ? 'Стоп' : 'Трейлер'}</span>
+        </button>
+      ) : null}
       {isPanel ? (
         <button
           type="button"
@@ -543,8 +611,21 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
           <section className="hero media-detail__window-hero">
             <div className="hero__backdrop" aria-hidden="true">
               <div className="hero__image-panel">
-                {isHeroLoading ? <MediaCoverPlaceholder className="hero__cover-placeholder" fill /> : null}
-                {showHeroImage ? (
+                {isTrailerArmed ? (
+                  <DetailTrailerVideo
+                    mediaId={detailItem.id}
+                    videoRef={trailerVideoRef}
+                    playableTrailerUrl={playableTrailerUrl}
+                    className="hero__trailer-video"
+                    onLoading={setTrailerLoading}
+                    onPlaying={() => setTrailerLoading(false)}
+                    onEnded={stopTrailer}
+                  />
+                ) : null}
+                {!isTrailerArmed && isHeroLoading ? (
+                  <MediaCoverPlaceholder className="hero__cover-placeholder" fill />
+                ) : null}
+                {!isTrailerArmed && showHeroImage ? (
                   <img
                     key={displayHeroSrc}
                     className="hero__backdrop-image hero__backdrop-image--ready"
@@ -555,6 +636,9 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
                     onError={onError}
                     onClick={(event) => void handleCopyId(event)}
                   />
+                ) : null}
+                {isTrailerArmed && (isTrailerLoading || !playableTrailerUrl) ? (
+                  <MediaCoverPlaceholder className="hero__cover-placeholder" fill />
                 ) : null}
               </div>
             </div>
@@ -585,14 +669,25 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
     <>
       {hasHeroSource ? (
         <div className="media-detail__banner" aria-hidden="true">
-          {!showHeroImage ? (
+          {isTrailerArmed ? (
+            <DetailTrailerVideo
+              mediaId={detailItem.id}
+              videoRef={trailerVideoRef}
+              playableTrailerUrl={playableTrailerUrl}
+              className="media-detail__banner-video"
+              onLoading={setTrailerLoading}
+              onPlaying={() => setTrailerLoading(false)}
+              onEnded={stopTrailer}
+            />
+          ) : null}
+          {!isTrailerArmed && !showHeroImage ? (
             <MediaCoverPlaceholder
               className="media-detail__banner-placeholder"
               fill
               animate={!failed}
             />
           ) : null}
-          {displayHeroSrc && !failed ? (
+          {!isTrailerArmed && displayHeroSrc && !failed ? (
             <img
               key={displayHeroSrc}
               className="media-detail__banner-image media-detail__banner-image--ready"
@@ -602,6 +697,9 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
               referrerPolicy="no-referrer"
               onError={onError}
             />
+          ) : null}
+          {isTrailerArmed && (isTrailerLoading || !playableTrailerUrl) ? (
+            <MediaCoverPlaceholder className="media-detail__banner-placeholder" fill />
           ) : null}
         </div>
       ) : null}
@@ -686,14 +784,25 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
         <div className="media-detail__panel">
           {hasHeroSource ? (
             <div className="media-detail__banner" aria-hidden="true">
-              {!showHeroImage ? (
+              {isTrailerArmed ? (
+                <DetailTrailerVideo
+                  mediaId={detailItem.id}
+                  videoRef={trailerVideoRef}
+                  playableTrailerUrl={playableTrailerUrl}
+                  className="media-detail__banner-video"
+                  onLoading={setTrailerLoading}
+                  onPlaying={() => setTrailerLoading(false)}
+                  onEnded={stopTrailer}
+                />
+              ) : null}
+              {!isTrailerArmed && !showHeroImage ? (
                 <MediaCoverPlaceholder
                   className="media-detail__banner-placeholder"
                   fill
                   animate={!failed}
                 />
               ) : null}
-              {displayHeroSrc && !failed ? (
+              {!isTrailerArmed && displayHeroSrc && !failed ? (
                 <img
                   key={displayHeroSrc}
                   className="media-detail__banner-image media-detail__banner-image--ready"
@@ -703,6 +812,9 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
                   referrerPolicy="no-referrer"
                   onError={onError}
                 />
+              ) : null}
+              {isTrailerArmed && (isTrailerLoading || !playableTrailerUrl) ? (
+                <MediaCoverPlaceholder className="media-detail__banner-placeholder" fill />
               ) : null}
             </div>
           ) : null}

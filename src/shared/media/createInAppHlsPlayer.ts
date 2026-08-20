@@ -10,10 +10,15 @@ export function createInAppHlsPlayer(): Hls {
     autoStartLoad: true,
     enableWorker: true,
     lowLatencyMode: false,
-    // Trailers: start quickly, keep a modest buffer.
     startLevel: -1,
     maxBufferLength: 20,
     maxMaxBufferLength: 40,
+    manifestLoadingMaxRetry: 4,
+    levelLoadingMaxRetry: 4,
+    fragLoadingMaxRetry: 4,
+    manifestLoadingRetryDelay: 400,
+    levelLoadingRetryDelay: 400,
+    fragLoadingRetryDelay: 400,
   });
 }
 
