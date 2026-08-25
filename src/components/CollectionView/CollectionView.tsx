@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
 import { useWatched } from '@/shared/domain/WatchedContext';
@@ -10,7 +10,9 @@ import {
   type WatchStatus,
 } from '@/shared/domain/watchStatus';
 import { playDeleteSound } from '@/shared/audio/uiSounds';
+import { fetchMediaById } from '@/shared/api/vokino/media';
 import { useMediaImage } from '@/shared/hooks/useMediaImage';
+import { useAppSettings } from '@/shared/settings/AppSettingsContext';
 import { usePosterThemeSource } from '@/shared/theme/usePosterThemeSource';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog/ConfirmDialog';
 import { Tabs } from '@/shared/ui/Tabs';
@@ -49,6 +51,7 @@ function tabEmptyIcon(tab: CollectionTab): ReactNode {
 }
 
 export function CollectionView({ onMediaSelect, isActive = true }: CollectionViewProps) {
+  const { settings } = useAppSettings();
   const { favorites, isLoading: favoritesLoading, clearAllFavorites } = useFavorites();
   const {
     listByStatus,
@@ -61,6 +64,11 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
   const [favoritesBackdropEnabled, setFavoritesBackdropEnabled] = useState(true);
   const [favoritesBackdropIndex, setFavoritesBackdropIndex] = useState(0);
   const [favoritesVisibleItems, setFavoritesVisibleItems] = useState<MediaItem[]>([]);
+  const [logoById, setLogoById] = useState<Record<string, string>>({});
+  const logoByIdRef = useRef(logoById);
+  logoByIdRef.current = logoById;
+
+  const isSliderLayout = settings.collectionLayout === 'slider';
 
   const collectionTabs = useMemo(
     () => [
@@ -82,12 +90,10 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
   const items = tab === 'favorites' ? favorites : statusItems;
   const isLoading = tab === 'favorites' ? favoritesLoading : statusesLoading;
 
-  const favoriteBackdrops = useMemo(() => {
-    const urls = favoritesVisibleItems
-      .map((item) => item.backdrop)
-      .filter((url) => Boolean(url));
-    return Array.from(new Set(urls));
-  }, [favoritesVisibleItems]);
+  const favoriteBackdropItems = useMemo(
+    () => favoritesVisibleItems.filter((item) => Boolean(item.backdrop)),
+    [favoritesVisibleItems],
+  );
 
   useEffect(() => {
     if (tab !== 'favorites') {
@@ -99,7 +105,7 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
       return;
     }
 
-    if (favoriteBackdrops.length <= 1) {
+    if (favoriteBackdropItems.length <= 1) {
       setFavoritesBackdropIndex(0);
       return;
     }
@@ -107,13 +113,19 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
     setFavoritesBackdropIndex(0);
 
     const id = window.setInterval(() => {
-      setFavoritesBackdropIndex((current) => (current + 1) % favoriteBackdrops.length);
+      setFavoritesBackdropIndex((current) => (current + 1) % favoriteBackdropItems.length);
     }, 5000);
 
     return () => window.clearInterval(id);
-  }, [favoriteBackdrops, favoritesBackdropEnabled, tab]);
+  }, [favoriteBackdropItems, favoritesBackdropEnabled, tab]);
 
-  const activeFavoriteBackdrop = favoriteBackdrops[favoritesBackdropIndex] ?? favoriteBackdrops[0] ?? '';
+  const activeFavoriteItem =
+    favoriteBackdropItems[favoritesBackdropIndex] ?? favoriteBackdropItems[0] ?? null;
+  const activeFavoriteBackdrop = activeFavoriteItem?.backdrop ?? '';
+  const activeFavoriteLogoUrl =
+    (activeFavoriteItem
+      ? logoById[activeFavoriteItem.id] || activeFavoriteItem.logo || ''
+      : '') || '';
 
   const {
     src: favoriteBackdropSrc,
@@ -124,10 +136,66 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
     eager: true,
   });
 
+  const {
+    src: favoriteLogoSrc,
+    failed: favoriteLogoFailed,
+    ready: favoriteLogoReady,
+  } = useMediaImage({
+    primaryUrl: activeFavoriteLogoUrl,
+    eager: true,
+  });
+
   usePosterThemeSource(
     favoriteBackdropReady && !favoriteBackdropFailed ? favoriteBackdropSrc : '',
     isActive && tab === 'favorites' && favoritesBackdropEnabled && Boolean(activeFavoriteBackdrop),
   );
+
+  const showFavoritesBackdrop =
+    tab === 'favorites' && favoritesBackdropEnabled && Boolean(activeFavoriteBackdrop);
+  const showFavoritesBrand = showFavoritesBackdrop && isSliderLayout && activeFavoriteItem != null;
+  const hasFavoriteLogoUrl = Boolean(activeFavoriteLogoUrl);
+  const showFavoriteLogo =
+    showFavoritesBrand &&
+    hasFavoriteLogoUrl &&
+    Boolean(favoriteLogoSrc) &&
+    favoriteLogoReady &&
+    !favoriteLogoFailed;
+  const showFavoriteLogoSkeleton =
+    showFavoritesBrand && hasFavoriteLogoUrl && !favoriteLogoFailed && !showFavoriteLogo;
+
+  useEffect(() => {
+    if (!showFavoritesBrand || !activeFavoriteItem) {
+      return;
+    }
+
+    const mediaId = activeFavoriteItem.id;
+    const storedLogo = activeFavoriteItem.logo?.trim();
+    if (storedLogo) {
+      setLogoById((current) =>
+        current[mediaId] === storedLogo ? current : { ...current, [mediaId]: storedLogo },
+      );
+      return;
+    }
+
+    if (logoByIdRef.current[mediaId]) {
+      return;
+    }
+
+    let cancelled = false;
+    void fetchMediaById(mediaId)
+      .then((media) => {
+        const logo = media?.logo?.trim();
+        if (cancelled || !logo) {
+          return;
+        }
+        setLogoById((current) => (current[mediaId] === logo ? current : { ...current, [mediaId]: logo }));
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeFavoriteItem, showFavoritesBrand]);
 
   useEffect(() => {
     if (tab !== 'favorites') {
@@ -169,7 +237,7 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
   return (
     <>
       <div className="collection-favorites-hero">
-        {tab === 'favorites' && favoritesBackdropEnabled && activeFavoriteBackdrop ? (
+        {showFavoritesBackdrop ? (
           <div className="collection-favorites-hero__backdrop" aria-hidden="true">
             <div className="collection-favorites-hero__image-panel">
               <img
@@ -185,10 +253,30 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
           </div>
         ) : null}
 
+        {showFavoritesBrand && activeFavoriteItem ? (
+          <div key={activeFavoriteItem.id} className="collection-favorites-hero__brand">
+            {showFavoriteLogo ? (
+              <img
+                key={favoriteLogoSrc}
+                className="collection-favorites-hero__logo"
+                src={favoriteLogoSrc}
+                alt={activeFavoriteItem.title}
+                loading="eager"
+                decoding="async"
+                referrerPolicy="no-referrer"
+              />
+            ) : showFavoriteLogoSkeleton ? (
+              <div className="collection-favorites-hero__logo-skeleton" aria-hidden="true" />
+            ) : (
+              <p className="collection-favorites-hero__title">{activeFavoriteItem.title}</p>
+            )}
+          </div>
+        ) : null}
+
         <LibraryCollectionView
           title="Моё"
           titleRightExtra={
-            tab === 'favorites' && favoriteBackdrops.length > 0 ? (
+            tab === 'favorites' && favoriteBackdropItems.length > 0 ? (
               <button
                 type="button"
                 className={`collection-favorites-hero__backdrop-toggle${
