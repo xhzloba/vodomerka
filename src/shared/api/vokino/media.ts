@@ -1,6 +1,10 @@
 import { httpGet } from '@/shared/api/httpClient';
 import { resolveVokinoUrl } from '@/shared/config/api';
-import type { VokinoChannelItem, VokinoContentDetails } from '@/shared/api/vokino/types';
+import type {
+  VokinoCastMember,
+  VokinoChannelItem,
+  VokinoContentDetails,
+} from '@/shared/api/vokino/types';
 import { attachViewRelations, mapChannelItem, type MediaItem } from '@/shared/domain/media';
 
 interface VokinoViewResponse {
@@ -8,6 +12,7 @@ interface VokinoViewResponse {
   details: VokinoContentDetails;
   sequelsAndPrequels?: VokinoChannelItem[] | 0;
   similars?: VokinoChannelItem[] | 0;
+  casts?: VokinoCastMember[] | 0;
 }
 
 /** Catalog card by id — `/v2/view/{id}` (same source as home/slider detail). */
@@ -32,7 +37,12 @@ export async function fetchMediaById(mediaId: string): Promise<MediaItem | null>
     return null;
   }
 
-  return attachViewRelations(item, response.sequelsAndPrequels, response.similars);
+  return attachViewRelations(
+    item,
+    response.sequelsAndPrequels,
+    response.similars,
+    response.casts,
+  );
 }
 
 /** Stub from player/continue/watched — missing catalog fields. */

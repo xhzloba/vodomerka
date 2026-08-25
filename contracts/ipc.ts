@@ -62,6 +62,8 @@ export interface AppSettings {
   heroAutoSlide: boolean;
   heroSlideIntervalSec: number;
   heroSourceSectionIds: string[];
+  /** Home only: tint app chrome from Hero backdrop colors. */
+  homeBackdropTint: boolean;
   cardShowInfo: boolean;
   catalogRowGap: CatalogRowGapPreset;
   posterSize: PosterSizePreset;

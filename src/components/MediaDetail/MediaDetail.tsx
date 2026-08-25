@@ -31,6 +31,8 @@ import {
 import { WATCH_STATUS_LABELS, WATCH_STATUSES, type WatchStatus } from '@/shared/domain/watchStatus';
 import { WatchStatusPicker } from './WatchStatusPicker';
 import { RelatedTitlesDialog } from './RelatedTitlesDialog';
+import { DetailCastStrip } from './DetailCastStrip';
+import { DetailGenresMore } from './DetailGenresMore';
 import '../HeroBanner/HeroBanner.css';
 import './MediaDetail.css';
 
@@ -387,17 +389,6 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
       </p>
     ) : null;
 
-  const titleBlock = (
-    <MediaDetailBrand
-      key={`${detailItem.id}:${detailItem.logo ?? ''}`}
-      logoUrl={detailItem.logo}
-      title={detailItem.title}
-      variant="window"
-      pending={logoPending}
-      onClick={(event) => void handleCopyId(event)}
-    />
-  );
-
   const factsBlock =
     detailItem.director || detailItem.country || detailItem.genres.length > 1 ? (
       <div className="media-detail__facts">
@@ -601,34 +592,43 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
     ) : null;
 
   if (isWindow) {
+    const cast = detailItem.cast ?? [];
+    const typeLabel = getMediaTypeLabel(detailItem.type);
+    const chipItems = [
+      { key: 'type', node: typeLabel },
+      detailItem.year != null ? { key: 'year', node: String(detailItem.year) } : null,
+      detailItem.duration ? { key: 'duration', node: detailItem.duration } : null,
+      detailItem.age != null ? { key: 'age', node: `${detailItem.age}+` } : null,
+      detailItem.country ? { key: 'country', node: detailItem.country } : null,
+    ].filter((chip): chip is { key: string; node: string } => chip != null);
+
+    const genres = detailItem.genres;
+    const extraGenres = genres.slice(1);
+
     return (
       <div className="media-detail media-detail--window">
         <div className="media-detail__panel">
-          <div className="media-detail__edge-pulse" aria-hidden="true">
-            <span className="media-detail__edge-pulse-core" />
-          </div>
-
-          <section className="hero media-detail__window-hero">
-            <div className="hero__backdrop" aria-hidden="true">
-              <div className="hero__image-panel">
+          <div className="mdw">
+            <header className="mdw-masthead">
+              <div className="mdw-masthead__media" aria-hidden="true">
                 {isTrailerArmed ? (
                   <DetailTrailerVideo
                     mediaId={detailItem.id}
                     videoRef={trailerVideoRef}
                     playableTrailerUrl={playableTrailerUrl}
-                    className="hero__trailer-video"
+                    className="mdw-masthead__video"
                     onLoading={setTrailerLoading}
                     onPlaying={() => setTrailerLoading(false)}
                     onEnded={stopTrailer}
                   />
                 ) : null}
                 {!isTrailerArmed && isHeroLoading ? (
-                  <MediaCoverPlaceholder className="hero__cover-placeholder" fill />
+                  <MediaCoverPlaceholder className="mdw-masthead__placeholder" fill />
                 ) : null}
                 {!isTrailerArmed && showHeroImage ? (
                   <img
                     key={displayHeroSrc}
-                    className="hero__backdrop-image hero__backdrop-image--ready"
+                    className="mdw-masthead__image mdw-masthead__image--ready"
                     src={displayHeroSrc}
                     alt=""
                     loading={loading}
@@ -638,25 +638,168 @@ export function MediaDetail({ item, variant = 'modal', onClose, onPlay, onSelect
                   />
                 ) : null}
                 {isTrailerArmed && (isTrailerLoading || !playableTrailerUrl) ? (
-                  <MediaCoverPlaceholder className="hero__cover-placeholder" fill />
+                  <MediaCoverPlaceholder className="mdw-masthead__placeholder" fill />
                 ) : null}
               </div>
-            </div>
+              <div className="mdw-masthead__fade" />
 
-            <div className="hero__content media-detail__window-content">
-              {titleBlock}
-              {detailItem.subtitle ? (
-                <p className="media-detail__subtitle">{detailItem.subtitle}</p>
-              ) : null}
-              {metaRow}
+              <div className="mdw-identity">
+                <div className="mdw-poster">
+                  {isPosterLoading ? (
+                    <MediaCoverPlaceholder className="mdw-poster__placeholder" fill />
+                  ) : null}
+                  {showPoster ? (
+                    <img
+                      key={posterSrc}
+                      className="mdw-poster__image mdw-poster__image--ready"
+                      src={posterSrc}
+                      alt={detailItem.title}
+                      loading="eager"
+                      referrerPolicy="no-referrer"
+                      onClick={(event) => void handleCopyId(event)}
+                    />
+                  ) : null}
+                </div>
+
+                <div className="mdw-identity__main">
+                  <div className="mdw-identity__heading">
+                    <MediaDetailBrand
+                      key={`${detailItem.id}:${detailItem.logo ?? ''}`}
+                      logoUrl={detailItem.logo}
+                      title={detailItem.title}
+                      variant="window"
+                      pending={logoPending}
+                      onClick={(event) => void handleCopyId(event)}
+                    />
+                    {detailItem.director ? (
+                      <p className="mdw-identity__subtitle">{detailItem.director}</p>
+                    ) : detailItem.subtitle ? (
+                      <p className="mdw-identity__subtitle">{detailItem.subtitle}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="mdw-chips">
+                    {detailItem.rating != null ? (
+                      <span className="mdw-chip mdw-chip--rating">
+                        <HeroRating rating={detailItem.rating} />
+                      </span>
+                    ) : null}
+                    {chipItems.map((chip) => (
+                      <span key={chip.key} className="mdw-chip">
+                        {chip.node}
+                      </span>
+                    ))}
+                    {genres[0] ? <span className="mdw-chip">{genres[0]}</span> : null}
+                    {extraGenres.length > 0 ? <DetailGenresMore genres={extraGenres} /> : null}
+                  </div>
+
+                  <div className="mdw-toolbar">
+                    <button
+                      type="button"
+                      className="mdw-btn mdw-btn--primary"
+                      onClick={() => onPlay(detailItem)}
+                    >
+                      <PlayIcon size={17} />
+                      Смотреть
+                    </button>
+                    {showTrailerButton ? (
+                      <button
+                        type="button"
+                        className={`mdw-btn mdw-btn--secondary${isTrailerArmed ? ' mdw-btn--active' : ''}`}
+                        aria-pressed={isTrailerArmed}
+                        onClick={toggleTrailer}
+                      >
+                        {isTrailerArmed ? <PauseBarsIcon size={16} /> : <PlayIcon size={16} />}
+                        {isTrailerArmed ? 'Стоп' : 'Трейлер'}
+                      </button>
+                    ) : null}
+
+                    <div className="mdw-toolbar__rail" role="group" aria-label="Избранное и статус">
+                      <button
+                        type="button"
+                        className={`mdw-icon${inFavorites ? ' mdw-icon--on' : ''}`}
+                        onClick={() => void handleToggleFavorite()}
+                        aria-label={inFavorites ? 'Убрать из избранного' : 'В избранное'}
+                        aria-pressed={inFavorites}
+                        title={inFavorites ? 'В избранном' : 'В избранное'}
+                      >
+                        <FavoritesIcon size={17} filled={inFavorites} />
+                      </button>
+                      {WATCH_STATUSES.map((status) => {
+                        const active = watchStatus === status;
+                        return (
+                          <button
+                            key={status}
+                            type="button"
+                            className={`mdw-icon${active ? ' mdw-icon--on' : ''}`}
+                            onClick={() => void handleToggleStatus(status)}
+                            aria-label={WATCH_STATUS_LABELS[status]}
+                            aria-pressed={active}
+                            title={WATCH_STATUS_LABELS[status]}
+                          >
+                            {status === 'watching' ? (
+                              <WatchingIcon size={17} strokeWidth={active ? 2 : 1.75} />
+                            ) : status === 'watched' ? (
+                              <EyeIcon size={17} strokeWidth={active ? 2 : 1.75} />
+                            ) : status === 'postponed' ? (
+                              <PauseCircleIcon size={17} strokeWidth={active ? 2 : 1.75} />
+                            ) : (
+                              <BanIcon size={17} strokeWidth={active ? 2 : 1.75} />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <div className="mdw-body">
               {detailItem.description ? (
-                <p className="hero__description">{detailItem.description}</p>
+                <section className="mdw-section">
+                  <h2 className="mdw-section__title">Описание</h2>
+                  <p className="mdw-section__text">{detailItem.description}</p>
+                </section>
               ) : null}
-              {actions}
-              {factsBlock}
-              {relatedButton}
+
+              {cast.length > 0 ? (
+                <section className="mdw-section mdw-section--cast">
+                  <DetailCastStrip cast={cast} />
+                </section>
+              ) : null}
+
+              {canOpenRelated || canOpenSimilars ? (
+                <section className="mdw-section">
+                  <h2 className="mdw-section__title">Ещё</h2>
+                  <div className="mdw-links">
+                    {canOpenRelated ? (
+                      <button
+                        type="button"
+                        className="mdw-link"
+                        onClick={() => setRelatedSheet('sequels')}
+                      >
+                        <LayersIcon size={16} />
+                        Сиквелы и приквелы
+                        <span className="mdw-link__count">{relatedAllItems.length}</span>
+                      </button>
+                    ) : null}
+                    {canOpenSimilars ? (
+                      <button
+                        type="button"
+                        className="mdw-link"
+                        onClick={() => setRelatedSheet('similars')}
+                      >
+                        <SparklesIcon size={16} />
+                        Похожие
+                        <span className="mdw-link__count">{similarItems.length}</span>
+                      </button>
+                    ) : null}
+                  </div>
+                </section>
+              ) : null}
             </div>
-          </section>
+          </div>
         </div>
         {descriptionDialog}
         {relatedDialog}

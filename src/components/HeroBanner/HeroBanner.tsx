@@ -6,6 +6,8 @@ import { getMediaTypeLabel } from '@/shared/domain/media';
 import { useHeroManualSwipe } from '@/shared/hooks/useHeroManualSwipe';
 import { useMediaImage } from '@/shared/hooks/useMediaImage';
 import { createInAppHlsPlayer, toPlayableHlsUrl } from '@/shared/media/createInAppHlsPlayer';
+import { useAppSettings } from '@/shared/settings/AppSettingsContext';
+import { usePosterThemeSource } from '@/shared/theme/usePosterThemeSource';
 import {
   MediaCoverPlaceholder,
   MediaPosterGlyph,
@@ -407,6 +409,11 @@ export function HeroBanner({ items, autoSlide, slideIntervalSec, onPlay, onInfo 
     fallbackUrl: item.poster,
     eager: true,
   });
+  const { settings } = useAppSettings();
+  usePosterThemeSource(
+    heroReady && !heroImageFailed ? heroSrc : '',
+    settings.homeBackdropTint && settings.heroEnabled,
+  );
   const { src: logoSrc, failed: logoFailed, ready: logoReady } = useMediaImage({
     primaryUrl: item.logo ?? '',
     eager: true,

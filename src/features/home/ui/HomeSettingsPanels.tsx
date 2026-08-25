@@ -89,6 +89,21 @@ export function HomeSettingsPanels({ variant = 'settings' }: HomeSettingsPanelsP
               aria-label="Показывать блок рекомендаций"
             />
           </div>
+          <div className="settings-row">
+            <SettingsGlyph tone="indigo">
+              <TrendingIcon size={15} strokeWidth={1.9} />
+            </SettingsGlyph>
+            <div className="settings-row__body">
+              <p className="settings-row__label">Фон от цвета backdrop</p>
+              <p className="settings-row__hint">Только на главной; вне её — выбранная тема</p>
+            </div>
+            <SettingsSwitch
+              checked={settings.homeBackdropTint}
+              onChange={(checked) => void updateSettings({ homeBackdropTint: checked })}
+              disabled={!settings.heroEnabled}
+              aria-label="Подстраивать фон под backdrop на главной"
+            />
+          </div>
         </div>
         <p className="settings-group__footer">
           Большой hero-баннер: backdrop, метаданные и кнопки «Смотреть» / «Подробнее».

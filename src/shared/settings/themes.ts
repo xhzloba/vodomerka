@@ -11,6 +11,9 @@ export type { AppTheme, BuiltinThemeId };
 
 export const DEFAULT_APP_THEME: AppTheme = DEFAULT_THEME_ID;
 
+/** Legacy id from removed adaptive theme — map to default. */
+const LEGACY_POSTER_THEME_ID = 'poster';
+
 export const APP_THEME_OPTIONS: Array<{
   id: BuiltinThemeId;
   label: string;
@@ -49,6 +52,9 @@ export function isAppThemeId(value: unknown): value is AppTheme {
 }
 
 export function normalizeAppTheme(value: unknown): AppTheme {
+  if (value === LEGACY_POSTER_THEME_ID) {
+    return DEFAULT_APP_THEME;
+  }
   return isAppThemeId(value) ? value : DEFAULT_APP_THEME;
 }
 

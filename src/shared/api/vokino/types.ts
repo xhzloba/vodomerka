@@ -59,6 +59,17 @@ export interface VokinoContentDetails {
   trailer_url?: string;
 }
 
+export interface VokinoCastMember {
+  id: string;
+  title: string;
+  poster?: string;
+  playlist_url?: string;
+  biography?: string;
+  place_of_birth?: string;
+  birthday?: string;
+  gender?: number;
+}
+
 export interface VokinoChannelItem {
   details: VokinoContentDetails;
   playlist_url: string;

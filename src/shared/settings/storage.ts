@@ -130,6 +130,7 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
       value.heroSlideIntervalSec ?? DEFAULT_APP_SETTINGS.heroSlideIntervalSec,
     ),
     heroSourceSectionIds: normalizeHeroSourceSectionIds(value.heroSourceSectionIds),
+    homeBackdropTint: value.homeBackdropTint ?? DEFAULT_APP_SETTINGS.homeBackdropTint,
     cardShowInfo: readCardShowInfo(value),
     catalogRowGap: normalizeCatalogRowGap(value.catalogRowGap),
     posterSize: normalizePosterSize(value.posterSize),

@@ -240,6 +240,11 @@
   --focus-glow: rgba(79, 89, 104, 0.18);
 }
 
+html[data-home-backdrop-tint='1'],
+html[data-home-backdrop-tint='1'] body {
+  transition: background-color 0.85s ease;
+}
+
 :root {
   --focus-scale: 1.06;
   --radius-sm: 10px;

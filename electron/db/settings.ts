@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   heroAutoSlide: true,
   heroSlideIntervalSec: 5,
   heroSourceSectionIds: [],
+  homeBackdropTint: true,
   cardShowInfo: false,
   catalogRowGap: 'normal',
   posterSize: 'medium',
@@ -60,6 +61,7 @@ const SETTING_KEYS = {
   heroAutoSlide: 'hero_auto_slide',
   heroSlideIntervalSec: 'hero_slide_interval_sec',
   heroSourceSectionIds: 'hero_source_section_ids',
+  homeBackdropTint: 'home_backdrop_tint',
   cardShowInfo: 'card_show_info',
   catalogRowGap: 'catalog_row_gap',
   posterSize: 'poster_size',
@@ -210,6 +212,10 @@ function getDefaultSettingEntries(): Array<{ key: string; value: string }> {
     {
       key: SETTING_KEYS.heroSourceSectionIds,
       value: JSON.stringify(DEFAULT_SETTINGS.heroSourceSectionIds),
+    },
+    {
+      key: SETTING_KEYS.homeBackdropTint,
+      value: DEFAULT_SETTINGS.homeBackdropTint ? '1' : '0',
     },
     { key: SETTING_KEYS.cardShowInfo, value: DEFAULT_SETTINGS.cardShowInfo ? '1' : '0' },
     { key: SETTING_KEYS.catalogRowGap, value: DEFAULT_SETTINGS.catalogRowGap },
@@ -366,6 +372,10 @@ function normalizeAiModel(value: string | undefined): string {
 }
 
 function normalizeTheme(value: string | undefined): AppTheme {
+  if (value === 'poster') {
+    return DEFAULT_SETTINGS.theme;
+  }
+
   if (typeof value === 'string' && THEME_ID_PATTERN.test(value)) {
     return value;
   }
@@ -636,6 +646,7 @@ function parseSettings(database: Database.Database): AppSettings {
   const autoSlideRaw = readSetting(database, SETTING_KEYS.heroAutoSlide);
   const intervalRaw = readSetting(database, SETTING_KEYS.heroSlideIntervalSec);
   const heroSourceSectionIdsRaw = readSetting(database, SETTING_KEYS.heroSourceSectionIds);
+  const homeBackdropTintRaw = readSetting(database, SETTING_KEYS.homeBackdropTint);
   const catalogRowGapRaw = readSetting(database, SETTING_KEYS.catalogRowGap);
   const posterSizeRaw = readSetting(database, SETTING_KEYS.posterSize);
   const collectionLayoutRaw = readSetting(database, SETTING_KEYS.collectionLayout);
@@ -672,6 +683,7 @@ function parseSettings(database: Database.Database): AppSettings {
     heroAutoSlide: autoSlideRaw !== '0',
     heroSlideIntervalSec,
     heroSourceSectionIds: parseHeroSourceSectionIds(heroSourceSectionIdsRaw),
+    homeBackdropTint: homeBackdropTintRaw !== '0',
     cardShowInfo: readCardShowInfo(database),
     catalogRowGap: normalizeCatalogRowGap(catalogRowGapRaw),
     posterSize: normalizePosterSize(posterSizeRaw),
@@ -760,6 +772,13 @@ export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
     upsert.run({
       key: SETTING_KEYS.heroSourceSectionIds,
       value: JSON.stringify(selected ? [selected] : []),
+    });
+  }
+
+  if (patch.homeBackdropTint !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.homeBackdropTint,
+      value: patch.homeBackdropTint ? '1' : '0',
     });
   }
 

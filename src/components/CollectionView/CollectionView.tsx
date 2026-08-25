@@ -10,6 +10,8 @@ import {
   type WatchStatus,
 } from '@/shared/domain/watchStatus';
 import { playDeleteSound } from '@/shared/audio/uiSounds';
+import { useMediaImage } from '@/shared/hooks/useMediaImage';
+import { usePosterThemeSource } from '@/shared/theme/usePosterThemeSource';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog/ConfirmDialog';
 import { Tabs } from '@/shared/ui/Tabs';
 import {
@@ -113,6 +115,20 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
 
   const activeFavoriteBackdrop = favoriteBackdrops[favoritesBackdropIndex] ?? favoriteBackdrops[0] ?? '';
 
+  const {
+    src: favoriteBackdropSrc,
+    failed: favoriteBackdropFailed,
+    ready: favoriteBackdropReady,
+  } = useMediaImage({
+    primaryUrl: activeFavoriteBackdrop,
+    eager: true,
+  });
+
+  usePosterThemeSource(
+    favoriteBackdropReady && !favoriteBackdropFailed ? favoriteBackdropSrc : '',
+    isActive && tab === 'favorites' && favoritesBackdropEnabled && Boolean(activeFavoriteBackdrop),
+  );
+
   useEffect(() => {
     if (tab !== 'favorites') {
       setFavoritesVisibleItems([]);
@@ -159,7 +175,7 @@ export function CollectionView({ onMediaSelect, isActive = true }: CollectionVie
               <img
                 key={activeFavoriteBackdrop}
                 className="collection-favorites-hero__backdrop-image collection-favorites-hero__backdrop-image--enter"
-                src={activeFavoriteBackdrop}
+                src={favoriteBackdropSrc || activeFavoriteBackdrop}
                 alt=""
                 loading="eager"
                 decoding="async"

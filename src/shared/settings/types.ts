@@ -60,6 +60,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   heroAutoSlide: true,
   heroSlideIntervalSec: 5,
   heroSourceSectionIds: [],
+  homeBackdropTint: true,
   cardShowInfo: false,
   catalogRowGap: 'normal',
   posterSize: 'medium',

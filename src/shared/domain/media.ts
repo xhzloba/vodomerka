@@ -1,4 +1,4 @@
-import type { VokinoChannelItem } from '@/shared/api/vokino/types';
+import type { VokinoCastMember, VokinoChannelItem } from '@/shared/api/vokino/types';
 import { resolveVokinoUrl } from '@/shared/config/api';
 import { applyMediaOverrides } from '@/shared/domain/overrides';
 import { getMediaOverrides } from '@/shared/domain/overridesStore';
@@ -10,6 +10,13 @@ import {
 } from '../../../contracts/mediaType';
 
 export type MediaType = 'movie' | 'serial' | string;
+
+export interface MediaCastMember {
+  id: string;
+  name: string;
+  poster?: string;
+  playlistUrl?: string;
+}
 
 export interface MediaItem {
   id: string;
@@ -27,6 +34,7 @@ export interface MediaItem {
   logo?: string;
   related?: MediaItem[];
   similars?: MediaItem[];
+  cast?: MediaCastMember[];
   viewUrl: string;
   country?: string;
   director?: string;
@@ -166,19 +174,54 @@ function mapRelatedChannels(
     .filter((row): row is MediaItem => row != null && row.id !== itemId);
 }
 
+const CAST_LIMIT = 16;
+
+function mapCastMembers(casts: VokinoCastMember[] | 0 | undefined): MediaCastMember[] {
+  if (!Array.isArray(casts) || casts.length === 0) {
+    return [];
+  }
+
+  const mapped: MediaCastMember[] = [];
+  const seen = new Set<string>();
+
+  for (const person of casts) {
+    const id = person?.id?.trim();
+    const name = person?.title?.trim();
+    if (!id || !name || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    mapped.push({
+      id,
+      name,
+      poster: person.poster?.trim() || undefined,
+      playlistUrl: person.playlist_url ? resolveVokinoUrl(person.playlist_url) : undefined,
+    });
+    if (mapped.length >= CAST_LIMIT) {
+      break;
+    }
+  }
+
+  return mapped;
+}
+
 export function attachViewRelations(
   item: MediaItem,
   sequelsAndPrequels: VokinoChannelItem[] | 0 | undefined,
   similars: VokinoChannelItem[] | 0 | undefined,
+  casts?: VokinoCastMember[] | 0 | undefined,
 ): MediaItem {
   const related = mapRelatedChannels(item.id, sequelsAndPrequels).sort(
     (left, right) => (left.year ?? 99999) - (right.year ?? 99999),
   );
 
+  const cast = mapCastMembers(casts);
+
   return {
     ...item,
     related,
     similars: mapRelatedChannels(item.id, similars),
+    ...(cast.length > 0 ? { cast } : {}),
   };
 }
 
