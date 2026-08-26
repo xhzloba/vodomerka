@@ -47,7 +47,7 @@ const DRAG_THRESHOLD_PX = 8;
 
 export function MediaCard({
   item,
-  variant = 'poster',
+  variant,
   isFocused,
   islandDragFrom = 'any',
   continueProgress = null,
@@ -56,6 +56,7 @@ export function MediaCard({
   onOpenDetails,
 }: MediaCardProps) {
   const { settings } = useAppSettings();
+  const resolvedVariant = variant ?? settings.cardAspect;
   const { isFavorite, toggleFavorite } = useFavorites();
   const { clearStatus, getStatus, toggleStatus } = useWatched();
   const { beginMediaDrag, updatePointer, releasePointer } = useMediaDrag();
@@ -305,9 +306,10 @@ export function MediaCard({
     [beginMediaDrag, closeContextMenu, islandDragFrom, item, releasePointer, updatePointer],
   );
 
-  const primaryUrl = variant === 'wide' ? item.backdrop || item.poster : item.poster;
-  const fallbackUrl = variant === 'wide' ? item.poster : item.backdrop;
+  const primaryUrl = resolvedVariant === 'wide' ? item.backdrop || item.poster : item.poster;
+  const fallbackUrl = resolvedVariant === 'wide' ? item.poster : item.backdrop;
   const hasImageSource = Boolean(primaryUrl || fallbackUrl);
+  const logoUrl = resolvedVariant === 'wide' ? item.logo?.trim() || '' : '';
 
   const { src, failed, ready, loading, onError } = useMediaImage({
     primaryUrl,
@@ -315,16 +317,27 @@ export function MediaCard({
     rootRef: cardRef,
   });
 
+  const {
+    src: logoSrc,
+    failed: logoFailed,
+    ready: logoReady,
+    onError: onLogoError,
+  } = useMediaImage({
+    primaryUrl: logoUrl,
+    rootRef: cardRef,
+  });
+
   const showImage = hasImageSource && !failed && ready;
   const isLoading = hasImageSource && !failed && !ready;
   const isEmptyCard = !hasImageSource || failed;
+  const showLogo = Boolean(logoUrl) && Boolean(logoSrc) && logoReady && !logoFailed;
 
   return (
     <>
       <article
         ref={cardRef}
         {...(islandDragFrom === 'any' ? { 'data-no-drag-scroll': true } : {})}
-        className={`media-card ${variant === 'wide' ? 'media-card--wide' : ''} ${isFocused ? 'media-card--focused' : ''}${isEmptyCard && !isLoading ? ' media-card--empty' : ''}${isDragging ? ' media-card--dragging' : ''}`}
+        className={`media-card ${resolvedVariant === 'wide' ? 'media-card--wide' : ''}${isFocused ? ' media-card--focused' : ''}${isEmptyCard && !isLoading ? ' media-card--empty' : ''}${isDragging ? ' media-card--dragging' : ''}`}
         onPointerDown={handlePointerDown}
         onClick={() => {
           if (suppressClickRef.current) {
@@ -370,6 +383,20 @@ export function MediaCard({
                 referrerPolicy="no-referrer"
                 onDragStart={(event) => event.preventDefault()}
                 onError={onError}
+              />
+            ) : null}
+            {showLogo ? (
+              <img
+                key={logoSrc}
+                className="media-card__logo"
+                src={logoSrc}
+                alt=""
+                decoding="async"
+                draggable={false}
+                referrerPolicy="no-referrer"
+                onDragStart={(event) => event.preventDefault()}
+                onError={onLogoError}
+                aria-hidden="true"
               />
             ) : null}
             {watchStatus || inFavorites || continueProgress?.episodeBadge ? (

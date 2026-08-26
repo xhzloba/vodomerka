@@ -27,9 +27,10 @@ import {
 } from '@/shared/ui/icons';
 import { APP_THEME_OPTIONS } from '@/shared/settings/themes';
 import {
-  POSTER_SIZE_OPTIONS,
   API_SERVER_OPTIONS,
+  CARD_ASPECT_OPTIONS,
   DETAIL_PRESENTATION_OPTIONS,
+  POSTER_SIZE_OPTIONS,
   SIDEBAR_MENU_ANIMATION_OPTIONS,
   SIDEBAR_STYLE_OPTIONS,
 } from '@/shared/settings/types';
@@ -373,10 +374,10 @@ export function SettingsView() {
 
             <section className="settings-group" aria-labelledby="settings-poster-size-title">
               <h2 id="settings-poster-size-title" className="settings-group__title">
-                Размер постеров
+                Размер карточек
               </h2>
               <div className="settings-panel">
-                <div className="settings-choice-list" role="radiogroup" aria-label="Размер постеров">
+                <div className="settings-choice-list" role="radiogroup" aria-label="Размер карточек">
                   {POSTER_SIZE_OPTIONS.map((option) => {
                     const isActive = settings.posterSize === option.id;
                     const tone =
@@ -405,7 +406,47 @@ export function SettingsView() {
                 </div>
               </div>
               <p className="settings-group__footer">
-                Главная, каталог, подборки, избранное и статусы просмотра.
+                Одна шкала для постеров и широких карточек — пиксели подбираются под форму.
+              </p>
+            </section>
+
+            <section className="settings-group" aria-labelledby="settings-card-aspect-title">
+              <h2 id="settings-card-aspect-title" className="settings-group__title">
+                Форма карточек
+              </h2>
+              <div className="settings-panel">
+                <div className="settings-choice-list" role="radiogroup" aria-label="Форма карточек">
+                  {CARD_ASPECT_OPTIONS.map((option) => {
+                    const isActive = settings.cardAspect === option.id;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isActive}
+                        className={`settings-choice${isActive ? ' settings-choice--active' : ''}`}
+                        onClick={() => void updateSettings({ cardAspect: option.id })}
+                      >
+                        <SettingsGlyph tone={option.id === 'wide' ? 'orange' : 'blue'}>
+                          {option.id === 'wide' ? (
+                            <GridIcon size={15} strokeWidth={1.9} />
+                          ) : (
+                            <FilmIcon size={15} strokeWidth={1.9} />
+                          )}
+                        </SettingsGlyph>
+                        <span className="settings-choice__body">
+                          <span className="settings-choice__label">{option.label}</span>
+                          <span className="settings-choice__hint">{option.hint}</span>
+                        </span>
+                        <SettingsCheckbox checked={isActive} decorative />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <p className="settings-group__footer">
+                Широкий режим показывает backdrop вместо вертикального постера.
               </p>
             </section>
 

@@ -33,7 +33,7 @@ function canScrollHorizontally(element: HTMLElement): boolean {
 export function ContentRow({
   title,
   items,
-  variant = 'poster',
+  variant,
   hideTitle = false,
   icon,
   titleCount,

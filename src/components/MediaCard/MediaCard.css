@@ -281,7 +281,7 @@
 .media-card__play {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -508,11 +508,29 @@
 }
 
 .media-card--wide {
-  width: 280px;
+  width: var(--media-card-width, 360px);
 }
 
 .media-card--wide .media-card__poster-wrap {
   aspect-ratio: 16 / 9;
+}
+
+.media-card__logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: auto;
+  max-width: 68%;
+  height: auto;
+  max-height: 46%;
+  margin: 0;
+  object-fit: contain;
+  object-position: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  -webkit-filter: var(--media-brand-logo-filter);
+  filter: var(--media-brand-logo-filter);
 }
 
 @media (prefers-reduced-motion: reduce) {

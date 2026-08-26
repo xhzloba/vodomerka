@@ -3,6 +3,10 @@
   min-width: 0;
 }
 
+.compilation-card .media-card__poster-wrap {
+  aspect-ratio: 2 / 3;
+}
+
 .compilation-card:focus-visible {
   outline: none;
 }

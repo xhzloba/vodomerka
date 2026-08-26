@@ -1,3 +1,9 @@
+.compilations-view--list {
+  /* Wide cards must not stretch compilation cover previews — keep poster scale. */
+  --media-card-width: var(--media-poster-card-width, 180px);
+  --media-grid-min: var(--media-poster-grid-min, 168px);
+}
+
 .compilations-view--list .compilations-view__content {
   padding: 0 18px 48px;
 }

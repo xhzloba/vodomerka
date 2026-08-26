@@ -141,10 +141,12 @@ export function MainAppShell() {
   );
 
   const dismissSetupWelcome = useCallback(() => {
+    setSetupWelcomeVisible(false);
     void updateSettings({ setupWelcomeDismissed: true });
   }, [updateSettings]);
 
   const openSetupWelcomeSettings = useCallback(() => {
+    setSetupWelcomeVisible(false);
     navigate('settings');
     void updateSettings({ setupWelcomeDismissed: true });
   }, [navigate, updateSettings]);

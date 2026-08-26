@@ -18,6 +18,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   cardShowInfo: false,
   catalogRowGap: 'normal',
   posterSize: 'medium',
+  cardAspect: 'poster',
   collectionLayout: 'slider',
   detailPresentation: 'window',
   sidebarCollapsed: false,
@@ -65,6 +66,7 @@ const SETTING_KEYS = {
   cardShowInfo: 'card_show_info',
   catalogRowGap: 'catalog_row_gap',
   posterSize: 'poster_size',
+  cardAspect: 'card_aspect',
   collectionLayout: 'collection_layout',
   detailPresentation: 'detail_presentation',
   sidebarCollapsed: 'sidebar_collapsed',
@@ -220,6 +222,7 @@ function getDefaultSettingEntries(): Array<{ key: string; value: string }> {
     { key: SETTING_KEYS.cardShowInfo, value: DEFAULT_SETTINGS.cardShowInfo ? '1' : '0' },
     { key: SETTING_KEYS.catalogRowGap, value: DEFAULT_SETTINGS.catalogRowGap },
     { key: SETTING_KEYS.posterSize, value: DEFAULT_SETTINGS.posterSize },
+    { key: SETTING_KEYS.cardAspect, value: DEFAULT_SETTINGS.cardAspect },
     { key: SETTING_KEYS.collectionLayout, value: DEFAULT_SETTINGS.collectionLayout },
     { key: SETTING_KEYS.detailPresentation, value: DEFAULT_SETTINGS.detailPresentation },
     {
@@ -446,6 +449,14 @@ function normalizePosterSize(value: string | undefined): AppSettings['posterSize
   return DEFAULT_SETTINGS.posterSize;
 }
 
+function normalizeCardAspect(value: string | undefined): AppSettings['cardAspect'] {
+  if (value === 'wide' || value === 'poster') {
+    return value;
+  }
+
+  return DEFAULT_SETTINGS.cardAspect;
+}
+
 function normalizeCollectionLayout(value: string | undefined): AppSettings['collectionLayout'] {
   if (value === 'grid' || value === 'slider') {
     return value;
@@ -649,6 +660,7 @@ function parseSettings(database: Database.Database): AppSettings {
   const homeBackdropTintRaw = readSetting(database, SETTING_KEYS.homeBackdropTint);
   const catalogRowGapRaw = readSetting(database, SETTING_KEYS.catalogRowGap);
   const posterSizeRaw = readSetting(database, SETTING_KEYS.posterSize);
+  const cardAspectRaw = readSetting(database, SETTING_KEYS.cardAspect);
   const collectionLayoutRaw = readSetting(database, SETTING_KEYS.collectionLayout);
   const detailPresentationRaw = readSetting(database, SETTING_KEYS.detailPresentation);
   const sidebarCollapsedRaw = readSetting(database, SETTING_KEYS.sidebarCollapsed);
@@ -687,6 +699,7 @@ function parseSettings(database: Database.Database): AppSettings {
     cardShowInfo: readCardShowInfo(database),
     catalogRowGap: normalizeCatalogRowGap(catalogRowGapRaw),
     posterSize: normalizePosterSize(posterSizeRaw),
+    cardAspect: normalizeCardAspect(cardAspectRaw),
     collectionLayout: normalizeCollectionLayout(collectionLayoutRaw),
     detailPresentation: normalizeDetailPresentation(detailPresentationRaw),
     sidebarCollapsed: sidebarCollapsedRaw === '1',
@@ -800,6 +813,13 @@ export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
     upsert.run({
       key: SETTING_KEYS.posterSize,
       value: normalizePosterSize(patch.posterSize),
+    });
+  }
+
+  if (patch.cardAspect !== undefined) {
+    upsert.run({
+      key: SETTING_KEYS.cardAspect,
+      value: normalizeCardAspect(patch.cardAspect),
     });
   }
 

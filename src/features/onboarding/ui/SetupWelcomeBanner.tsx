@@ -34,12 +34,18 @@ export function SetupWelcomeBanner({
         </div>
 
         <div className="setup-welcome__actions">
-          <button type="button" className="setup-welcome__cta" onClick={onOpenSettings}>
+          <button
+            type="button"
+            className="setup-welcome__cta"
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={onOpenSettings}
+          >
             Открыть настройки
           </button>
           <button
             type="button"
             className="setup-welcome__later"
+            onMouseDown={(event) => event.stopPropagation()}
             onClick={onDismiss}
           >
             Позже

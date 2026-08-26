@@ -43,8 +43,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   }, [settings.uiSoundsEnabled]);
 
   useEffect(() => {
-    applyPosterSizeCssVars(settings.posterSize);
-  }, [settings.posterSize]);
+    applyPosterSizeCssVars(settings.posterSize, settings.cardAspect);
+  }, [settings.cardAspect, settings.posterSize]);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,7 +56,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         }
 
         await applyResolvedTheme(loaded.theme);
-        applyPosterSizeCssVars(loaded.posterSize);
+        applyPosterSizeCssVars(loaded.posterSize, loaded.cardAspect);
         applyApiServer(loaded.apiServer);
         setSettings(loaded);
       })
@@ -77,8 +77,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     if (patch.theme !== undefined) {
       await applyResolvedTheme(next.theme);
     }
-    if (patch.posterSize !== undefined) {
-      applyPosterSizeCssVars(next.posterSize);
+    if (patch.posterSize !== undefined || patch.cardAspect !== undefined) {
+      applyPosterSizeCssVars(next.posterSize, next.cardAspect);
     }
     if (patch.apiServer !== undefined && next.apiServer !== prevServer) {
       applyApiServer(next.apiServer, true);
@@ -89,7 +89,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const resetToDefaults = useCallback(async () => {
     const next = await resetAppData();
     await applyResolvedTheme(next.theme);
-    applyPosterSizeCssVars(next.posterSize);
+    applyPosterSizeCssVars(next.posterSize, next.cardAspect);
     applyApiServer(next.apiServer, true);
     setSettings(next);
     setSetupWelcomeEpoch((value) => value + 1);
@@ -98,7 +98,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const reloadSettings = useCallback(async () => {
     const next = await loadAppSettings();
     await applyResolvedTheme(next.theme);
-    applyPosterSizeCssVars(next.posterSize);
+    applyPosterSizeCssVars(next.posterSize, next.cardAspect);
     applyApiServer(next.apiServer, true);
     setSettings(next);
     return next;

@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { applyAppTheme, normalizeAppTheme } from './shared/settings/themes';
-import { applyPosterSizeCssVars, normalizePosterSize } from './shared/settings/types';
+import { applyPosterSizeCssVars, normalizeCardAspect, normalizePosterSize } from './shared/settings/types';
 import './styles/globals.css';
 import './shared/ui/scroll.css';
 import './shared/ui/icons/icons.css';
@@ -10,16 +10,16 @@ import './shared/ui/icons/icons.css';
 try {
   const raw = localStorage.getItem('tv-leonid-settings');
   if (raw) {
-    const parsed = JSON.parse(raw) as { theme?: unknown; posterSize?: unknown };
+    const parsed = JSON.parse(raw) as { theme?: unknown; posterSize?: unknown; cardAspect?: unknown };
     applyAppTheme(normalizeAppTheme(parsed.theme));
-    applyPosterSizeCssVars(normalizePosterSize(parsed.posterSize));
+    applyPosterSizeCssVars(normalizePosterSize(parsed.posterSize), normalizeCardAspect(parsed.cardAspect));
   } else {
     applyAppTheme('obsidian');
-    applyPosterSizeCssVars('medium');
+    applyPosterSizeCssVars('medium', 'poster');
   }
 } catch {
   applyAppTheme('obsidian');
-  applyPosterSizeCssVars('medium');
+  applyPosterSizeCssVars('medium', 'poster');
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

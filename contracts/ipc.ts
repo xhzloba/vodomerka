@@ -37,6 +37,9 @@ export type CatalogRowGapPreset = 'compact' | 'normal' | 'relaxed' | 'spacious';
 
 export type PosterSizePreset = 'small' | 'medium' | 'large';
 
+/** Portrait posters vs landscape backdrop cards. */
+export type CardAspect = 'poster' | 'wide';
+
 export type CollectionLayout = 'slider' | 'grid';
 
 /** How media details open: separate BrowserWindow or in-app side panel. */
@@ -67,6 +70,8 @@ export interface AppSettings {
   cardShowInfo: boolean;
   catalogRowGap: CatalogRowGapPreset;
   posterSize: PosterSizePreset;
+  /** Portrait poster cards or landscape backdrop cards. */
+  cardAspect: CardAspect;
   /** Collection / watch-status list layout. */
   collectionLayout: CollectionLayout;
   /** Media detail: separate window or right slide-out panel. */

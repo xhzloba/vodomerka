@@ -1,6 +1,7 @@
 import type {
   ApiServerId,
   AppSettings,
+  CardAspect,
   CatalogRowGapPreset,
   CollectionLayout,
   DetailPresentation,
@@ -16,6 +17,7 @@ export type {
   ApiServerId,
   AppSettings,
   AppTheme,
+  CardAspect,
   CatalogRowGapPreset,
   CollectionLayout,
   DetailPresentation,
@@ -44,8 +46,8 @@ export const CATALOG_GAP_VALUES: Record<CatalogRowGapPreset, { row: number; colu
 
 export const POSTER_SIZE_OPTIONS: Array<{ id: PosterSizePreset; label: string; hint: string }> = [
   { id: 'small', label: 'Маленькие', hint: 'Больше карточек в ряду и сетке' },
-  { id: 'medium', label: 'Средние', hint: 'Текущий размер по умолчанию' },
-  { id: 'large', label: 'Большие', hint: 'Крупные постеры, меньше в ряду' },
+  { id: 'medium', label: 'Средние', hint: 'Размер по умолчанию' },
+  { id: 'large', label: 'Большие', hint: 'Крупнее, меньше в ряду' },
 ];
 
 export const POSTER_SIZE_VALUES: Record<PosterSizePreset, { cardWidth: number; gridMin: number }> = {
@@ -53,6 +55,26 @@ export const POSTER_SIZE_VALUES: Record<PosterSizePreset, { cardWidth: number; g
   medium: { cardWidth: 180, gridMin: 168 },
   large: { cardWidth: 220, gridMin: 200 },
 };
+
+/** Landscape cards share `posterSize`, but need wider px than portrait posters. */
+export const WIDE_CARD_SIZE_VALUES: Record<PosterSizePreset, { cardWidth: number; gridMin: number }> = {
+  small: { cardWidth: 260, gridMin: 236 },
+  medium: { cardWidth: 360, gridMin: 320 },
+  large: { cardWidth: 460, gridMin: 408 },
+};
+
+export const CARD_ASPECT_OPTIONS: Array<{ id: CardAspect; label: string; hint: string }> = [
+  {
+    id: 'poster',
+    label: 'Постеры',
+    hint: 'Вертикальные обложки, как сейчас',
+  },
+  {
+    id: 'wide',
+    label: 'Широкие',
+    hint: 'Прямоугольные карточки с backdrop',
+  },
+];
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   theme: 'obsidian',
@@ -64,6 +86,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   cardShowInfo: false,
   catalogRowGap: 'normal',
   posterSize: 'medium',
+  cardAspect: 'poster',
   collectionLayout: 'slider',
   detailPresentation: 'window',
   sidebarCollapsed: false,
@@ -119,6 +142,14 @@ export function normalizePosterSize(value: unknown): PosterSizePreset {
   return DEFAULT_APP_SETTINGS.posterSize;
 }
 
+export function normalizeCardAspect(value: unknown): CardAspect {
+  if (value === 'wide' || value === 'poster') {
+    return value;
+  }
+
+  return DEFAULT_APP_SETTINGS.cardAspect;
+}
+
 export function normalizeCollectionLayout(value: unknown): CollectionLayout {
   if (value === 'grid' || value === 'slider') {
     return value;
@@ -152,11 +183,20 @@ export const DETAIL_PRESENTATION_OPTIONS: Array<{
   },
 ];
 
-export function applyPosterSizeCssVars(posterSize: PosterSizePreset): void {
-  const values = POSTER_SIZE_VALUES[posterSize];
+export function applyPosterSizeCssVars(
+  posterSize: PosterSizePreset,
+  cardAspect: CardAspect = DEFAULT_APP_SETTINGS.cardAspect,
+): void {
+  const posterValues = POSTER_SIZE_VALUES[posterSize];
+  const activeValues =
+    cardAspect === 'wide' ? WIDE_CARD_SIZE_VALUES[posterSize] : posterValues;
   const root = document.documentElement;
-  root.style.setProperty('--media-card-width', `${values.cardWidth}px`);
-  root.style.setProperty('--media-grid-min', `${values.gridMin}px`);
+  root.style.setProperty('--media-card-width', `${activeValues.cardWidth}px`);
+  root.style.setProperty('--media-grid-min', `${activeValues.gridMin}px`);
+  /* Always available for surfaces that must stay portrait (e.g. compilations list). */
+  root.style.setProperty('--media-poster-card-width', `${posterValues.cardWidth}px`);
+  root.style.setProperty('--media-poster-grid-min', `${posterValues.gridMin}px`);
+  root.dataset.cardAspect = cardAspect;
 }
 
 export function normalizeSidebarMenuAnimation(value: unknown): SidebarMenuAnimation {

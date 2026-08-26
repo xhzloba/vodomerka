@@ -3,8 +3,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1150;
+  z-index: 1250;
   pointer-events: none;
+  -webkit-app-region: no-drag;
   animation: setupWelcomeEnter 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -38,7 +39,9 @@
     0 -1px 0 rgba(255, 255, 255, 0.04),
     0 -4px 12px rgba(0, 0, 0, 0.24),
     0 -10px 24px rgba(0, 0, 0, 0.18);
+  isolation: isolate;
   pointer-events: auto;
+  -webkit-app-region: no-drag;
   overflow: hidden;
 }
 
@@ -141,11 +144,24 @@
 }
 
 .setup-welcome__actions {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 12px;
   min-width: 0;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+}
+
+.setup-welcome__cta,
+.setup-welcome__later {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+  cursor: pointer;
 }
 
 .setup-welcome__cta {
