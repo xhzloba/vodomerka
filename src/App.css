@@ -101,6 +101,11 @@ body.is-media-dragging .app-shell--apple-sidebar .titlebar {
   transition: padding-left var(--transition-smooth);
 }
 
+/* Wide backdrops are heavy to rescale every frame while the sidebar animates. */
+html[data-card-aspect='wide'] .app__main {
+  transition: none;
+}
+
 .app__view-layer {
   height: 100%;
 }

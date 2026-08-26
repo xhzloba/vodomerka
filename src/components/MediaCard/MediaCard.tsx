@@ -331,6 +331,8 @@ export function MediaCard({
   const isLoading = hasImageSource && !failed && !ready;
   const isEmptyCard = !hasImageSource || failed;
   const showLogo = Boolean(logoUrl) && Boolean(logoSrc) && logoReady && !logoFailed;
+  const showWideTitle =
+    resolvedVariant === 'wide' && !showLogo && (!logoUrl || logoFailed);
 
   return (
     <>
@@ -398,6 +400,11 @@ export function MediaCard({
                 onError={onLogoError}
                 aria-hidden="true"
               />
+            ) : null}
+            {showWideTitle ? (
+              <p className="media-card__wide-title" aria-hidden="true">
+                {item.title}
+              </p>
             ) : null}
             {watchStatus || inFavorites || continueProgress?.episodeBadge ? (
               <div className="media-card__badges">

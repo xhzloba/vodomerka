@@ -10,6 +10,12 @@
   contain-intrinsic-size: auto 300px;
 }
 
+html[data-card-aspect='wide'] .media-grid .media-card {
+  contain: layout paint style;
+  /* 16:9 cover + optional title/meta under card */
+  contain-intrinsic-size: auto calc(var(--media-grid-min, 320px) * 0.5625 + 72px);
+}
+
 .media-grid__loader {
   grid-column: 1 / -1;
   justify-self: center;
