@@ -303,15 +303,7 @@ export function MainAppShell() {
           />
         );
       case 'browse':
-        return (
-          <BrowseView
-            onMediaSelect={handleMediaSelect}
-            settingsMenuOpen={browseSettingsMenuOpen}
-            onSettingsMenuOpenChange={setBrowseSettingsMenuOpen}
-            browseTarget={browseTarget}
-            onBrowseTargetConsumed={clearBrowseTarget}
-          />
-        );
+        return null;
       case 'compilations':
         return (
           <CompilationsView
@@ -379,11 +371,26 @@ export function MainAppShell() {
         <main className="app__main">
           <div
             className={`app__view-layer${
-              activeNav === 'library' ? ' app__view-layer--hidden' : ''
+              activeNav === 'library' || activeNav === 'browse' ? ' app__view-layer--hidden' : ''
             }`}
-            aria-hidden={activeNav === 'library'}
+            aria-hidden={activeNav === 'library' || activeNav === 'browse'}
           >
             {renderPrimaryView()}
+          </div>
+          <div
+            className={`app__view-layer${
+              activeNav === 'browse' ? '' : ' app__view-layer--hidden'
+            }`}
+            aria-hidden={activeNav !== 'browse'}
+          >
+            <BrowseView
+              onMediaSelect={handleMediaSelect}
+              settingsMenuOpen={browseSettingsMenuOpen}
+              onSettingsMenuOpenChange={setBrowseSettingsMenuOpen}
+              browseTarget={browseTarget}
+              onBrowseTargetConsumed={clearBrowseTarget}
+              isActive={activeNav === 'browse'}
+            />
           </div>
           <div
             className={`app__view-layer${

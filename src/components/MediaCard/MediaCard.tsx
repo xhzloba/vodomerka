@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
+import { useCallback, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from 'react';
 import type { MediaItem } from '@/shared/domain/media';
 import type { ContinueCardProgress } from '@/shared/domain/continueWatchingProgress';
 import { useFavorites } from '@/shared/domain/FavoritesContext';
@@ -44,6 +44,51 @@ interface MediaCardProps {
 }
 
 const DRAG_THRESHOLD_PX = 8;
+
+/** Stable anchor: bottom-left / center / bottom-right — varies by media id. */
+function wideBrandAnchor(seed: string): CSSProperties {
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  const slot = Math.abs(hash) % 3;
+
+  if (slot === 0) {
+    return {
+      top: 'auto',
+      left: '10%',
+      right: 'auto',
+      bottom: '12%',
+      transform: 'none',
+      textAlign: 'left',
+      objectPosition: 'left bottom',
+    };
+  }
+
+  if (slot === 1) {
+    return {
+      top: '50%',
+      left: '50%',
+      right: 'auto',
+      bottom: 'auto',
+      transform: 'translate(-50%, -50%)',
+      textAlign: 'center',
+      objectPosition: 'center',
+    };
+  }
+
+  return {
+    top: 'auto',
+    left: 'auto',
+    right: '10%',
+    bottom: '12%',
+    transform: 'none',
+    textAlign: 'right',
+    objectPosition: 'right bottom',
+  };
+}
 
 export function MediaCard({
   item,
@@ -333,6 +378,8 @@ export function MediaCard({
   const showLogo = Boolean(logoUrl) && Boolean(logoSrc) && logoReady && !logoFailed;
   const showWideTitle =
     resolvedVariant === 'wide' && !showLogo && (!logoUrl || logoFailed);
+  const wideBrandStyle =
+    showLogo || showWideTitle ? wideBrandAnchor(item.id) : undefined;
 
   return (
     <>
@@ -391,6 +438,7 @@ export function MediaCard({
               <img
                 key={logoSrc}
                 className="media-card__logo"
+                style={wideBrandStyle}
                 src={logoSrc}
                 alt=""
                 decoding="async"
@@ -402,7 +450,7 @@ export function MediaCard({
               />
             ) : null}
             {showWideTitle ? (
-              <p className="media-card__wide-title" aria-hidden="true">
+              <p className="media-card__wide-title" style={wideBrandStyle} aria-hidden="true">
                 {item.title}
               </p>
             ) : null}

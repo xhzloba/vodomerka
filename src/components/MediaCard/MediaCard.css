@@ -522,9 +522,9 @@
   left: 50%;
   z-index: 2;
   width: auto;
-  max-width: 68%;
+  max-width: 58%;
   height: auto;
-  max-height: 46%;
+  max-height: 40%;
   margin: 0;
   object-fit: contain;
   object-position: center;
@@ -540,8 +540,9 @@
   left: 50%;
   z-index: 2;
   box-sizing: border-box;
-  width: 68%;
-  max-height: 46%;
+  width: 58%;
+  max-width: 58%;
+  max-height: 40%;
   margin: 0;
   padding: 0;
   overflow: hidden;

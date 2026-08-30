@@ -61,7 +61,16 @@ function isVokinoBrowseCategoryUrl(url: string): boolean {
 }
 
 export function normalizeBrowseCategory(category: VokinoCategory): VokinoCategory {
-  if (category.is_category === 1 || !isVokinoBrowseCategoryUrl(category.playlist_url)) {
+  const flagged =
+    category.is_category === 1 ||
+    (category.is_category as unknown) === true ||
+    (category.is_category as unknown) === '1';
+
+  if (flagged) {
+    return category.is_category === 1 ? category : { ...category, is_category: 1 };
+  }
+
+  if (!isVokinoBrowseCategoryUrl(category.playlist_url)) {
     return category;
   }
 
@@ -69,6 +78,10 @@ export function normalizeBrowseCategory(category: VokinoCategory): VokinoCategor
     ...category,
     is_category: 1,
   };
+}
+
+export function isBrowseCategoryHub(category: VokinoCategory): boolean {
+  return normalizeBrowseCategory(category).is_category === 1;
 }
 
 export function normalizeBrowseCategories(categories: VokinoCategory[]): VokinoCategory[] {

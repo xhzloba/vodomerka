@@ -8,7 +8,9 @@ import {
   fetchPaginatedList,
   findBrowseCategoryByType,
   getDefaultBrowseCategory,
+  isBrowseCategoryHub,
   mergeUniqueItems,
+  normalizeBrowseCategory,
   sortBrowseCategories,
 } from '@/shared/api/vokino/browse';
 import { extractBrowseType } from '@/shared/api/vokino/browseQuery';
@@ -48,6 +50,7 @@ interface BrowseViewProps {
   onSettingsMenuOpenChange: (open: boolean) => void;
   browseTarget?: BrowseNavigationTarget | null;
   onBrowseTargetConsumed?: () => void;
+  isActive?: boolean;
 }
 
 function pickDefaultTab(tabs: BrowseTab[]): BrowseTab | null {
@@ -66,9 +69,12 @@ export function BrowseView({
   onSettingsMenuOpenChange,
   browseTarget = null,
   onBrowseTargetConsumed,
+  isActive = true,
 }: BrowseViewProps) {
   const scrollRef = useOverlayScroll<HTMLDivElement>();
   const requestIdRef = useRef(0);
+  const loadMoreIdRef = useRef(0);
+  const emptyRetryRef = useRef(false);
   const bootstrapSessionRef = useRef(0);
   const browseTargetRef = useRef(browseTarget);
   browseTargetRef.current = browseTarget;
@@ -83,7 +89,7 @@ export function BrowseView({
   const [items, setItems] = useState<MediaItem[]>([]);
   const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
   const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
-  const [isContentLoading, setIsContentLoading] = useState(false);
+  const [isContentLoading, setIsContentLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
@@ -91,9 +97,14 @@ export function BrowseView({
   const [isCategoryHintActive, setIsCategoryHintActive] = useState(false);
   const categoryHintStartedRef = useRef(false);
 
-  useAppTopProgress('browse', isCategoriesLoading || isContentLoading, 'Загрузка каталога');
+  useAppTopProgress(
+    'browse',
+    isActive && (isCategoriesLoading || isContentLoading),
+    'Загрузка каталога',
+  );
 
   const categoryHintEligible =
+    isActive &&
     !isLoading &&
     !settings.browseCategoryHintDismissed &&
     !prefersReducedMotion();
@@ -181,74 +192,110 @@ export function BrowseView({
         manageLoading?: boolean;
       },
     ) => {
-      const requestId = requestIdRef.current + 1;
-      requestIdRef.current = requestId;
       const append = options?.append ?? false;
       const manageLoading = options?.manageLoading ?? true;
+      const normalizedCategory = normalizeBrowseCategory(category);
 
       if (append) {
+        loadMoreIdRef.current += 1;
+        const loadMoreId = loadMoreIdRef.current;
         setIsLoadingMore(true);
-      } else if (manageLoading) {
+
+        try {
+          const result = await fetchPaginatedList(
+            normalizedCategory.playlist_url,
+            options?.pageUrl ?? null,
+          );
+          if (loadMoreId !== loadMoreIdRef.current) return;
+
+          setItems((current) => {
+            const merged = mergeUniqueItems(current, result.items);
+            if (merged.length === current.length) {
+              setNextPageUrl(null);
+            } else {
+              setNextPageUrl(result.nextUrl);
+            }
+            return merged;
+          });
+        } catch {
+          if (loadMoreId === loadMoreIdRef.current) {
+            setNextPageUrl(null);
+          }
+        } finally {
+          if (loadMoreId === loadMoreIdRef.current) {
+            setIsLoadingMore(false);
+          }
+        }
+        return;
+      }
+
+      const requestId = requestIdRef.current + 1;
+      requestIdRef.current = requestId;
+
+      if (manageLoading) {
+        loadMoreIdRef.current += 1;
+        setIsLoadingMore(false);
         setIsContentLoading(true);
         setError(null);
-        setItems([]);
         setNextPageUrl(null);
       }
 
-      let enrichedTabs = tabs;
-      let nextTab = activeTab;
-
       try {
-        let playlistUrl = category.playlist_url;
+        let playlistUrl = normalizedCategory.playlist_url;
         const pageUrl = options?.pageUrl ?? null;
+        let nextTab = options?.tab ?? activeTab;
 
-        if (!append) {
-          const categoryTabs = category.is_category === 1 ? await fetchBrowseTabs(category) : [];
-          if (requestId !== requestIdRef.current) return;
+        const categoryTabs = isBrowseCategoryHub(normalizedCategory)
+          ? await fetchBrowseTabs(normalizedCategory)
+          : [];
+        if (requestId !== requestIdRef.current) return;
 
-          enrichedTabs = enrichBrowseTabs(categoryTabs, category);
-          setTabs(enrichedTabs);
+        const enrichedTabs = enrichBrowseTabs(categoryTabs, normalizedCategory);
+        setTabs(enrichedTabs);
 
-          nextTab = options?.tab ?? pickDefaultTab(enrichedTabs);
-          setActiveTab(nextTab);
+        nextTab = options?.tab ?? pickDefaultTab(enrichedTabs);
+        setActiveTab(nextTab);
 
-          if (nextTab) {
-            const appliedFilters = options?.filters ?? filters;
-            const builtUrl = buildBrowseListUrlFromContext(category, nextTab, appliedFilters);
-            playlistUrl = builtUrl ?? nextTab.playlistUrl;
-          }
+        if (nextTab) {
+          const appliedFilters = options?.filters ?? filters;
+          const builtUrl = buildBrowseListUrlFromContext(
+            normalizedCategory,
+            nextTab,
+            appliedFilters,
+          );
+          playlistUrl = builtUrl ?? nextTab.playlistUrl;
+        } else if (isBrowseCategoryHub(normalizedCategory)) {
+          // Hub endpoints return sort tabs, not media — never treat them as a list.
+          throw new Error('Не удалось получить разделы категории');
         }
 
         const result = await fetchPaginatedList(playlistUrl, pageUrl);
         if (requestId !== requestIdRef.current) return;
 
-        if (append) {
-          setItems((current) => mergeUniqueItems(current, result.items));
-          setNextPageUrl(result.nextUrl);
-          return;
+        // One retry: first paint after cold start occasionally returns an empty page.
+        let resolved = result;
+        if (result.items.length === 0 && !pageUrl) {
+          resolved = await fetchPaginatedList(playlistUrl, pageUrl);
+          if (requestId !== requestIdRef.current) return;
         }
 
-        setItems(result.items);
-        setNextPageUrl(result.nextUrl);
+        setItems(resolved.items);
+        setNextPageUrl(resolved.nextUrl);
       } catch (err) {
         if (requestId !== requestIdRef.current) return;
 
-        if (!append) {
-          setError(err instanceof Error ? err.message : 'Не удалось загрузить каталог');
-          setItems([]);
-          setNextPageUrl(null);
-        }
+        setError(err instanceof Error ? err.message : 'Не удалось загрузить каталог');
+        setItems([]);
+        setNextPageUrl(null);
       } finally {
         if (requestId !== requestIdRef.current) return;
 
-        if (append) {
-          setIsLoadingMore(false);
-        } else if (manageLoading) {
+        if (manageLoading) {
           setIsContentLoading(false);
         }
       }
     },
-    [activeTab, filters, tabs],
+    [activeTab, filters],
   );
 
   useEffect(() => {
@@ -270,8 +317,10 @@ export function BrowseView({
       const pendingTarget = browseTargetRef.current;
 
       setIsCategoriesLoading(true);
-      setIsContentLoading(false);
+      setIsContentLoading(true);
       setError(null);
+      setItems([]);
+      setNextPageUrl(null);
 
       try {
         const main = await vokinoRepository.getMain();
@@ -290,6 +339,7 @@ export function BrowseView({
         setSelectedCategory(category);
 
         if (!category) {
+          setIsContentLoading(false);
           return;
         }
 
@@ -297,26 +347,21 @@ export function BrowseView({
           onBrowseTargetConsumedRef.current?.();
         }
 
-        setIsCategoriesLoading(false);
-        setIsContentLoading(true);
-        setItems([]);
-        setNextPageUrl(null);
-
+        // Keep isCategoriesLoading true until content settles so browseTarget
+        // effect cannot start a second load that races this bootstrap.
         await loadContentRef.current(category, {
           filters: {},
-          manageLoading: false,
+          manageLoading: true,
         });
       } catch (err) {
         if (!cancelled && bootstrapSessionRef.current === sessionId) {
           setError(err instanceof Error ? err.message : 'Не удалось загрузить каталог');
+          setIsContentLoading(false);
         }
       } finally {
-        window.queueMicrotask(() => {
-          if (!cancelled && bootstrapSessionRef.current === sessionId) {
-            setIsCategoriesLoading(false);
-            setIsContentLoading(false);
-          }
-        });
+        if (!cancelled && bootstrapSessionRef.current === sessionId) {
+          setIsCategoriesLoading(false);
+        }
       }
     }
 
@@ -324,6 +369,8 @@ export function BrowseView({
     return () => {
       cancelled = true;
       bootstrapSessionRef.current += 1;
+      // Invalidate in-flight loadContent so a remount cannot apply stale empty results.
+      requestIdRef.current += 1;
     };
   }, []);
 
@@ -350,6 +397,41 @@ export function BrowseView({
       manageLoading: true,
     });
   }, [browseTarget, categories, isCategoriesLoading, selectedCategory]);
+
+  useEffect(() => {
+    emptyRetryRef.current = false;
+  }, [selectedCategory?.playlist_url]);
+
+  useEffect(() => {
+    if (!isActive) {
+      emptyRetryRef.current = false;
+      return;
+    }
+
+    if (
+      emptyRetryRef.current ||
+      isCategoriesLoading ||
+      isContentLoading ||
+      isLoadingMore ||
+      items.length > 0 ||
+      !selectedCategory
+    ) {
+      return;
+    }
+
+    emptyRetryRef.current = true;
+    void loadContentRef.current(selectedCategory, {
+      filters: {},
+      manageLoading: true,
+    });
+  }, [
+    isActive,
+    isCategoriesLoading,
+    isContentLoading,
+    isLoadingMore,
+    items.length,
+    selectedCategory,
+  ]);
 
   useEffect(() => {
     void ensureMediaOverridesLoaded().then(() => {
@@ -561,14 +643,14 @@ export function BrowseView({
       <div ref={scrollRef} className="browse-view__scroll scroll-overlay">
         {error && <p className="browse-view__error">{error}</p>}
 
-        {isContentLoading ? (
+        {isCategoriesLoading || isContentLoading ? (
           <div className="page-state-overlay" aria-busy="true" aria-label="Загрузка каталога">
             <PageLoading />
           </div>
         ) : null}
 
         <div className="browse-view__content" style={catalogGridStyle}>
-          {isContentLoading ? null : items.length > 0 ? (
+          {isCategoriesLoading || isContentLoading ? null : items.length > 0 ? (
             <MediaGrid
               items={items}
               isLoadingMore={isLoadingMore}
